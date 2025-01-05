@@ -5,6 +5,8 @@ import {
 	ButtonStyle,
 	CommandInteraction,
 	type TextChannel,
+	ButtonInteraction,
+	Message,
 } from 'discord.js';
 import type { Context, Lavamusic } from '../structures/index';
 
@@ -86,13 +88,12 @@ export class Utils {
 				ctx.deferred ? ctx.interaction?.followUp({ embeds: embed }) : ctx.interaction?.reply({ embeds: embed });
 				return;
 			}
-
 			(ctx.channel as TextChannel).send({ embeds: embed });
 			return;
 		}
 
 		let page = 0;
-		const getButton = (page: number): any => {
+		const getButton = (page: number) => {
 			const firstEmbed = page === 0;
 			const lastEmbed = page === embed.length - 1;
 			const pageEmbed = embed[page];
@@ -120,32 +121,28 @@ export class Utils {
 				.setCustomId('stop')
 				.setEmoji(client.emoji.page.cancel)
 				.setStyle(ButtonStyle.Danger);
-			const row = new ActionRowBuilder().addComponents(first, back, stop, next, last);
+			const row = new ActionRowBuilder<ButtonBuilder>().addComponents(first, back, stop, next, last);
 			return { embeds: [pageEmbed], components: [row] };
 		};
 
 		const msgOptions = getButton(0);
-		const msg = ctx.isInteraction
-			? await (ctx.deferred
-					? ctx.interaction!.followUp({
-							...msgOptions,
-							fetchReply: true as boolean,
-						})
-					: ctx.interaction!.reply({ ...msgOptions, fetchReply: true }))
-			: await (ctx.channel as TextChannel).send({
-					...msgOptions,
-					fetchReply: true,
-				});
+		const msg = await (ctx.isInteraction
+			? ctx.deferred
+				? ctx.interaction!.followUp(msgOptions)
+				: ctx.interaction!.reply(msgOptions)
+			: (ctx.channel as TextChannel).send(msgOptions));
+
+		if (!msg) return;
 
 		const author = ctx instanceof CommandInteraction ? ctx.user : ctx.author;
 
-		const filter = (int: any): any => int.user.id === author?.id;
-		const collector = msg.createMessageComponentCollector({
+		const filter = (int: ButtonInteraction | any) => int.user.id === author?.id;
+		const collector = (msg as Message).createMessageComponentCollector({
 			filter,
 			time: 60000,
 		});
 
-		collector.on('collect', async interaction => {
+		collector.on('collect', async (interaction: ButtonInteraction) => {
 			if (interaction.user.id === author?.id) {
 				await interaction.deferUpdate();
 				if (interaction.customId === 'first' && page !== 0) {
@@ -159,7 +156,9 @@ export class Utils {
 				} else if (interaction.customId === 'last' && page !== embed.length - 1) {
 					page = embed.length - 1;
 				}
-				await interaction.editReply(getButton(page));
+				if (msg instanceof Message) {
+					await msg.edit(getButton(page));
+				}
 			} else {
 				await interaction.reply({
 					content: ctx.locale('buttons.errors.not_author'),
@@ -169,7 +168,9 @@ export class Utils {
 		});
 
 		collector.on('end', async () => {
-			await msg.edit({ embeds: [embed[page]], components: [] });
+			if (msg instanceof Message) {
+				await msg.edit({ embeds: [embed[page]], components: [] });
+			}
 		});
 	}
 }
