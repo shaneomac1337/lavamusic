@@ -3,10 +3,11 @@ import type { Lavamusic } from '../../structures/index';
 
 interface ApiOptions extends FastifyPluginOptions {
 	client: Lavamusic;
+	webServer?: any;
 }
 
 export async function apiRoutes(fastify: FastifyInstance, options: ApiOptions) {
-	const { client } = options;
+	const { client, webServer } = options;
 
 	// Authentication middleware
 	fastify.addHook('preHandler', async (request, reply) => {
@@ -114,6 +115,11 @@ export async function apiRoutes(fastify: FastifyInstance, options: ApiOptions) {
 		await player.queue.add(result.tracks[0]);
 		if (!player.playing) {
 			await player.play();
+		}
+
+		// Emit queue update
+		if (webServer) {
+			webServer.emitQueueUpdateForGuild(guildId);
 		}
 
 		return { success: true, track: result.tracks[0].info };
@@ -384,6 +390,12 @@ export async function apiRoutes(fastify: FastifyInstance, options: ApiOptions) {
 		}
 
 		player.queue.remove(trackIndex);
+
+		// Emit queue update
+		if (webServer) {
+			webServer.emitQueueUpdateForGuild(guildId);
+		}
+
 		return { success: true };
 	});
 
@@ -414,6 +426,11 @@ export async function apiRoutes(fastify: FastifyInstance, options: ApiOptions) {
 			await player.play();
 		}
 
+		// Emit queue update
+		if (webServer) {
+			webServer.emitQueueUpdateForGuild(guildId);
+		}
+
 		return { success: true, track: track.info, message: 'Track added to front of queue and playing' };
 	});
 
@@ -434,6 +451,11 @@ export async function apiRoutes(fastify: FastifyInstance, options: ApiOptions) {
 		// Move track from one position to another
 		const track = player.queue.tracks.splice(from, 1)[0];
 		player.queue.tracks.splice(to, 0, track);
+
+		// Emit queue update
+		if (webServer) {
+			webServer.emitQueueUpdateForGuild(guildId);
+		}
 
 		return { success: true, message: 'Track moved successfully' };
 	});
@@ -458,6 +480,11 @@ export async function apiRoutes(fastify: FastifyInstance, options: ApiOptions) {
 		// Skip current track to play the target track
 		await player.skip();
 
+		// Emit queue update
+		if (webServer) {
+			webServer.emitQueueUpdateForGuild(guildId);
+		}
+
 		return { success: true, message: 'Jumped to track successfully' };
 	});
 
@@ -472,6 +499,11 @@ export async function apiRoutes(fastify: FastifyInstance, options: ApiOptions) {
 
 		const clearedCount = player.queue.tracks.length;
 		player.queue.tracks.splice(0, player.queue.tracks.length);
+
+		// Emit queue update
+		if (webServer) {
+			webServer.emitQueueUpdateForGuild(guildId);
+		}
 
 		return { success: true, message: `Cleared ${clearedCount} tracks from queue` };
 	});
@@ -490,6 +522,11 @@ export async function apiRoutes(fastify: FastifyInstance, options: ApiOptions) {
 		for (let i = tracks.length - 1; i > 0; i--) {
 			const j = Math.floor(Math.random() * (i + 1));
 			[tracks[i], tracks[j]] = [tracks[j], tracks[i]];
+		}
+
+		// Emit queue update
+		if (webServer) {
+			webServer.emitQueueUpdateForGuild(guildId);
 		}
 
 		return { success: true, message: 'Queue shuffled successfully' };

@@ -516,22 +516,7 @@
 				"text": "The text to say"
 			}
 		},
-		"speak": {
-			"description": "Convert text to speech with advanced voice options",
-			"options": {
-				"text": "The text to convert to speech",
-				"voice": "The voice to use for speech synthesis",
-				"speed": "The speed of speech (0.5 to 2.0)"
-			}
-		},
-		"mluvit": {
-			"description": "Czech text to speech conversion",
-			"options": {
-				"text": "Text to convert to Czech speech",
-				"voice": "Czech voice to use (Tereza or Antonín)",
-				"speed": "Speech speed (0.5 to 2.0)"
-			}
-		},
+
 		"developer": {
 			"description": "Shows information about the bot developer"
 		}

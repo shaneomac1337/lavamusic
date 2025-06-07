@@ -80,11 +80,11 @@ export class WebServer {
 
 	private async setupRoutes(): Promise<void> {
 		// API routes
-		await this.app.register(apiRoutes, { prefix: '/api', client: this.client });
-		
+		await this.app.register(apiRoutes, { prefix: '/api', client: this.client, webServer: this });
+
 		// Auth routes
 		await this.app.register(authRoutes, { prefix: '/auth', client: this.client });
-		
+
 		// Dashboard routes
 		await this.app.register(dashboardRoutes, { prefix: '/', client: this.client });
 
@@ -142,18 +142,27 @@ export class WebServer {
 					thumbnail: track.info.artworkUrl,
 				},
 			});
+
+			// Also emit queue update when track starts
+			this.emitQueueUpdate(player);
 		});
 
 		this.client.manager.on('trackEnd', (player) => {
 			this.io.to(`guild:${player.guildId}`).emit('trackEnd', {
 				guildId: player.guildId,
 			});
+
+			// Emit queue update when track ends
+			this.emitQueueUpdate(player);
 		});
 
 		this.client.manager.on('queueEnd', (player) => {
 			this.io.to(`guild:${player.guildId}`).emit('queueEnd', {
 				guildId: player.guildId,
 			});
+
+			// Emit queue update when queue ends
+			this.emitQueueUpdate(player);
 		});
 
 		// Player state changes
@@ -164,8 +173,76 @@ export class WebServer {
 				paused: player.paused,
 				volume: player.volume,
 				connected: player.connected,
+				playing: player.playing,
+				voiceChannelId: player.voiceChannelId,
+				voiceChannelName: player.voiceChannelId ? this.client.guilds.cache.get(player.guildId)?.channels.cache.get(player.voiceChannelId)?.name || 'Unknown Channel' : null,
 			});
 		});
+
+		// Set up periodic player updates for active players
+		setInterval(() => {
+			this.client.manager.players.forEach((player) => {
+				if (player.playing && player.queue.current) {
+					this.io.to(`guild:${player.guildId}`).emit('playerUpdate', {
+						guildId: player.guildId,
+						position: player.position,
+						paused: player.paused,
+						volume: player.volume,
+						connected: player.connected,
+						playing: player.playing,
+						voiceChannelId: player.voiceChannelId,
+						voiceChannelName: player.voiceChannelId ? this.client.guilds.cache.get(player.guildId)?.channels.cache.get(player.voiceChannelId)?.name || 'Unknown Channel' : null,
+					});
+				}
+			});
+		}, 5000); // Update every 5 seconds
+
+		// Player creation and destruction
+		this.client.manager.on('playerCreate', (player) => {
+			this.io.to(`guild:${player.guildId}`).emit('playerCreate', {
+				guildId: player.guildId,
+				voiceChannelId: player.voiceChannelId,
+				connected: player.connected,
+			});
+		});
+
+		this.client.manager.on('playerDestroy', (player) => {
+			this.io.to(`guild:${player.guildId}`).emit('playerDestroy', {
+				guildId: player.guildId,
+			});
+		});
+	}
+
+	// Helper method to emit queue updates
+	private emitQueueUpdate(player: any): void {
+		const queueData = {
+			guildId: player.guildId,
+			tracks: player.queue.tracks.map((track: any, index: number) => ({
+				title: track.info.title,
+				author: track.info.author,
+				duration: track.info.duration,
+				uri: track.info.uri,
+				thumbnail: track.info.artworkUrl,
+				index: index,
+			})),
+			current: player.queue.current ? {
+				title: player.queue.current.info.title,
+				author: player.queue.current.info.author,
+				duration: player.queue.current.info.duration,
+				uri: player.queue.current.info.uri,
+				thumbnail: player.queue.current.info.artworkUrl,
+			} : null,
+		};
+
+		this.io.to(`guild:${player.guildId}`).emit('queueUpdate', queueData);
+	}
+
+	// Public method to emit queue updates from API routes
+	public emitQueueUpdateForGuild(guildId: string): void {
+		const player = this.client.manager.getPlayer(guildId);
+		if (player) {
+			this.emitQueueUpdate(player);
+		}
 	}
 
 	public async start(): Promise<void> {

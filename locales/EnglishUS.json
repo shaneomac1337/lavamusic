@@ -456,26 +456,7 @@
 				"set": "Set the volume to {volume}"
 			}
 		},
-		"speak": {
-			"description": "Convert text to speech with advanced voice options",
-			"options": {
-				"text": "The text to convert to speech",
-				"voice": "The voice to use for speech synthesis",
-				"speed": "The speed of speech (0.5 to 2.0)"
-			},
-			"loading": "🎤 Converting text to speech...",
-			"success": "🎤 **Speaking:** {text}\n**Voice:** {voice}",
-			"errors": {
-				"no_text": "Please provide text to convert to speech.",
-				"text_too_long": "Text is too long! Maximum 500 characters allowed.",
-				"tts_failed": "Failed to convert text to speech. Please try again."
-			},
-			"fields": {
-				"voice": "Voice",
-				"speed": "Speed",
-				"length": "Text Length"
-			}
-		},
+
 		"say": {
 			"description": "Quick text to speech conversion",
 			"options": {
@@ -493,26 +474,7 @@
 				"voice": "Voice Type"
 			}
 		},
-		"mluvit": {
-			"description": "Czech text to speech conversion",
-			"options": {
-				"text": "Text to convert to Czech speech",
-				"voice": "Czech voice to use (Tereza or Antonín)",
-				"speed": "Speech speed (0.5 to 2.0)"
-			},
-			"loading": "🇨🇿 Převádím text na řeč...",
-			"success": "🇨🇿 **Mluvím:** {text}\n**Hlas:** {voice}",
-			"errors": {
-				"no_text": "Prosím zadejte text k převedení na řeč.",
-				"text_too_long": "Text je příliš dlouhý! Maximum 500 znaků.",
-				"tts_failed": "Nepodařilo se převést text na řeč. Zkuste to znovu."
-			},
-			"fields": {
-				"voice": "Hlas",
-				"speed": "Rychlost",
-				"length": "Délka textu"
-			}
-		},
+
 		"addsong": {
 			"description": "Adds a song to the playlist",
 			"options": {
