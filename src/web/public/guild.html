@@ -54,6 +54,45 @@
             color: #059669;
             font-weight: 600;
         }
+        .search-suggestion {
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        .search-suggestion:hover {
+            background-color: #f3f4f6;
+        }
+        .search-suggestion.selected {
+            background-color: #e5e7eb;
+        }
+        .suggestion-thumbnail {
+            width: 40px;
+            height: 40px;
+            object-fit: cover;
+            border-radius: 4px;
+        }
+        .suggestion-content {
+            flex: 1;
+            min-width: 0;
+        }
+        .suggestion-title {
+            font-weight: 500;
+            color: #1f2937;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .suggestion-author {
+            color: #6b7280;
+            font-size: 0.875rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .suggestion-duration {
+            color: #9ca3af;
+            font-size: 0.75rem;
+            white-space: nowrap;
+        }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
@@ -162,7 +201,13 @@
                     <div class="border-t pt-4">
                         <h3 class="text-md font-medium text-gray-900 mb-2">Add Track</h3>
                         <div class="flex space-x-2 mb-3">
-                            <input type="text" id="search-input" placeholder="Search for a song or paste URL..." class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500">
+                            <div class="flex-1 relative">
+                                <input type="text" id="search-input" placeholder="Search for a song or paste URL..." class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500" autocomplete="off">
+                                <!-- Search suggestions dropdown -->
+                                <div id="search-suggestions" class="absolute top-full left-0 right-0 bg-white border border-gray-300 rounded-md shadow-lg z-50 hidden max-h-64 overflow-y-auto">
+                                    <!-- Suggestions will be populated here -->
+                                </div>
+                            </div>
                             <button onclick="addTrack()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md">
                                 <i class="fas fa-plus mr-2"></i>
                                 Add
@@ -382,7 +427,13 @@
             <div class="mb-4 p-4 border rounded-lg">
                 <h4 class="text-md font-medium text-gray-900 mb-2">Add Track</h4>
                 <div class="flex space-x-2">
-                    <input type="text" id="addTrackQuery" class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" placeholder="Search for a song or paste URL...">
+                    <div class="flex-1 relative">
+                        <input type="text" id="addTrackQuery" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" placeholder="Search for a song or paste URL..." autocomplete="off">
+                        <!-- Search suggestions dropdown for playlist -->
+                        <div id="playlist-search-suggestions" class="absolute top-full left-0 right-0 bg-white border border-gray-300 rounded-md shadow-lg z-50 hidden max-h-64 overflow-y-auto">
+                            <!-- Suggestions will be populated here -->
+                        </div>
+                    </div>
                     <button onclick="addTrackToPlaylist()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md">
                         <i class="fas fa-plus mr-1"></i>
                         Add
@@ -1644,6 +1695,161 @@
             }
         });
 
+        // Search autocomplete functionality
+        let searchTimeout = null;
+        let selectedSuggestionIndex = -1;
+        let currentSuggestions = [];
+
+        function setupSearchAutocomplete(inputId, suggestionsId) {
+            const input = document.getElementById(inputId);
+            const suggestionsContainer = document.getElementById(suggestionsId);
+
+            input.addEventListener('input', (e) => {
+                const query = e.target.value.trim();
+
+                if (query.length < 2) {
+                    hideSuggestions(suggestionsContainer);
+                    return;
+                }
+
+                // Debounce search requests
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                    fetchSearchSuggestions(query, suggestionsContainer);
+                }, 300);
+            });
+
+            input.addEventListener('keydown', (e) => {
+                const suggestions = suggestionsContainer.querySelectorAll('.search-suggestion');
+
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    selectedSuggestionIndex = Math.min(selectedSuggestionIndex + 1, suggestions.length - 1);
+                    updateSuggestionSelection(suggestions);
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    selectedSuggestionIndex = Math.max(selectedSuggestionIndex - 1, -1);
+                    updateSuggestionSelection(suggestions);
+                } else if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (selectedSuggestionIndex >= 0 && suggestions[selectedSuggestionIndex]) {
+                        selectSuggestion(suggestions[selectedSuggestionIndex], input, suggestionsContainer);
+                    } else {
+                        // If no suggestion selected, trigger the appropriate action
+                        if (inputId === 'search-input') {
+                            addTrack();
+                        } else if (inputId === 'addTrackQuery') {
+                            addTrackToPlaylist();
+                        }
+                    }
+                } else if (e.key === 'Escape') {
+                    hideSuggestions(suggestionsContainer);
+                }
+            });
+
+            // Hide suggestions when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!input.contains(e.target) && !suggestionsContainer.contains(e.target)) {
+                    hideSuggestions(suggestionsContainer);
+                }
+            });
+        }
+
+        async function fetchSearchSuggestions(query, suggestionsContainer) {
+            try {
+                // Show loading state
+                suggestionsContainer.innerHTML = '<div class="p-3 text-center text-gray-500"><i class="fas fa-spinner fa-spin mr-2"></i>Searching...</div>';
+                suggestionsContainer.classList.remove('hidden');
+
+                const response = await fetch(`/api/search/suggestions?q=${encodeURIComponent(query)}`);
+                const data = await response.json();
+
+                currentSuggestions = data.suggestions || [];
+                displaySuggestions(currentSuggestions, suggestionsContainer);
+            } catch (error) {
+                console.error('Error fetching search suggestions:', error);
+                hideSuggestions(suggestionsContainer);
+            }
+        }
+
+        function displaySuggestions(suggestions, container) {
+            if (suggestions.length === 0) {
+                hideSuggestions(container);
+                return;
+            }
+
+            container.innerHTML = '';
+            selectedSuggestionIndex = -1;
+
+            suggestions.forEach((suggestion, index) => {
+                const suggestionElement = document.createElement('div');
+                suggestionElement.className = 'search-suggestion p-3 flex items-center space-x-3 border-b border-gray-100 last:border-b-0';
+                suggestionElement.dataset.index = index;
+
+                const thumbnail = suggestion.thumbnail ?
+                    `<img src="${suggestion.thumbnail}" alt="Thumbnail" class="suggestion-thumbnail bg-gray-200">` :
+                    `<div class="suggestion-thumbnail bg-gray-200 flex items-center justify-center"><i class="fas fa-music text-gray-400"></i></div>`;
+
+                suggestionElement.innerHTML = `
+                    ${thumbnail}
+                    <div class="suggestion-content">
+                        <div class="suggestion-title">${escapeHtml(suggestion.title)}</div>
+                        <div class="suggestion-author">${escapeHtml(suggestion.author)}</div>
+                    </div>
+                    <div class="suggestion-duration">${formatDuration(suggestion.duration)}</div>
+                `;
+
+                suggestionElement.addEventListener('click', () => {
+                    const input = container.previousElementSibling;
+                    selectSuggestion(suggestionElement, input, container);
+                });
+
+                container.appendChild(suggestionElement);
+            });
+
+            container.classList.remove('hidden');
+        }
+
+        function selectSuggestion(suggestionElement, input, container) {
+            const index = parseInt(suggestionElement.dataset.index);
+            const suggestion = currentSuggestions[index];
+
+            if (suggestion) {
+                input.value = suggestion.uri; // Use the URI for direct play
+                input.dataset.selectedTitle = suggestion.displayName; // Store display name for UI
+                hideSuggestions(container);
+
+                // Trigger the appropriate action based on which input was used
+                if (input.id === 'search-input') {
+                    addTrack();
+                } else if (input.id === 'addTrackQuery') {
+                    addTrackToPlaylist();
+                }
+            }
+        }
+
+        function updateSuggestionSelection(suggestions) {
+            suggestions.forEach((suggestion, index) => {
+                if (index === selectedSuggestionIndex) {
+                    suggestion.classList.add('selected');
+                } else {
+                    suggestion.classList.remove('selected');
+                }
+            });
+        }
+
+        function hideSuggestions(container) {
+            container.classList.add('hidden');
+            container.innerHTML = '';
+            selectedSuggestionIndex = -1;
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
         // Logout function
         async function logout() {
             try {
@@ -1655,13 +1861,12 @@
         }
 
         // Initialize on page load
-        document.addEventListener('DOMContentLoaded', initGuildDashboard);
+        document.addEventListener('DOMContentLoaded', () => {
+            initGuildDashboard();
 
-        // Allow Enter key to add track
-        document.getElementById('search-input').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                addTrack();
-            }
+            // Setup search autocomplete for both search inputs
+            setupSearchAutocomplete('search-input', 'search-suggestions');
+            setupSearchAutocomplete('addTrackQuery', 'playlist-search-suggestions');
         });
     </script>
 </body>
