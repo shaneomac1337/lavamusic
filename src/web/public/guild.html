@@ -412,6 +412,7 @@
         let socket;
         let guildId;
         let currentPlayer = null;
+        let progressUpdateInterval = null;
 
         // Initialize guild dashboard
         async function initGuildDashboard() {
@@ -449,6 +450,11 @@
                 currentPlayer = guildData.player;
                 console.log('Initial player data:', currentPlayer);
                 updatePlayerUI();
+
+                // Start progress timer if track is playing
+                if (currentPlayer.current && !currentPlayer.paused) {
+                    startProgressTimer();
+                }
             } else {
                 // No player exists
                 currentPlayer = null;
@@ -466,14 +472,39 @@
 
             socket.on('trackStart', (data) => {
                 if (data.guildId === guildId) {
+                    console.log('Track started:', data.track);
                     updateCurrentTrack(data.track);
                 }
             });
 
             socket.on('playerUpdate', (data) => {
                 if (data.guildId === guildId) {
-                    currentPlayer = { ...currentPlayer, ...data };
+                    console.log('Player update received:', data);
+
+                    // Update player state
+                    if (currentPlayer) {
+                        currentPlayer = { ...currentPlayer, ...data };
+                    } else {
+                        currentPlayer = data;
+                    }
+
+                    // Update UI elements
                     updatePlayerUI();
+
+                    // Update progress bar if we have position and current track
+                    if (data.position !== undefined && currentPlayer.current) {
+                        // Reset the estimated position tracking
+                        currentPlayer.lastUpdateTime = Date.now();
+                        currentPlayer.estimatedPosition = data.position;
+                        updateProgressBar(data.position, currentPlayer.current.duration);
+                    }
+
+                    // Start or stop progress timer based on playing state
+                    if (currentPlayer.current && !currentPlayer.paused) {
+                        startProgressTimer();
+                    } else {
+                        stopProgressTimer();
+                    }
                 }
             });
 
@@ -491,6 +522,30 @@
                     updateConnectionStatus(false, null, null);
                 }
             });
+
+            // Real-time queue updates
+            socket.on('queueUpdate', (data) => {
+                if (data.guildId === guildId) {
+                    console.log('Queue updated:', data);
+                    updateQueueUI(data);
+                }
+            });
+
+            // Real-time track updates
+            socket.on('trackEnd', (data) => {
+                if (data.guildId === guildId) {
+                    console.log('Track ended:', data);
+                    // Queue will be updated via queueUpdate event
+                }
+            });
+
+            socket.on('queueEnd', (data) => {
+                if (data.guildId === guildId) {
+                    console.log('Queue ended:', data);
+                    // Clear the queue display
+                    updateQueueUI({ tracks: [], current: null });
+                }
+            });
         }
 
         // Player control functions
@@ -503,6 +558,13 @@
                 if (result.success) {
                     currentPlayer.paused = result.paused;
                     updatePlayerUI();
+
+                    // Handle progress timer based on play/pause state
+                    if (result.paused) {
+                        stopProgressTimer();
+                    } else {
+                        startProgressTimer();
+                    }
                 }
             } catch (error) {
                 console.error('Error toggling play/pause:', error);
@@ -656,7 +718,7 @@
 
                 if (response.ok) {
                     document.getElementById('search-input').value = '';
-                    loadQueue();
+                    // Queue will be updated via Socket.IO
                 }
             } catch (error) {
                 console.error('Error adding track:', error);
@@ -683,7 +745,7 @@
                 const result = await response.json();
                 if (result.success) {
                     document.getElementById('search-input').value = '';
-                    loadQueue();
+                    // Queue will be updated via Socket.IO
                     alert(`Force playing: ${result.track.title}`);
                 } else {
                     alert('Failed to force play track');
@@ -754,7 +816,7 @@
                     updateFairPlayButton();
                     if (currentFairPlay) {
                         alert('Fair Play enabled - Queue reordered fairly');
-                        loadQueue(); // Refresh queue to show new order
+                        // Queue will be updated via Socket.IO
                     }
                 }
             } catch (error) {
@@ -788,7 +850,7 @@
                 const result = await response.json();
                 if (result.success) {
                     alert('Queue shuffled successfully!');
-                    loadQueue(); // Refresh queue display
+                    // Queue will be updated via Socket.IO
                 }
             } catch (error) {
                 console.error('Error shuffling queue:', error);
@@ -809,7 +871,7 @@
                 const result = await response.json();
                 if (result.success) {
                     alert(result.message);
-                    loadQueue(); // Refresh queue display
+                    // Queue will be updated via Socket.IO
                 }
             } catch (error) {
                 console.error('Error clearing queue:', error);
@@ -859,6 +921,101 @@
             } catch (error) {
                 console.error('Error joining voice channel:', error);
                 alert('Error joining voice channel. Please try again.');
+            }
+        }
+
+        // Update current track display
+        function updateCurrentTrack(track) {
+            console.log('Updating current track:', track);
+
+            // Update the current track info in the player
+            if (currentPlayer) {
+                currentPlayer.current = track;
+            } else {
+                // Create a minimal player object if it doesn't exist
+                currentPlayer = {
+                    current: track,
+                    connected: true,
+                    playing: true,
+                    paused: false,
+                    volume: 100,
+                    position: 0
+                };
+            }
+
+            // Update the UI immediately
+            document.getElementById('track-title').textContent = track.title;
+            document.getElementById('track-author').textContent = track.author;
+
+            if (track.thumbnail) {
+                const thumbnail = document.getElementById('track-thumbnail');
+                thumbnail.src = track.thumbnail;
+                thumbnail.classList.remove('hidden');
+                document.getElementById('no-track').classList.add('hidden');
+            }
+
+            // Update progress bar
+            updateProgressBar(0, track.duration);
+
+            // Update play/pause button to show playing state
+            const playPauseBtn = document.getElementById('play-pause-btn');
+            const playPauseIcon = playPauseBtn.querySelector('i');
+            playPauseIcon.className = 'fas fa-pause';
+
+            // Start progress update timer
+            startProgressTimer();
+        }
+
+        // Start progress update timer
+        function startProgressTimer() {
+            console.log('Starting progress timer...');
+
+            // Clear existing timer
+            if (progressUpdateInterval) {
+                clearInterval(progressUpdateInterval);
+            }
+
+            // Start new timer if we have a playing track
+            if (currentPlayer && currentPlayer.current && !currentPlayer.paused) {
+                console.log('Progress timer started for track:', currentPlayer.current.title);
+
+                // Initialize timing
+                currentPlayer.lastUpdateTime = Date.now();
+                currentPlayer.estimatedPosition = currentPlayer.position || 0;
+
+                progressUpdateInterval = setInterval(() => {
+                    if (currentPlayer && currentPlayer.current && !currentPlayer.paused) {
+                        // Estimate current position based on time elapsed
+                        const now = Date.now();
+                        const elapsed = now - currentPlayer.lastUpdateTime;
+                        currentPlayer.estimatedPosition += elapsed;
+                        currentPlayer.lastUpdateTime = now;
+
+                        // Update progress bar with estimated position
+                        updateProgressBar(currentPlayer.estimatedPosition, currentPlayer.current.duration);
+
+                        // Debug log every 10 seconds
+                        if (Math.floor(currentPlayer.estimatedPosition / 1000) % 10 === 0) {
+                            console.log('Progress update:', formatDuration(currentPlayer.estimatedPosition), '/', formatDuration(currentPlayer.current.duration));
+                        }
+                    } else {
+                        // Stop timer if not playing
+                        console.log('Stopping progress timer - not playing');
+                        stopProgressTimer();
+                    }
+                }, 500); // Update every 500ms for smoother progress
+            } else {
+                console.log('Cannot start progress timer - no track or paused');
+            }
+        }
+
+        // Stop progress update timer
+        function stopProgressTimer() {
+            console.log('Stopping progress timer...');
+            if (progressUpdateInterval) {
+                clearInterval(progressUpdateInterval);
+                progressUpdateInterval = null;
+                console.log('Progress timer stopped');
             }
         }
 
@@ -973,7 +1130,7 @@
                 });
 
                 if (response.ok) {
-                    loadQueue(); // Refresh queue display
+                    // Queue will be updated via Socket.IO
                 }
             } catch (error) {
                 console.error('Error moving track up:', error);
@@ -991,7 +1148,7 @@
                 });
 
                 if (response.ok) {
-                    loadQueue(); // Refresh queue display
+                    // Queue will be updated via Socket.IO
                 }
             } catch (error) {
                 console.error('Error moving track down:', error);
@@ -1010,7 +1167,7 @@
 
                 const result = await response.json();
                 if (result.success) {
-                    loadQueue(); // Refresh queue display
+                    // Queue will be updated via Socket.IO
                 }
             } catch (error) {
                 console.error('Error jumping to track:', error);
@@ -1025,7 +1182,7 @@
                 });
 
                 if (response.ok) {
-                    loadQueue(); // Refresh queue display
+                    // Queue will be updated via Socket.IO
                 }
             } catch (error) {
                 console.error('Error removing track from queue:', error);
@@ -1167,7 +1324,7 @@
                 const result = await response.json();
                 if (result.success) {
                     alert(result.message);
-                    loadQueue(); // Refresh queue display
+                    // Queue will be updated via Socket.IO
                 }
             } catch (error) {
                 console.error('Error loading playlist:', error);
@@ -1384,7 +1541,7 @@
                 const result = await response.json();
                 if (result.success) {
                     hidePlaylistDetailsModal();
-                    loadQueue(); // Refresh queue display
+                    // Queue will be updated via Socket.IO
                     alert(result.message);
                 }
             } catch (error) {

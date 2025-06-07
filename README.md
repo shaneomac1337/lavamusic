@@ -29,9 +29,7 @@
 
 ## 🔥 Unique Features
 
-- **🇨🇿 Czech Text-to-Speech Support** with native Tereza and Antonín voices
-- **🎤 Advanced TTS Commands** (`!say`, `!speak`, `!mluvit`) with speed control
-- **🎵 Dual TTS Engines** (DuncteBot TTS + Flowery TTS)
+- **🎤 Text-to-Speech Support** with simple `!say` command
 - User-friendly and Easy to Use
 - Highly Configurable
 - Customizable Prefix
@@ -83,38 +81,21 @@
 
 To Setup a Lavalink server on Windows, Linux, or Replit, [Click Here!](https://github.com/LucasB25/lavalink-server)
 
-## 🇨🇿 Czech Text-to-Speech Features
+## 🎤 Text-to-Speech Features
 
-### 🎤 **TTS Commands**
+### **TTS Command**
 
 #### Quick TTS
 ```bash
-!say Ahoj všichni!           # Quick Czech TTS with DuncteBot
-/say text:Dobrý den!         # Slash command version
+!say Hello everyone!         # Simple TTS with DuncteBot
+/say text:Welcome!           # Slash command version
 ```
-
-#### Advanced TTS
-```bash
-!speak Vítejte na serveru!                    # Default Czech Tereza voice
-!speak text:Ahoj voice:cs-CZ-Tereza speed:1.2 # Custom voice and speed
-/speak text:Děkuji! voice:cs-CZ-Antonin       # Male Czech voice
-```
-
-#### Czech-Specific TTS
-```bash
-!mluvit Jak se máte?         # Czech-optimized command
-/mluvit text:Nashledanou!    # Slash command version
-```
-
-### 🎭 **Available Czech Voices**
-- **🇨🇿 Tereza** (Female, Czech) - Default voice
-- **🇨🇿 Antonín** (Male, Czech) - Alternative voice
 
 ### ⚡ **TTS Features**
-- **Speed Control**: Adjust speech speed from 0.5x to 2.0x
-- **Character Limits**: 200-500 characters per message
+- **Simple & Reliable**: Uses DuncteBot TTS engine
+- **Character Limit**: Up to 200 characters per message
 - **Queue Integration**: TTS plays alongside music
-- **Dual Engine Support**: DuncteBot TTS + Flowery TTS
+- **Easy to Use**: Just type your message and it speaks!
 
 ### **Need help with plugins?**
 
