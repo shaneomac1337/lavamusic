@@ -36,6 +36,17 @@ export default class TrackStart extends Event {
 
 		this.client.utils.updateStatus(this.client);
 
+		// Check if this is a radio stream and start detection
+		const isRadio = this.client.radioDetection.isRadioStream(track);
+		if (isRadio) {
+			console.log(`🎵 Radio stream detected: ${isRadio} for track: ${track.info.title} (guild: ${player.guildId})`);
+			await this.client.radioDetection.startRadioDetection(player, track);
+		} else {
+			// Stop any existing radio detection for this guild
+			console.log(`🎵 Non-radio track started, stopping any radio detection for guild ${player.guildId}`);
+			this.client.radioDetection.stopRadioDetection(player.guildId);
+		}
+
 		const locale = await this.client.db.getLanguage(guild.id);
 
 		const embed = this.client

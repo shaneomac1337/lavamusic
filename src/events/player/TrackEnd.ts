@@ -20,6 +20,11 @@ export default class TrackEnd extends Event {
 		// Update bot status when track ends
 		this.client.utils.updateStatus(this.client);
 
+		// Stop radio detection when track ends (unless another radio track starts)
+		// Note: This will be restarted in TrackStart if the next track is also a radio stream
+		console.log(`🔚 Track ended for guild ${player.guildId}, stopping radio detection`);
+		this.client.radioDetection.stopRadioDetection(player.guildId);
+
 		const messageId = player.get<string | undefined>('messageId');
 		if (!messageId) return;
 

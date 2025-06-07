@@ -24,6 +24,7 @@ import LavalinkClient from "./LavalinkClient";
 import Logger from "./Logger";
 import type { Command } from "./index";
 import { WebServer } from "../web/server";
+import { RadioDetectionService } from "../utils/RadioDetection";
 
 export default class Lavamusic extends Client {
   public commands: Collection<string, any> = new Collection();
@@ -40,6 +41,7 @@ export default class Lavamusic extends Client {
   public env: typeof env = env;
   public manager!: LavalinkClient;
   public webServer?: WebServer;
+  public radioDetection!: RadioDetectionService;
   public embed(): EmbedBuilder {
     return new EmbedBuilder();
   }
@@ -52,6 +54,7 @@ export default class Lavamusic extends Client {
       this.logger.warn("Top.gg token not found!");
     }
     this.manager = new LavalinkClient(this);
+    this.radioDetection = new RadioDetectionService(this);
     await this.loadCommands();
     this.logger.info("Successfully loaded commands!");
     await this.loadEvents();

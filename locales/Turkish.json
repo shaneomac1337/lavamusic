@@ -526,7 +526,6 @@
 				"text": "The text to say"
 			}
 		},
-
 		"developer": {
 			"description": "Shows information about the bot developer"
 		}
@@ -663,5 +662,7 @@
 	"Leave a guild": "Bir sunucudan çık.",
 	"List all guilds the bot is in": "Botun bulunduğu tüm sunucuları listele.",
 	"Restart the bot": "Botu yeniden başlat.",
-	"The loop mode you want to set": "The loop mode you want to set"
+	"The loop mode you want to set": "The loop mode you want to set",
+	"Debug radio detection system": "Debug radio detection system",
+	"Debug action to perform": "Debug action to perform"
 }

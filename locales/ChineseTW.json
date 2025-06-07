@@ -516,7 +516,6 @@
 				"text": "The text to say"
 			}
 		},
-
 		"developer": {
 			"description": "Shows information about the bot developer"
 		}
@@ -651,5 +650,7 @@
 	"Leave a guild": "離開伺服器",
 	"List all guilds the bot is in": "列出機器人所在的所有伺服器",
 	"Restart the bot": "重啟機器人",
-	"The loop mode you want to set": "The loop mode you want to set"
+	"The loop mode you want to set": "The loop mode you want to set",
+	"Debug radio detection system": "Debug radio detection system",
+	"Debug action to perform": "Debug action to perform"
 }

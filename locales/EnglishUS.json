@@ -456,7 +456,6 @@
 				"set": "Set the volume to {volume}"
 			}
 		},
-
 		"say": {
 			"description": "Quick text to speech conversion",
 			"options": {
@@ -474,7 +473,6 @@
 				"voice": "Voice Type"
 			}
 		},
-
 		"addsong": {
 			"description": "Adds a song to the playlist",
 			"options": {
@@ -695,5 +693,7 @@
 	"Leave a guild": "Leave a guild",
 	"List all guilds the bot is in": "List all guilds the bot is in",
 	"Restart the bot": "Restart the bot",
-	"The loop mode you want to set": "The loop mode you want to set"
+	"The loop mode you want to set": "The loop mode you want to set",
+	"Debug radio detection system": "Debug radio detection system",
+	"Debug action to perform": "Debug action to perform"
 }

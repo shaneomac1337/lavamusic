@@ -16,6 +16,9 @@ export default class PlayerDestroy extends Event {
 		const locale = await this.client.db.getLanguage(player.guildId);
 		await updateSetup(this.client, guild, locale);
 
+		// Stop radio detection when player is destroyed
+		this.client.radioDetection.stopRadioDetection(player.guildId);
+
 		const messageId = player.get<string | undefined>('messageId');
 		if (!messageId) return;
 

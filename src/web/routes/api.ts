@@ -339,14 +339,90 @@ export async function apiRoutes(fastify: FastifyInstance, options: ApiOptions) {
 		}
 	});
 
-	// Player controls
-	fastify.post('/guilds/:guildId/player/play', async (request) => {
+	// Player controls with auto-join
+	fastify.post('/guilds/:guildId/player/play', {
+		preHandler: async (request) => {
+			try {
+				const token = request.cookies.token;
+				if (!token) {
+					throw new Error('No token');
+				}
+
+				const decoded = fastify.jwt.verify(token);
+				request.user = decoded;
+			} catch (err) {
+				throw fastify.httpErrors.unauthorized('Authentication required');
+			}
+		}
+	}, async (request) => {
 		const { guildId } = request.params as { guildId: string };
 		const { query } = request.body as { query: string };
-		
-		const player = client.manager.getPlayer(guildId);
-		if (!player) {
-			throw fastify.httpErrors.notFound('Player not found');
+		const user = request.user as any;
+
+		const guild = client.guilds.cache.get(guildId);
+		if (!guild) {
+			throw fastify.httpErrors.notFound('Guild not found');
+		}
+
+		// Find the user in the guild
+		const member = guild.members.cache.get(user.userId);
+		if (!member) {
+			throw fastify.httpErrors.notFound('You are not a member of this guild');
+		}
+
+		let player = client.manager.getPlayer(guildId);
+
+		// Auto-join logic: If no player or not connected, try to join user's voice channel
+		if (!player || !player.connected) {
+			// Check if user is in a voice channel
+			if (!member.voice.channel) {
+				throw fastify.httpErrors.badRequest('You must be in a voice channel to play music');
+			}
+
+			const voiceChannel = member.voice.channel;
+
+			// Check if bot has permissions to join the channel
+			const botMember = guild.members.cache.get(client.user!.id);
+			if (!botMember) {
+				throw fastify.httpErrors.internalServerError('Bot not found in guild');
+			}
+
+			const permissions = voiceChannel.permissionsFor(botMember);
+			if (!permissions?.has(['Connect', 'Speak'])) {
+				throw fastify.httpErrors.forbidden('Bot does not have permission to join your voice channel');
+			}
+
+			// Create new player if doesn't exist
+			if (!player) {
+				// Get the configured text channel for this guild
+				const configuredTextChannelId = await client.db.getTextChannel(guildId);
+				const textChannelId = configuredTextChannelId || voiceChannel.id; // Fallback to voice channel
+
+				player = client.manager.createPlayer({
+					guildId: guild.id,
+					voiceChannelId: voiceChannel.id,
+					textChannelId: textChannelId,
+					selfMute: false,
+					selfDeaf: true,
+					vcRegion: voiceChannel.rtcRegion!,
+				});
+
+				console.log(`🤖 Auto-created player for guild ${guildId} via dashboard play`);
+			}
+
+			// Connect to the voice channel
+			if (!player.connected) {
+				await player.connect();
+				console.log(`🔗 Auto-connected to voice channel ${voiceChannel.name} via dashboard play`);
+			}
+
+			// If bot is in a different voice channel, move to user's channel
+			if (player.voiceChannelId !== voiceChannel.id) {
+				await player.disconnect();
+				player.voiceChannelId = voiceChannel.id;
+				await player.connect();
+				console.log(`🔄 Moved bot to user's voice channel ${voiceChannel.name} via dashboard play`);
+			}
 		}
 
 		const result = await player.search({ query }, { id: 'dashboard' });
@@ -364,7 +440,11 @@ export async function apiRoutes(fastify: FastifyInstance, options: ApiOptions) {
 			webServer.emitQueueUpdateForGuild(guildId);
 		}
 
-		return { success: true, track: result.tracks[0].info };
+		return {
+			success: true,
+			track: result.tracks[0].info,
+			autoJoined: !player || !player.connected // Indicate if auto-join happened
+		};
 	});
 
 	fastify.post('/guilds/:guildId/player/pause', async (request) => {
@@ -641,14 +721,90 @@ export async function apiRoutes(fastify: FastifyInstance, options: ApiOptions) {
 		return { success: true };
 	});
 
-	// Force play - Add track to front of queue and play immediately
-	fastify.post('/guilds/:guildId/player/force-play', async (request) => {
+	// Force play - Add track to front of queue and play immediately with auto-join
+	fastify.post('/guilds/:guildId/player/force-play', {
+		preHandler: async (request) => {
+			try {
+				const token = request.cookies.token;
+				if (!token) {
+					throw new Error('No token');
+				}
+
+				const decoded = fastify.jwt.verify(token);
+				request.user = decoded;
+			} catch (err) {
+				throw fastify.httpErrors.unauthorized('Authentication required');
+			}
+		}
+	}, async (request) => {
 		const { guildId } = request.params as { guildId: string };
 		const { query } = request.body as { query: string };
+		const user = request.user as any;
 
-		const player = client.manager.getPlayer(guildId);
-		if (!player) {
-			throw fastify.httpErrors.notFound('Player not found');
+		const guild = client.guilds.cache.get(guildId);
+		if (!guild) {
+			throw fastify.httpErrors.notFound('Guild not found');
+		}
+
+		// Find the user in the guild
+		const member = guild.members.cache.get(user.userId);
+		if (!member) {
+			throw fastify.httpErrors.notFound('You are not a member of this guild');
+		}
+
+		let player = client.manager.getPlayer(guildId);
+
+		// Auto-join logic: If no player or not connected, try to join user's voice channel
+		if (!player || !player.connected) {
+			// Check if user is in a voice channel
+			if (!member.voice.channel) {
+				throw fastify.httpErrors.badRequest('You must be in a voice channel to play music');
+			}
+
+			const voiceChannel = member.voice.channel;
+
+			// Check if bot has permissions to join the channel
+			const botMember = guild.members.cache.get(client.user!.id);
+			if (!botMember) {
+				throw fastify.httpErrors.internalServerError('Bot not found in guild');
+			}
+
+			const permissions = voiceChannel.permissionsFor(botMember);
+			if (!permissions?.has(['Connect', 'Speak'])) {
+				throw fastify.httpErrors.forbidden('Bot does not have permission to join your voice channel');
+			}
+
+			// Create new player if doesn't exist
+			if (!player) {
+				// Get the configured text channel for this guild
+				const configuredTextChannelId = await client.db.getTextChannel(guildId);
+				const textChannelId = configuredTextChannelId || voiceChannel.id; // Fallback to voice channel
+
+				player = client.manager.createPlayer({
+					guildId: guild.id,
+					voiceChannelId: voiceChannel.id,
+					textChannelId: textChannelId,
+					selfMute: false,
+					selfDeaf: true,
+					vcRegion: voiceChannel.rtcRegion!,
+				});
+
+				console.log(`🤖 Auto-created player for guild ${guildId} via dashboard force-play`);
+			}
+
+			// Connect to the voice channel
+			if (!player.connected) {
+				await player.connect();
+				console.log(`🔗 Auto-connected to voice channel ${voiceChannel.name} via dashboard force-play`);
+			}
+
+			// If bot is in a different voice channel, move to user's channel
+			if (player.voiceChannelId !== voiceChannel.id) {
+				await player.disconnect();
+				player.voiceChannelId = voiceChannel.id;
+				await player.connect();
+				console.log(`🔄 Moved bot to user's voice channel ${voiceChannel.name} via dashboard force-play`);
+			}
 		}
 
 		const result = await player.search({ query }, { id: 'dashboard-force' });
@@ -673,7 +829,12 @@ export async function apiRoutes(fastify: FastifyInstance, options: ApiOptions) {
 			webServer.emitQueueUpdateForGuild(guildId);
 		}
 
-		return { success: true, track: track.info, message: 'Track added to front of queue and playing' };
+		return {
+			success: true,
+			track: track.info,
+			message: 'Track added to front of queue and playing',
+			autoJoined: !player || !player.connected // Indicate if auto-join happened
+		};
 	});
 
 	// Move track in queue
@@ -980,19 +1141,95 @@ export async function apiRoutes(fastify: FastifyInstance, options: ApiOptions) {
 		return { success: true };
 	});
 
-	// Load playlist to queue
-	fastify.post('/guilds/:guildId/playlists/:playlistId/load', async (request) => {
+	// Load playlist to queue with auto-join
+	fastify.post('/guilds/:guildId/playlists/:playlistId/load', {
+		preHandler: async (request) => {
+			try {
+				const token = request.cookies.token;
+				if (!token) {
+					throw new Error('No token');
+				}
+
+				const decoded = fastify.jwt.verify(token);
+				request.user = decoded;
+			} catch (err) {
+				throw fastify.httpErrors.unauthorized('Authentication required');
+			}
+		}
+	}, async (request) => {
 		const { guildId, playlistId } = request.params as { guildId: string; playlistId: string };
 		const { shuffle } = request.body as { shuffle?: boolean };
+		const user = request.user as any;
 
 		const playlist = await client.db.getPlaylistById(playlistId);
 		if (!playlist) {
 			throw fastify.httpErrors.notFound('Playlist not found');
 		}
 
-		const player = client.manager.getPlayer(guildId);
-		if (!player) {
-			throw fastify.httpErrors.notFound('Player not found');
+		const guild = client.guilds.cache.get(guildId);
+		if (!guild) {
+			throw fastify.httpErrors.notFound('Guild not found');
+		}
+
+		// Find the user in the guild
+		const member = guild.members.cache.get(user.userId);
+		if (!member) {
+			throw fastify.httpErrors.notFound('You are not a member of this guild');
+		}
+
+		let player = client.manager.getPlayer(guildId);
+
+		// Auto-join logic: If no player or not connected, try to join user's voice channel
+		if (!player || !player.connected) {
+			// Check if user is in a voice channel
+			if (!member.voice.channel) {
+				throw fastify.httpErrors.badRequest('You must be in a voice channel to load a playlist');
+			}
+
+			const voiceChannel = member.voice.channel;
+
+			// Check if bot has permissions to join the channel
+			const botMember = guild.members.cache.get(client.user!.id);
+			if (!botMember) {
+				throw fastify.httpErrors.internalServerError('Bot not found in guild');
+			}
+
+			const permissions = voiceChannel.permissionsFor(botMember);
+			if (!permissions?.has(['Connect', 'Speak'])) {
+				throw fastify.httpErrors.forbidden('Bot does not have permission to join your voice channel');
+			}
+
+			// Create new player if doesn't exist
+			if (!player) {
+				// Get the configured text channel for this guild
+				const configuredTextChannelId = await client.db.getTextChannel(guildId);
+				const textChannelId = configuredTextChannelId || voiceChannel.id; // Fallback to voice channel
+
+				player = client.manager.createPlayer({
+					guildId: guild.id,
+					voiceChannelId: voiceChannel.id,
+					textChannelId: textChannelId,
+					selfMute: false,
+					selfDeaf: true,
+					vcRegion: voiceChannel.rtcRegion!,
+				});
+
+				console.log(`🤖 Auto-created player for guild ${guildId} via dashboard playlist load`);
+			}
+
+			// Connect to the voice channel
+			if (!player.connected) {
+				await player.connect();
+				console.log(`🔗 Auto-connected to voice channel ${voiceChannel.name} via dashboard playlist load`);
+			}
+
+			// If bot is in a different voice channel, move to user's channel
+			if (player.voiceChannelId !== voiceChannel.id) {
+				await player.disconnect();
+				player.voiceChannelId = voiceChannel.id;
+				await player.connect();
+				console.log(`🔄 Moved bot to user's voice channel ${voiceChannel.name} via dashboard playlist load`);
+			}
 		}
 
 		const tracks = playlist.tracks ? JSON.parse(playlist.tracks) : [];
@@ -1221,23 +1458,67 @@ export async function apiRoutes(fastify: FastifyInstance, options: ApiOptions) {
 		return { success: true, message: 'Radio API is working' };
 	});
 
+	// Get all available radio stations
+	fastify.get('/radio/stations', async () => {
+		const stations = Array.from(client.radioDetection.getAllRadioStations().entries()).map(([id, station]) => ({
+			id,
+			name: station.name,
+			country: station.country,
+			color: station.color
+		}));
+
+		return {
+			success: true,
+			stations
+		};
+	});
+
 	// Radio station now playing API
 	fastify.get('/radio/:stationId/now-playing', async (request, reply) => {
 		const { stationId } = request.params as { stationId: string };
 
 		// Define radio station APIs
 		const radioAPIs: Record<string, string> = {
-			'hitradio-fm-plus': 'https://radia.cz/api/v1/radio/hitradio-fm-plus/songs/now.json'
+			'hitradio-fm-plus': 'https://radia.cz/api/v1/radio/hitradio-fm-plus/songs/now.json',
+			'radio-blanik': 'https://radia.cz/api/v1/radio/blanik-cz/songs/now.json',
+			'rock-radio-sumava': 'https://radia.cz/api/v1/radio/rock-radio/songs/now.json',
+			'radio-golem': '', // No API available - stream metadata only
+			'evropa2': 'https://rds.actve.net/v1/metadata/channel/evropa2'
 			// More radio stations can be added here
 		};
 
 		const apiUrl = radioAPIs[stationId];
-		if (!apiUrl) {
+		if (apiUrl === undefined) {
 			return reply.code(404).send({
 				success: false,
 				error: 'Radio station not found',
 				station: stationId,
 				nowPlaying: null
+			});
+		}
+
+		// Handle stations without APIs
+		if (apiUrl === '') {
+			console.log(`Station ${stationId} has no API - returning basic info`);
+			const stationNames: Record<string, string> = {
+				'radio-golem': 'Radio Golem'
+			};
+
+			return reply.send({
+				success: true,
+				station: stationId,
+				nowPlaying: {
+					title: 'Live Radio Stream',
+					artist: stationNames[stationId] || 'Unknown Station',
+					album: null,
+					duration: null,
+					startTime: null,
+					endTime: null,
+					artwork: null,
+					station: stationNames[stationId] || 'Unknown Station'
+				},
+				message: 'Station does not provide song information',
+				lastUpdated: new Date().toISOString()
 			});
 		}
 
@@ -1266,9 +1547,16 @@ export async function apiRoutes(fastify: FastifyInstance, options: ApiOptions) {
 			// Parse the response based on the radio station format
 			let nowPlaying = null;
 
-			if (stationId === 'hitradio-fm-plus') {
-				// Parse Hitradio FM Plus API response
+			if (stationId === 'hitradio-fm-plus' || stationId === 'radio-blanik' || stationId === 'rock-radio-sumava') {
+				// Parse radia.cz API response (all three stations use same format)
 				// Expected format: { interpret: "ARTIST", song: "TITLE", image: "URL", beginAt: "TIME", endAt: "TIME", active: true }
+				const stationNames: Record<string, string> = {
+					'hitradio-fm-plus': 'Hitradio FM Plus',
+					'radio-blanik': 'Radio Blaník',
+					'rock-radio-sumava': 'Rock Radio Šumava'
+				};
+				const stationName = stationNames[stationId];
+
 				if (data && data.song && data.interpret && data.active) {
 					nowPlaying = {
 						title: data.song,
@@ -1278,7 +1566,32 @@ export async function apiRoutes(fastify: FastifyInstance, options: ApiOptions) {
 						startTime: data.beginAt || null,
 						endTime: data.endAt || null,
 						artwork: data.image || null,
-						station: 'Hitradio FM Plus'
+						station: stationName
+					};
+				} else {
+					console.log(`No valid song data found for ${stationId}:`, data);
+					// Return success but no song info if data is incomplete
+					return reply.send({
+						success: true,
+						station: stationId,
+						nowPlaying: null,
+						message: 'Song information not yet available',
+						lastUpdated: new Date().toISOString()
+					});
+				}
+			} else if (stationId === 'evropa2') {
+				// Parse actve.net API response (Evropa 2)
+				// Expected format: { status: "ok", title: "TITLE", artist: "ARTIST", album: "ALBUM", cover: "URL", songStart: "TIME" }
+				if (data && data.status === 'ok' && data.title && data.artist) {
+					nowPlaying = {
+						title: data.title,
+						artist: data.artist,
+						album: data.album || null,
+						duration: data.duration || null,
+						startTime: data.songStart || null,
+						endTime: null, // Not provided in this format
+						artwork: data.cover || null,
+						station: 'Evropa 2'
 					};
 				} else {
 					console.log(`No valid song data found for ${stationId}:`, data);
