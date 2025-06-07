@@ -16,6 +16,9 @@ export default class QueueEnd extends Event {
 		const locale = await this.client.db.getLanguage(player.guildId);
 		await updateSetup(this.client, guild, locale);
 
+		// Update bot status when queue ends
+		this.client.utils.updateStatus(this.client);
+
 		const messageId = player.get<string | undefined>('messageId');
 		if (!messageId) return;
 

@@ -24,18 +24,50 @@ export class Utils {
 
 	public static updateStatus(client: Lavamusic, guildId?: string): void {
 		const { user } = client;
-		if (user && client.env.GUILD_ID && guildId === client.env.GUILD_ID) {
-			const player = client.manager.getPlayer(client.env.GUILD_ID);
-			user.setPresence({
-				activities: [
-					{
-						name: player?.queue?.current ? `🎶 | ${player.queue?.current.info.title}` : client.env.BOT_ACTIVITY,
-						type: player?.queue?.current ? ActivityType.Listening : client.env.BOT_ACTIVITY_TYPE,
-					},
-				],
-				status: client.env.BOT_STATUS as any,
-			});
+		if (!user) return;
+
+		// Get all active players with current tracks
+		const activePlayers = Array.from(client.manager.players.values()).filter(p => p.queue?.current);
+		const totalPlayers = activePlayers.length;
+
+		let activityName: string;
+		let activityType: ActivityType;
+
+		if (totalPlayers > 0) {
+			if (totalPlayers === 1) {
+				// Single server playing - show current track
+				const player = activePlayers[0];
+				const track = player.queue?.current;
+				if (track) {
+					// Truncate long titles to fit Discord's limit (128 characters)
+					const title = track.info.title.length > 50 ? track.info.title.substring(0, 47) + "..." : track.info.title;
+					const author = track.info.author.length > 30 ? track.info.author.substring(0, 27) + "..." : track.info.author;
+					activityName = `🎵 ${title} by ${author}`;
+					activityType = ActivityType.Listening;
+				} else {
+					activityName = client.env.BOT_ACTIVITY;
+					activityType = client.env.BOT_ACTIVITY_TYPE;
+				}
+			} else {
+				// Multiple servers playing
+				activityName = `🎶 Music in ${totalPlayers} servers`;
+				activityType = ActivityType.Listening;
+			}
+		} else {
+			// No music playing
+			activityName = client.env.BOT_ACTIVITY;
+			activityType = client.env.BOT_ACTIVITY_TYPE;
 		}
+
+		user.setPresence({
+			activities: [
+				{
+					name: activityName,
+					type: activityType,
+				},
+			],
+			status: client.env.BOT_STATUS as any,
+		});
 	}
 
 	public static chunk(array: any[], size: number) {

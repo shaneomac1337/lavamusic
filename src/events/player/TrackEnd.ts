@@ -17,6 +17,9 @@ export default class TrackEnd extends Event {
 		const locale = await this.client.db.getLanguage(player.guildId);
 		await updateSetup(this.client, guild, locale);
 
+		// Update bot status when track ends
+		this.client.utils.updateStatus(this.client);
+
 		const messageId = player.get<string | undefined>('messageId');
 		if (!messageId) return;
 
