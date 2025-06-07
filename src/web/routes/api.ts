@@ -97,6 +97,209 @@ export async function apiRoutes(fastify: FastifyInstance, options: ApiOptions) {
 		};
 	});
 
+	// Audio Filters API
+	fastify.post('/guilds/:guildId/filters/bassboost', async (request) => {
+		const { guildId } = request.params as { guildId: string };
+		const { level } = request.body as { level: 'high' | 'medium' | 'low' | 'off' };
+
+		const player = client.manager.getPlayer(guildId);
+		if (!player) {
+			throw fastify.httpErrors.notFound('Player not found');
+		}
+
+		const { EQList } = await import('lavalink-client');
+
+		switch (level) {
+			case 'high':
+				await player.filterManager.setEQ(EQList.BassboostHigh);
+				break;
+			case 'medium':
+				await player.filterManager.setEQ(EQList.BassboostMedium);
+				break;
+			case 'low':
+				await player.filterManager.setEQ(EQList.BassboostLow);
+				break;
+			case 'off':
+				await player.filterManager.clearEQ();
+				break;
+		}
+
+		return { success: true, level };
+	});
+
+	fastify.post('/guilds/:guildId/filters/toggle', async (request) => {
+		const { guildId } = request.params as { guildId: string };
+		const { filter } = request.body as { filter: string };
+
+		const player = client.manager.getPlayer(guildId);
+		if (!player) {
+			throw fastify.httpErrors.notFound('Player not found');
+		}
+
+		let enabled = false;
+
+		switch (filter) {
+			case '8d':
+				const rotationEnabled = player.filterManager.filters.rotation;
+				if (rotationEnabled) {
+					await player.filterManager.toggleRotation();
+					enabled = false;
+				} else {
+					await player.filterManager.toggleRotation(0.2);
+					enabled = true;
+				}
+				break;
+			case 'nightcore':
+				const nightcoreEnabled = player.filterManager.filters.nightcore;
+				await player.filterManager.toggleNightcore();
+				enabled = !nightcoreEnabled;
+				break;
+			case 'karaoke':
+				const karaokeEnabled = player.filterManager.filters.karaoke;
+				await player.filterManager.toggleKaraoke();
+				enabled = !karaokeEnabled;
+				break;
+			case 'vibrato':
+				const vibratoEnabled = player.filterManager.filters.vibrato;
+				await player.filterManager.toggleVibrato();
+				enabled = !vibratoEnabled;
+				break;
+			case 'tremolo':
+				const tremoloEnabled = player.filterManager.filters.tremolo;
+				await player.filterManager.toggleTremolo();
+				enabled = !tremoloEnabled;
+				break;
+			case 'lowpass':
+				const lowpassEnabled = player.filterManager.filters.lowPass;
+				await player.filterManager.toggleLowPass();
+				enabled = !lowpassEnabled;
+				break;
+			default:
+				throw fastify.httpErrors.badRequest('Invalid filter type');
+		}
+
+		return { success: true, filter, enabled };
+	});
+
+	fastify.post('/guilds/:guildId/filters/pitch', async (request) => {
+		const { guildId } = request.params as { guildId: string };
+		const { pitch } = request.body as { pitch: number };
+
+		const player = client.manager.getPlayer(guildId);
+		if (!player) {
+			throw fastify.httpErrors.notFound('Player not found');
+		}
+
+		if (pitch < 0.5 || pitch > 5) {
+			throw fastify.httpErrors.badRequest('Pitch must be between 0.5 and 5.0');
+		}
+
+		await player.filterManager.setPitch(pitch);
+		return { success: true, pitch };
+	});
+
+	fastify.post('/guilds/:guildId/filters/speed', async (request) => {
+		const { guildId } = request.params as { guildId: string };
+		const { speed } = request.body as { speed: number };
+
+		const player = client.manager.getPlayer(guildId);
+		if (!player) {
+			throw fastify.httpErrors.notFound('Player not found');
+		}
+
+		if (speed < 0.5 || speed > 5) {
+			throw fastify.httpErrors.badRequest('Speed must be between 0.5 and 5.0');
+		}
+
+		await player.filterManager.setSpeed(speed);
+		return { success: true, speed };
+	});
+
+	fastify.post('/guilds/:guildId/filters/reset', async (request) => {
+		const { guildId } = request.params as { guildId: string };
+
+		const player = client.manager.getPlayer(guildId);
+		if (!player) {
+			throw fastify.httpErrors.notFound('Player not found');
+		}
+
+		player.filterManager.resetFilters();
+		player.filterManager.clearEQ();
+		return { success: true, message: 'All filters reset' };
+	});
+
+	fastify.get('/guilds/:guildId/filters/status', async (request) => {
+		const { guildId } = request.params as { guildId: string };
+
+		const player = client.manager.getPlayer(guildId);
+		if (!player) {
+			throw fastify.httpErrors.notFound('Player not found');
+		}
+
+		const filters = player.filterManager.filters;
+		return {
+			bassboost: filters.equalizer && filters.equalizer.length > 0 ? 'active' : 'off',
+			rotation: !!filters.rotation,
+			karaoke: !!filters.karaoke,
+			vibrato: !!filters.vibrato,
+			tremolo: !!filters.tremolo,
+			lowpass: !!filters.lowPass,
+			nightcore: !!filters.nightcore,
+			pitch: 1, // Default pitch value
+			speed: 1, // Default speed value
+		};
+	});
+
+	// Advanced Settings API
+	fastify.post('/guilds/:guildId/settings/247', async (request) => {
+		const { guildId } = request.params as { guildId: string };
+		const { enabled } = request.body as { enabled: boolean };
+
+		const player = client.manager.getPlayer(guildId);
+		if (!player) {
+			throw fastify.httpErrors.notFound('Player not found');
+		}
+
+		// Toggle 24/7 mode
+		player.set('247', enabled);
+
+		return { success: true, enabled };
+	});
+
+	fastify.post('/guilds/:guildId/settings/autoplay', async (request) => {
+		const { guildId } = request.params as { guildId: string };
+		const { enabled } = request.body as { enabled: boolean };
+
+		const player = client.manager.getPlayer(guildId);
+		if (!player) {
+			throw fastify.httpErrors.notFound('Player not found');
+		}
+
+		// Toggle autoplay
+		player.set('autoplay', enabled);
+
+		return { success: true, enabled };
+	});
+
+	fastify.get('/guilds/:guildId/settings', async (request) => {
+		const { guildId } = request.params as { guildId: string };
+
+		const player = client.manager.getPlayer(guildId);
+		if (!player) {
+			return {
+				'247': false,
+				autoplay: false,
+				volume: 50
+			};
+		}
+
+		return {
+			'247': player.get('247') || false,
+			autoplay: player.get('autoplay') || false,
+			volume: player.volume || 50
+		};
+	});
+
 	// Search suggestions for autocomplete
 	fastify.get('/search/suggestions', async (request) => {
 		const { q } = request.query as { q: string };
@@ -1011,5 +1214,99 @@ export async function apiRoutes(fastify: FastifyInstance, options: ApiOptions) {
 			},
 			tracks: trackDetails
 		};
+	});
+
+	// Test radio endpoint
+	fastify.get('/radio/test', async () => {
+		return { success: true, message: 'Radio API is working' };
+	});
+
+	// Radio station now playing API
+	fastify.get('/radio/:stationId/now-playing', async (request, reply) => {
+		const { stationId } = request.params as { stationId: string };
+
+		// Define radio station APIs
+		const radioAPIs: Record<string, string> = {
+			'hitradio-fm-plus': 'https://radia.cz/api/v1/radio/hitradio-fm-plus/songs/now.json'
+			// More radio stations can be added here
+		};
+
+		const apiUrl = radioAPIs[stationId];
+		if (!apiUrl) {
+			return reply.code(404).send({
+				success: false,
+				error: 'Radio station not found',
+				station: stationId,
+				nowPlaying: null
+			});
+		}
+
+		try {
+			console.log(`Fetching radio data for ${stationId} from: ${apiUrl}`);
+
+			const response = await fetch(apiUrl, {
+				headers: {
+					'User-Agent': 'Lavamusic-Dashboard/1.0'
+				}
+			});
+
+			if (!response.ok) {
+				console.log(`Radio API returned ${response.status} for ${stationId}`);
+				return reply.send({
+					success: false,
+					station: stationId,
+					error: `Radio API returned ${response.status}`,
+					nowPlaying: null
+				});
+			}
+
+			const data = await response.json();
+			console.log(`Radio API response for ${stationId}:`, data);
+
+			// Parse the response based on the radio station format
+			let nowPlaying = null;
+
+			if (stationId === 'hitradio-fm-plus') {
+				// Parse Hitradio FM Plus API response
+				// Expected format: { interpret: "ARTIST", song: "TITLE", image: "URL", beginAt: "TIME", endAt: "TIME", active: true }
+				if (data && data.song && data.interpret && data.active) {
+					nowPlaying = {
+						title: data.song,
+						artist: data.interpret,
+						album: null,
+						duration: null,
+						startTime: data.beginAt || null,
+						endTime: data.endAt || null,
+						artwork: data.image || null,
+						station: 'Hitradio FM Plus'
+					};
+				} else {
+					console.log(`No valid song data found for ${stationId}:`, data);
+					// Return success but no song info if data is incomplete
+					return reply.send({
+						success: true,
+						station: stationId,
+						nowPlaying: null,
+						message: 'Song information not yet available',
+						lastUpdated: new Date().toISOString()
+					});
+				}
+			}
+
+			return reply.send({
+				success: true,
+				station: stationId,
+				nowPlaying,
+				lastUpdated: new Date().toISOString()
+			});
+		} catch (error: any) {
+			console.error(`Error fetching now playing for ${stationId}:`, error);
+			return reply.send({
+				success: false,
+				station: stationId,
+				error: error.message,
+				nowPlaying: null
+			});
+		}
 	});
 }
