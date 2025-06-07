@@ -97,6 +97,45 @@ export async function apiRoutes(fastify: FastifyInstance, options: ApiOptions) {
 		};
 	});
 
+	// Search suggestions for autocomplete
+	fastify.get('/search/suggestions', async (request) => {
+		const { q } = request.query as { q: string };
+
+		if (!q || q.trim().length < 2) {
+			return { suggestions: [] };
+		}
+
+		try {
+			// Check if manager is available
+			if (!client.manager || !client.manager.nodeManager.nodes.size) {
+				return { suggestions: [] };
+			}
+
+			const searchResult = await client.manager.search(q.trim(), { id: 'dashboard-search' });
+			const suggestions = [];
+
+			if (searchResult.loadType === 'search' && searchResult.tracks.length > 0) {
+				// Return top 8 suggestions
+				for (const track of searchResult.tracks.slice(0, 8)) {
+					const name = `${track.info.title} by ${track.info.author}`;
+					suggestions.push({
+						title: track.info.title,
+						author: track.info.author,
+						duration: track.info.duration,
+						uri: track.info.uri,
+						thumbnail: track.info.artworkUrl,
+						displayName: name.length > 80 ? `${name.substring(0, 77)}...` : name,
+					});
+				}
+			}
+
+			return { suggestions };
+		} catch (error) {
+			console.error('Search suggestions error:', error);
+			return { suggestions: [] };
+		}
+	});
+
 	// Player controls
 	fastify.post('/guilds/:guildId/player/play', async (request) => {
 		const { guildId } = request.params as { guildId: string };
