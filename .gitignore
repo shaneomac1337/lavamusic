@@ -531,7 +531,6 @@ FodyWeavers.xsd
 # Lavamusic
 Lavalink/logs
 Lavalink/plugins
-Lavalink/application.yml
 Lavalink/Lavalink.jar
 prisma/migrations
 prisma/lavamusic.db

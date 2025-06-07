@@ -1,0 +1,1317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guild Dashboard - Lavamusic</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .player-controls button {
+            transition: all 0.3s ease;
+        }
+        .player-controls button:hover {
+            transform: scale(1.1);
+        }
+        .volume-slider {
+            background: linear-gradient(to right, #667eea 0%, #764ba2 100%);
+        }
+        .queue-item {
+            transition: all 0.2s ease;
+        }
+        .queue-item:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .advanced-controls {
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+        }
+        .force-play-btn {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3);
+        }
+        .force-play-btn:hover {
+            box-shadow: 0 4px 8px rgba(239, 68, 68, 0.4);
+            transform: translateY(-1px);
+        }
+        .progress-container:hover {
+            transform: scaleY(1.2);
+        }
+        .control-button {
+            transition: all 0.2s ease;
+        }
+        .control-button:hover {
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <!-- Navigation -->
+    <nav class="gradient-bg shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <a href="/dashboard" class="text-white hover:text-gray-200 mr-4">
+                        <i class="fas fa-arrow-left"></i>
+                    </a>
+                    <div class="flex-shrink-0">
+                        <h1 class="text-white text-xl font-bold">
+                            <i class="fas fa-music mr-2"></i>
+                            <span id="guild-name">Loading...</span>
+                        </h1>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button onclick="logout()" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition duration-300">
+                        <i class="fas fa-sign-out-alt mr-2"></i>
+                        Logout
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Music Player -->
+            <div class="lg:col-span-2">
+                <div class="bg-white shadow rounded-lg p-6">
+                    <h2 class="text-lg font-medium text-gray-900 mb-4">
+                        <i class="fas fa-play mr-2"></i>
+                        Music Player
+                    </h2>
+                    
+                    <!-- Current Track -->
+                    <div id="current-track" class="mb-6 p-4 bg-gray-50 rounded-lg">
+                        <div class="flex items-center space-x-4">
+                            <div class="flex-shrink-0">
+                                <img id="track-thumbnail" src="" alt="Track thumbnail" class="w-16 h-16 rounded-lg object-cover hidden">
+                                <div id="no-track" class="w-16 h-16 bg-gray-300 rounded-lg flex items-center justify-center">
+                                    <i class="fas fa-music text-gray-500"></i>
+                                </div>
+                            </div>
+                            <div class="flex-1">
+                                <h3 id="track-title" class="text-lg font-medium text-gray-900">No track playing</h3>
+                                <p id="track-author" class="text-sm text-gray-500">Select a track to start playing</p>
+                                <div class="mt-2">
+                                    <div class="bg-gray-200 rounded-full h-2 cursor-pointer" onclick="seekToPosition(event)" id="progress-container">
+                                        <div id="progress-bar" class="bg-purple-600 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                                    </div>
+                                    <div class="flex justify-between text-xs text-gray-500 mt-1">
+                                        <span id="current-time">0:00</span>
+                                        <span id="total-time">0:00</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Player Controls -->
+                    <div class="player-controls flex justify-center space-x-4 mb-6">
+                        <button onclick="previousTrack()" class="bg-gray-200 hover:bg-gray-300 text-gray-700 p-3 rounded-full">
+                            <i class="fas fa-step-backward"></i>
+                        </button>
+                        <button id="play-pause-btn" onclick="togglePlayPause()" class="bg-purple-600 hover:bg-purple-700 text-white p-4 rounded-full">
+                            <i class="fas fa-play"></i>
+                        </button>
+                        <button onclick="nextTrack()" class="bg-gray-200 hover:bg-gray-300 text-gray-700 p-3 rounded-full">
+                            <i class="fas fa-step-forward"></i>
+                        </button>
+                        <button onclick="stopPlayer()" class="bg-red-500 hover:bg-red-600 text-white p-3 rounded-full">
+                            <i class="fas fa-stop"></i>
+                        </button>
+                    </div>
+
+                    <!-- Volume Control -->
+                    <div class="flex items-center space-x-4 mb-6">
+                        <i class="fas fa-volume-down text-gray-500"></i>
+                        <input type="range" id="volume-slider" min="0" max="100" value="50" class="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                        <i class="fas fa-volume-up text-gray-500"></i>
+                        <span id="volume-display" class="text-sm text-gray-500 w-12">50%</span>
+                    </div>
+
+                    <!-- Add Track -->
+                    <div class="border-t pt-4">
+                        <h3 class="text-md font-medium text-gray-900 mb-2">Add Track</h3>
+                        <div class="flex space-x-2 mb-3">
+                            <input type="text" id="search-input" placeholder="Search for a song or paste URL..." class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500">
+                            <button onclick="addTrack()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md">
+                                <i class="fas fa-plus mr-2"></i>
+                                Add
+                            </button>
+                            <button onclick="forcePlay()" class="force-play-btn text-white px-4 py-2 rounded-md control-button" title="Force play - Skip queue and play immediately">
+                                <i class="fas fa-bolt mr-2"></i>
+                                Force
+                            </button>
+                        </div>
+
+                        <!-- Advanced Controls -->
+                        <div class="advanced-controls grid grid-cols-2 md:grid-cols-4 gap-2 mb-3 p-3 rounded-lg">
+                            <button onclick="toggleRepeat()" id="repeat-btn" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-2 rounded-md text-sm">
+                                <i class="fas fa-repeat mr-1"></i>
+                                <span id="repeat-text">Repeat: Off</span>
+                            </button>
+                            <button onclick="toggleFairPlay()" id="fairplay-btn" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-2 rounded-md text-sm">
+                                <i class="fas fa-balance-scale mr-1"></i>
+                                <span id="fairplay-text">Fair Play: Off</span>
+                            </button>
+                            <button onclick="shuffleQueue()" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-md text-sm">
+                                <i class="fas fa-shuffle mr-1"></i>
+                                Shuffle
+                            </button>
+                            <button onclick="clearQueue()" class="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-md text-sm">
+                                <i class="fas fa-trash mr-1"></i>
+                                Clear
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Queue & Settings -->
+            <div class="space-y-6">
+                <!-- Playlists -->
+                <div class="bg-white shadow rounded-lg p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-lg font-medium text-gray-900">
+                            <i class="fas fa-music mr-2"></i>
+                            Playlists
+                        </h2>
+                        <div class="flex space-x-2">
+                            <button onclick="showImportPlaylistModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md text-sm">
+                                <i class="fas fa-download mr-1"></i>
+                                Import
+                            </button>
+                            <button onclick="showCreatePlaylistModal()" class="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1 rounded-md text-sm">
+                                <i class="fas fa-plus mr-1"></i>
+                                Create
+                            </button>
+                        </div>
+                    </div>
+                    <div id="playlists-list" class="space-y-2 max-h-48 overflow-y-auto">
+                        <p class="text-gray-500 text-center py-4">Loading playlists...</p>
+                    </div>
+                </div>
+
+                <!-- Queue -->
+                <div class="bg-white shadow rounded-lg p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-lg font-medium text-gray-900">
+                            <i class="fas fa-list mr-2"></i>
+                            Queue <span id="queue-count" class="text-sm text-gray-500">(0 tracks)</span>
+                        </h2>
+                        <div class="flex space-x-2">
+                            <button onclick="saveCurrentQueue()" class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-md text-sm">
+                                <i class="fas fa-save mr-1"></i>
+                                Save as Playlist
+                            </button>
+                        </div>
+                    </div>
+                    <div id="queue-stats" class="mb-3 text-sm text-gray-600">
+                        <!-- Queue statistics will be displayed here -->
+                    </div>
+                    <div id="queue-list" class="space-y-2 max-h-96 overflow-y-auto">
+                        <p class="text-gray-500 text-center py-4">Queue is empty</p>
+                    </div>
+                </div>
+
+                <!-- Quick Settings -->
+                <div class="bg-white shadow rounded-lg p-6">
+                    <h2 class="text-lg font-medium text-gray-900 mb-4">
+                        <i class="fas fa-cog mr-2"></i>
+                        Quick Settings
+                    </h2>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Bot Prefix</label>
+                            <input type="text" id="prefix-input" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Language</label>
+                            <select id="language-select" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500">
+                                <option value="EnglishUS">English (US)</option>
+                                <option value="Czech">Czech</option>
+                                <option value="German">German</option>
+                                <option value="French">French</option>
+                                <option value="Spanish">Spanish</option>
+                            </select>
+                        </div>
+                        <button onclick="saveSettings()" class="w-full bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-md">
+                            <i class="fas fa-save mr-2"></i>
+                            Save Settings
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Playlist Modal -->
+    <div id="createPlaylistModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-6 w-96 max-w-md mx-4">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-medium text-gray-900">Create New Playlist</h3>
+                <button onclick="hideCreatePlaylistModal()" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="createPlaylistForm">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Playlist Name</label>
+                        <input type="text" id="playlistName" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500" placeholder="My Awesome Playlist">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Description (Optional)</label>
+                        <textarea id="playlistDescription" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500" placeholder="Describe your playlist..."></textarea>
+                    </div>
+                    <div class="flex items-center">
+                        <input type="checkbox" id="playlistPublic" class="mr-2">
+                        <label for="playlistPublic" class="text-sm text-gray-700">Make playlist public (others can discover and use it)</label>
+                    </div>
+                    <div class="flex items-center">
+                        <input type="checkbox" id="includeCurrentQueue" class="mr-2" checked>
+                        <label for="includeCurrentQueue" class="text-sm text-gray-700">Include current queue in playlist</label>
+                    </div>
+                </div>
+                <div class="flex justify-end space-x-3 mt-6">
+                    <button type="button" onclick="hideCreatePlaylistModal()" class="px-4 py-2 text-gray-600 hover:text-gray-800">Cancel</button>
+                    <button type="submit" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md">
+                        <i class="fas fa-plus mr-2"></i>
+                        Create Playlist
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Import Playlist Modal -->
+    <div id="importPlaylistModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-6 w-96 max-w-md mx-4">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-medium text-gray-900">Import Playlist</h3>
+                <button onclick="hideImportPlaylistModal()" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="importPlaylistForm">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Playlist/Album URL</label>
+                        <input type="url" id="importUrl" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="https://music.youtube.com/playlist?list=...">
+                        <p class="text-xs text-gray-500 mt-1">Supports YouTube Music, Spotify, YouTube playlists</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Playlist Name (Optional)</label>
+                        <input type="text" id="importName" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Leave empty to use original name">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Description (Optional)</label>
+                        <textarea id="importDescription" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Optional description..."></textarea>
+                    </div>
+                    <div class="flex items-center">
+                        <input type="checkbox" id="importPublic" class="mr-2">
+                        <label for="importPublic" class="text-sm text-gray-700">Make playlist public</label>
+                    </div>
+                </div>
+                <div class="flex justify-end space-x-3 mt-6">
+                    <button type="button" onclick="hideImportPlaylistModal()" class="px-4 py-2 text-gray-600 hover:text-gray-800">Cancel</button>
+                    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md">
+                        <i class="fas fa-download mr-2"></i>
+                        Import Playlist
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Playlist Details Modal -->
+    <div id="playlistDetailsModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-6 w-full max-w-4xl mx-4 max-h-[90vh] overflow-hidden flex flex-col">
+            <div class="flex justify-between items-center mb-4">
+                <h3 id="playlistDetailsTitle" class="text-lg font-medium text-gray-900">Playlist Details</h3>
+                <button onclick="hidePlaylistDetailsModal()" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <!-- Playlist Info -->
+            <div id="playlistInfo" class="mb-4 p-4 bg-gray-50 rounded-lg">
+                <!-- Playlist metadata will be loaded here -->
+            </div>
+
+            <!-- Add Track Section -->
+            <div class="mb-4 p-4 border rounded-lg">
+                <h4 class="text-md font-medium text-gray-900 mb-2">Add Track</h4>
+                <div class="flex space-x-2">
+                    <input type="text" id="addTrackQuery" class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" placeholder="Search for a song or paste URL...">
+                    <button onclick="addTrackToPlaylist()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md">
+                        <i class="fas fa-plus mr-1"></i>
+                        Add
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tracks List -->
+            <div class="flex-1 overflow-hidden">
+                <h4 class="text-md font-medium text-gray-900 mb-2">Tracks</h4>
+                <div id="playlistTracks" class="overflow-y-auto max-h-96 space-y-2">
+                    <!-- Tracks will be loaded here -->
+                </div>
+            </div>
+
+            <div class="flex justify-end space-x-3 mt-4">
+                <button onclick="hidePlaylistDetailsModal()" class="px-4 py-2 text-gray-600 hover:text-gray-800">Close</button>
+                <button onclick="loadCurrentPlaylist()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md">
+                    <i class="fas fa-play mr-2"></i>
+                    Load to Queue
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let socket;
+        let guildId;
+        let currentPlayer = null;
+
+        // Initialize guild dashboard
+        async function initGuildDashboard() {
+            guildId = window.location.pathname.split('/').pop();
+
+            try {
+                const response = await fetch(`/api/guilds/${guildId}`);
+                if (!response.ok) {
+                    throw new Error('Failed to load guild data');
+                }
+
+                const guildData = await response.json();
+                updateGuildUI(guildData);
+                initSocket();
+                loadQueue();
+                loadPlaylists();
+            } catch (error) {
+                console.error('Error loading guild dashboard:', error);
+                window.location.href = '/dashboard';
+            }
+        }
+
+        // Update guild UI
+        function updateGuildUI(guildData) {
+            document.getElementById('guild-name').textContent = guildData.name;
+            
+            if (guildData.settings) {
+                document.getElementById('prefix-input').value = guildData.settings.prefix || '!';
+                document.getElementById('language-select').value = guildData.settings.language || 'EnglishUS';
+            }
+
+            if (guildData.player) {
+                currentPlayer = guildData.player;
+                updatePlayerUI();
+            }
+        }
+
+
+
+        // Socket.IO initialization
+        function initSocket() {
+            socket = io();
+            
+            socket.emit('join-guild', guildId);
+
+            socket.on('trackStart', (data) => {
+                if (data.guildId === guildId) {
+                    updateCurrentTrack(data.track);
+                }
+            });
+
+            socket.on('playerUpdate', (data) => {
+                if (data.guildId === guildId) {
+                    currentPlayer = { ...currentPlayer, ...data };
+                    updatePlayerUI();
+                }
+            });
+        }
+
+        // Player control functions
+        async function togglePlayPause() {
+            try {
+                const response = await fetch(`/api/guilds/${guildId}/player/pause`, {
+                    method: 'POST'
+                });
+                const result = await response.json();
+                if (result.success) {
+                    currentPlayer.paused = result.paused;
+                    updatePlayerUI();
+                }
+            } catch (error) {
+                console.error('Error toggling play/pause:', error);
+            }
+        }
+
+        async function nextTrack() {
+            try {
+                await fetch(`/api/guilds/${guildId}/player/skip`, {
+                    method: 'POST'
+                });
+            } catch (error) {
+                console.error('Error skipping track:', error);
+            }
+        }
+
+        async function stopPlayer() {
+            try {
+                await fetch(`/api/guilds/${guildId}/player/stop`, {
+                    method: 'POST'
+                });
+            } catch (error) {
+                console.error('Error stopping player:', error);
+            }
+        }
+
+        // Seek functionality
+        async function seekToPosition(event) {
+            if (!currentPlayer || !currentPlayer.current) return;
+
+            const progressContainer = document.getElementById('progress-container');
+            const rect = progressContainer.getBoundingClientRect();
+            const clickX = event.clientX - rect.left;
+            const percentage = clickX / rect.width;
+            const seekPosition = Math.floor(currentPlayer.current.duration * percentage);
+
+            try {
+                const response = await fetch(`/api/guilds/${guildId}/player/seek`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ position: seekPosition })
+                });
+
+                if (response.ok) {
+                    // Update progress bar immediately for better UX
+                    updateProgressBar(seekPosition, currentPlayer.current.duration);
+                }
+            } catch (error) {
+                console.error('Error seeking:', error);
+            }
+        }
+
+        function updateProgressBar(position, duration) {
+            if (!duration || duration === 0) return;
+
+            const percentage = (position / duration) * 100;
+            document.getElementById('progress-bar').style.width = `${Math.min(100, Math.max(0, percentage))}%`;
+            document.getElementById('current-time').textContent = formatDuration(position);
+            document.getElementById('total-time').textContent = formatDuration(duration);
+        }
+
+        // Enhanced player UI update
+        function updatePlayerUI() {
+            if (!currentPlayer) return;
+
+            const playPauseBtn = document.getElementById('play-pause-btn');
+            const playPauseIcon = playPauseBtn.querySelector('i');
+
+            if (currentPlayer.paused) {
+                playPauseIcon.className = 'fas fa-play';
+            } else {
+                playPauseIcon.className = 'fas fa-pause';
+            }
+
+            document.getElementById('volume-slider').value = currentPlayer.volume;
+            document.getElementById('volume-display').textContent = `${currentPlayer.volume}%`;
+
+            if (currentPlayer.current) {
+                const track = currentPlayer.current;
+                document.getElementById('track-title').textContent = track.title;
+                document.getElementById('track-author').textContent = track.author;
+
+                // Update progress bar
+                updateProgressBar(currentPlayer.position || 0, track.duration);
+
+                if (track.thumbnail) {
+                    const thumbnail = document.getElementById('track-thumbnail');
+                    thumbnail.src = track.thumbnail;
+                    thumbnail.classList.remove('hidden');
+                    document.getElementById('no-track').classList.add('hidden');
+                } else {
+                    document.getElementById('track-thumbnail').classList.add('hidden');
+                    document.getElementById('no-track').classList.remove('hidden');
+                }
+            } else {
+                // No track playing
+                document.getElementById('track-title').textContent = 'No track playing';
+                document.getElementById('track-author').textContent = 'Select a track to start playing';
+                document.getElementById('track-thumbnail').classList.add('hidden');
+                document.getElementById('no-track').classList.remove('hidden');
+                updateProgressBar(0, 0);
+            }
+        }
+
+        async function addTrack() {
+            const query = document.getElementById('search-input').value.trim();
+            if (!query) return;
+
+            try {
+                const response = await fetch(`/api/guilds/${guildId}/player/play`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ query })
+                });
+
+                if (response.ok) {
+                    document.getElementById('search-input').value = '';
+                    loadQueue();
+                }
+            } catch (error) {
+                console.error('Error adding track:', error);
+            }
+        }
+
+        // Force play function
+        async function forcePlay() {
+            const query = document.getElementById('search-input').value.trim();
+            if (!query) {
+                alert('Please enter a song to force play');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/guilds/${guildId}/player/force-play`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ query })
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    document.getElementById('search-input').value = '';
+                    loadQueue();
+                    alert(`Force playing: ${result.track.title}`);
+                } else {
+                    alert('Failed to force play track');
+                }
+            } catch (error) {
+                console.error('Error force playing track:', error);
+                alert('Error force playing track');
+            }
+        }
+
+        // Advanced control functions
+        let currentRepeatMode = 'off';
+        let currentFairPlay = false;
+
+        async function toggleRepeat() {
+            const modes = ['off', 'track', 'queue'];
+            const currentIndex = modes.indexOf(currentRepeatMode);
+            const nextMode = modes[(currentIndex + 1) % modes.length];
+
+            try {
+                const response = await fetch(`/api/guilds/${guildId}/player/repeat`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ mode: nextMode })
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    currentRepeatMode = nextMode;
+                    updateRepeatButton();
+                }
+            } catch (error) {
+                console.error('Error toggling repeat:', error);
+            }
+        }
+
+        function updateRepeatButton() {
+            const btn = document.getElementById('repeat-btn');
+            const text = document.getElementById('repeat-text');
+
+            switch (currentRepeatMode) {
+                case 'off':
+                    btn.className = 'bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-2 rounded-md text-sm';
+                    text.textContent = 'Repeat: Off';
+                    break;
+                case 'track':
+                    btn.className = 'bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-md text-sm';
+                    text.textContent = 'Repeat: Track';
+                    break;
+                case 'queue':
+                    btn.className = 'bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-md text-sm';
+                    text.textContent = 'Repeat: Queue';
+                    break;
+            }
+        }
+
+        async function toggleFairPlay() {
+            try {
+                const response = await fetch(`/api/guilds/${guildId}/player/fairplay`, {
+                    method: 'POST'
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    currentFairPlay = result.fairPlay;
+                    updateFairPlayButton();
+                    if (currentFairPlay) {
+                        alert('Fair Play enabled - Queue reordered fairly');
+                        loadQueue(); // Refresh queue to show new order
+                    }
+                }
+            } catch (error) {
+                console.error('Error toggling fair play:', error);
+            }
+        }
+
+        function updateFairPlayButton() {
+            const btn = document.getElementById('fairplay-btn');
+            const text = document.getElementById('fairplay-text');
+
+            if (currentFairPlay) {
+                btn.className = 'bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-md text-sm';
+                text.textContent = 'Fair Play: On';
+            } else {
+                btn.className = 'bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-2 rounded-md text-sm';
+                text.textContent = 'Fair Play: Off';
+            }
+        }
+
+        async function shuffleQueue() {
+            if (!confirm('Are you sure you want to shuffle the queue?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/guilds/${guildId}/queue/shuffle`, {
+                    method: 'POST'
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    alert('Queue shuffled successfully!');
+                    loadQueue(); // Refresh queue display
+                }
+            } catch (error) {
+                console.error('Error shuffling queue:', error);
+                alert('Error shuffling queue');
+            }
+        }
+
+        async function clearQueue() {
+            if (!confirm('Are you sure you want to clear the entire queue?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/guilds/${guildId}/queue/clear`, {
+                    method: 'POST'
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    alert(result.message);
+                    loadQueue(); // Refresh queue display
+                }
+            } catch (error) {
+                console.error('Error clearing queue:', error);
+                alert('Error clearing queue');
+            }
+        }
+
+        // Volume control
+        document.getElementById('volume-slider').addEventListener('input', async (e) => {
+            const volume = parseInt(e.target.value);
+            document.getElementById('volume-display').textContent = `${volume}%`;
+            
+            try {
+                await fetch(`/api/guilds/${guildId}/player/volume`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ volume })
+                });
+            } catch (error) {
+                console.error('Error setting volume:', error);
+            }
+        });
+
+        // Load queue
+        async function loadQueue() {
+            try {
+                const response = await fetch(`/api/guilds/${guildId}/queue`);
+                const queueData = await response.json();
+                updateQueueUI(queueData);
+            } catch (error) {
+                console.error('Error loading queue:', error);
+            }
+        }
+
+        // Update queue UI
+        function updateQueueUI(queueData) {
+            const queueList = document.getElementById('queue-list');
+            const queueCount = document.getElementById('queue-count');
+            const queueStats = document.getElementById('queue-stats');
+
+            if (!queueData.tracks || queueData.tracks.length === 0) {
+                queueList.innerHTML = '<p class="text-gray-500 text-center py-4">Queue is empty</p>';
+                queueCount.textContent = '(0 tracks)';
+                queueStats.innerHTML = '';
+                return;
+            }
+
+            // Update queue count and stats
+            const totalTracks = queueData.tracks.length;
+            const totalDuration = queueData.tracks.reduce((sum, track) => sum + (track.duration || 0), 0);
+
+            queueCount.textContent = `(${totalTracks} tracks)`;
+            queueStats.innerHTML = `
+                <div class="flex justify-between text-xs">
+                    <span>Total Duration: ${formatDuration(totalDuration)}</span>
+                    <span>Tracks: ${totalTracks}</span>
+                </div>
+            `;
+
+            queueList.innerHTML = queueData.tracks.map((track, index) => `
+                <div class="flex items-center justify-between p-3 bg-gray-50 rounded hover:bg-gray-100 transition-colors">
+                    <div class="flex items-center flex-1 min-w-0">
+                        <span class="text-xs text-gray-400 mr-3 w-6">${index + 1}</span>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm font-medium text-gray-900 truncate">${track.title}</p>
+                            <p class="text-xs text-gray-500 truncate">${track.author} • ${formatDuration(track.duration)}</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-1 ml-2">
+                        ${index > 0 ? `<button onclick="moveTrackUp(${index})" class="text-blue-500 hover:text-blue-700 p-1" title="Move up">
+                            <i class="fas fa-chevron-up text-xs"></i>
+                        </button>` : ''}
+                        ${index < queueData.tracks.length - 1 ? `<button onclick="moveTrackDown(${index})" class="text-blue-500 hover:text-blue-700 p-1" title="Move down">
+                            <i class="fas fa-chevron-down text-xs"></i>
+                        </button>` : ''}
+                        <button onclick="jumpToTrack(${index})" class="text-green-500 hover:text-green-700 p-1" title="Jump to this track">
+                            <i class="fas fa-play text-xs"></i>
+                        </button>
+                        <button onclick="removeFromQueue(${index})" class="text-red-500 hover:text-red-700 p-1" title="Remove from queue">
+                            <i class="fas fa-times text-xs"></i>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Queue manipulation functions
+        async function moveTrackUp(index) {
+            if (index <= 0) return;
+
+            try {
+                const response = await fetch(`/api/guilds/${guildId}/queue/move`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ from: index, to: index - 1 })
+                });
+
+                if (response.ok) {
+                    loadQueue(); // Refresh queue display
+                }
+            } catch (error) {
+                console.error('Error moving track up:', error);
+            }
+        }
+
+        async function moveTrackDown(index) {
+            try {
+                const response = await fetch(`/api/guilds/${guildId}/queue/move`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ from: index, to: index + 1 })
+                });
+
+                if (response.ok) {
+                    loadQueue(); // Refresh queue display
+                }
+            } catch (error) {
+                console.error('Error moving track down:', error);
+            }
+        }
+
+        async function jumpToTrack(index) {
+            if (!confirm(`Jump to track ${index + 1}? This will skip all tracks before it.`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/guilds/${guildId}/queue/jump/${index}`, {
+                    method: 'POST'
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    loadQueue(); // Refresh queue display
+                }
+            } catch (error) {
+                console.error('Error jumping to track:', error);
+                alert('Error jumping to track');
+            }
+        }
+
+        async function removeFromQueue(index) {
+            try {
+                const response = await fetch(`/api/guilds/${guildId}/queue/${index}`, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    loadQueue(); // Refresh queue display
+                }
+            } catch (error) {
+                console.error('Error removing track from queue:', error);
+            }
+        }
+
+        // Utility function to format duration
+        function formatDuration(ms) {
+            if (!ms || ms === 0) return '0:00';
+
+            const seconds = Math.floor(ms / 1000);
+            const minutes = Math.floor(seconds / 60);
+            const hours = Math.floor(minutes / 60);
+
+            if (hours > 0) {
+                return `${hours}:${String(minutes % 60).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
+            } else {
+                return `${minutes}:${String(seconds % 60).padStart(2, '0')}`;
+            }
+        }
+
+        // Save settings
+        async function saveSettings() {
+            const prefix = document.getElementById('prefix-input').value;
+            const language = document.getElementById('language-select').value;
+
+            try {
+                await fetch(`/api/guilds/${guildId}/settings`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ prefix, language })
+                });
+
+                alert('Settings saved successfully!');
+            } catch (error) {
+                console.error('Error saving settings:', error);
+                alert('Error saving settings');
+            }
+        }
+
+        // Playlist Management Functions
+        async function loadPlaylists() {
+            try {
+                const response = await fetch(`/api/playlists?guildId=${guildId}`);
+                const data = await response.json();
+                updatePlaylistsUI(data.playlists);
+            } catch (error) {
+                console.error('Error loading playlists:', error);
+            }
+        }
+
+        function updatePlaylistsUI(playlists) {
+            const playlistsList = document.getElementById('playlists-list');
+
+            if (!playlists || playlists.length === 0) {
+                playlistsList.innerHTML = '<p class="text-gray-500 text-center py-4">No playlists found</p>';
+                return;
+            }
+
+            playlistsList.innerHTML = playlists.map(playlist => `
+                <div class="flex items-center justify-between p-2 bg-gray-50 rounded hover:bg-gray-100">
+                    <div class="flex-1 cursor-pointer" onclick="showPlaylistDetails('${playlist.id}')">
+                        <p class="text-sm font-medium text-gray-900 truncate">${playlist.name}</p>
+                        <p class="text-xs text-gray-500">${playlist.trackCount} tracks • ${formatDate(playlist.updatedAt)}</p>
+                    </div>
+                    <div class="flex space-x-1">
+                        <button onclick="showPlaylistDetails('${playlist.id}')" class="text-blue-600 hover:text-blue-800 p-1" title="View/Edit playlist">
+                            <i class="fas fa-eye text-xs"></i>
+                        </button>
+                        <button onclick="loadPlaylist('${playlist.id}')" class="text-green-600 hover:text-green-800 p-1" title="Load playlist">
+                            <i class="fas fa-play text-xs"></i>
+                        </button>
+                        <button onclick="deletePlaylist('${playlist.id}')" class="text-red-600 hover:text-red-800 p-1" title="Delete playlist">
+                            <i class="fas fa-trash text-xs"></i>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function loadPlaylist(playlistId) {
+            try {
+                const response = await fetch(`/api/guilds/${guildId}/playlists/${playlistId}/load`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ shuffle: false })
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    alert(result.message);
+                    loadQueue(); // Refresh queue display
+                }
+            } catch (error) {
+                console.error('Error loading playlist:', error);
+                alert('Error loading playlist');
+            }
+        }
+
+        async function deletePlaylist(playlistId) {
+            if (!confirm('Are you sure you want to delete this playlist?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/playlists/${playlistId}`, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    loadPlaylists(); // Refresh playlists list
+                } else {
+                    alert('Error deleting playlist');
+                }
+            } catch (error) {
+                console.error('Error deleting playlist:', error);
+                alert('Error deleting playlist');
+            }
+        }
+
+        function showCreatePlaylistModal() {
+            document.getElementById('createPlaylistModal').classList.remove('hidden');
+        }
+
+        function hideCreatePlaylistModal() {
+            document.getElementById('createPlaylistModal').classList.add('hidden');
+            document.getElementById('createPlaylistForm').reset();
+        }
+
+        async function saveCurrentQueue() {
+            try {
+                const response = await fetch(`/api/guilds/${guildId}/queue`);
+                const queueData = await response.json();
+
+                if (!queueData.tracks || queueData.tracks.length === 0) {
+                    alert('Queue is empty. Add some tracks first!');
+                    return;
+                }
+
+                // Pre-fill modal with queue data
+                document.getElementById('includeCurrentQueue').checked = true;
+                showCreatePlaylistModal();
+            } catch (error) {
+                console.error('Error getting queue:', error);
+                alert('Error accessing queue');
+            }
+        }
+
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString();
+        }
+
+        // Enhanced Playlist Management Functions
+        let currentPlaylistId = null;
+
+        function showImportPlaylistModal() {
+            document.getElementById('importPlaylistModal').classList.remove('hidden');
+        }
+
+        function hideImportPlaylistModal() {
+            document.getElementById('importPlaylistModal').classList.add('hidden');
+            document.getElementById('importPlaylistForm').reset();
+        }
+
+        async function showPlaylistDetails(playlistId) {
+            currentPlaylistId = playlistId;
+
+            try {
+                const response = await fetch(`/api/playlists/${playlistId}/tracks`);
+                const data = await response.json();
+
+                // Update modal title and info
+                document.getElementById('playlistDetailsTitle').textContent = data.playlist.name;
+                document.getElementById('playlistInfo').innerHTML = `
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <p class="text-sm text-gray-600">Name</p>
+                            <p class="font-medium">${data.playlist.name}</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-600">Tracks</p>
+                            <p class="font-medium">${data.playlist.trackCount}</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-600">Created</p>
+                            <p class="font-medium">${formatDate(data.playlist.createdAt)}</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-600">Visibility</p>
+                            <p class="font-medium">${data.playlist.isPublic ? 'Public' : 'Private'}</p>
+                        </div>
+                    </div>
+                    ${data.playlist.description ? `<p class="mt-2 text-sm text-gray-700">${data.playlist.description}</p>` : ''}
+                `;
+
+                // Update tracks list
+                updatePlaylistTracksUI(data.tracks);
+
+                // Show modal
+                document.getElementById('playlistDetailsModal').classList.remove('hidden');
+            } catch (error) {
+                console.error('Error loading playlist details:', error);
+                alert('Error loading playlist details');
+            }
+        }
+
+        function hidePlaylistDetailsModal() {
+            document.getElementById('playlistDetailsModal').classList.add('hidden');
+            currentPlaylistId = null;
+        }
+
+        function updatePlaylistTracksUI(tracks) {
+            const tracksContainer = document.getElementById('playlistTracks');
+
+            if (!tracks || tracks.length === 0) {
+                tracksContainer.innerHTML = '<p class="text-gray-500 text-center py-4">No tracks in this playlist</p>';
+                return;
+            }
+
+            tracksContainer.innerHTML = tracks.map((track, index) => `
+                <div class="flex items-center justify-between p-3 bg-white border rounded-lg hover:bg-gray-50">
+                    <div class="flex items-center space-x-3 flex-1">
+                        <div class="text-sm text-gray-500 w-8">${index + 1}</div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm font-medium text-gray-900 truncate">${track.title}</p>
+                            <p class="text-xs text-gray-500 truncate">${track.author} • ${formatDuration(track.duration)}</p>
+                        </div>
+                    </div>
+                    <div class="flex space-x-1">
+                        <button onclick="removeTrackFromPlaylist(${index})" class="text-red-600 hover:text-red-800 p-1" title="Remove track">
+                            <i class="fas fa-times text-xs"></i>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function addTrackToPlaylist() {
+            if (!currentPlaylistId) return;
+
+            const query = document.getElementById('addTrackQuery').value.trim();
+            if (!query) {
+                alert('Please enter a song name or URL');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/playlists/${currentPlaylistId}/tracks`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ query })
+                });
+
+                const result = await response.json();
+                if (response.ok) {
+                    document.getElementById('addTrackQuery').value = '';
+                    showPlaylistDetails(currentPlaylistId); // Refresh the view
+                    alert(result.message);
+                } else {
+                    alert(result.message || 'Error adding track');
+                }
+            } catch (error) {
+                console.error('Error adding track:', error);
+                alert('Error adding track');
+            }
+        }
+
+        async function removeTrackFromPlaylist(trackIndex) {
+            if (!currentPlaylistId) return;
+
+            if (!confirm('Remove this track from the playlist?')) return;
+
+            try {
+                const response = await fetch(`/api/playlists/${currentPlaylistId}/tracks/${trackIndex}`, {
+                    method: 'DELETE'
+                });
+
+                const result = await response.json();
+                if (response.ok) {
+                    showPlaylistDetails(currentPlaylistId); // Refresh the view
+                    alert(result.message);
+                } else {
+                    alert(result.message || 'Error removing track');
+                }
+            } catch (error) {
+                console.error('Error removing track:', error);
+                alert('Error removing track');
+            }
+        }
+
+        async function loadCurrentPlaylist() {
+            if (!currentPlaylistId) return;
+
+            try {
+                const response = await fetch(`/api/guilds/${guildId}/playlists/${currentPlaylistId}/load`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ shuffle: false })
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    hidePlaylistDetailsModal();
+                    loadQueue(); // Refresh queue display
+                    alert(result.message);
+                }
+            } catch (error) {
+                console.error('Error loading playlist:', error);
+                alert('Error loading playlist');
+            }
+        }
+
+        function formatDuration(ms) {
+            const minutes = Math.floor(ms / 60000);
+            const seconds = Math.floor((ms % 60000) / 1000);
+            return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        // Handle create playlist form submission
+        document.getElementById('createPlaylistForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const name = document.getElementById('playlistName').value;
+            const description = document.getElementById('playlistDescription').value;
+            const isPublic = document.getElementById('playlistPublic').checked;
+            const includeQueue = document.getElementById('includeCurrentQueue').checked;
+
+            let tracks = [];
+
+            if (includeQueue) {
+                try {
+                    const response = await fetch(`/api/guilds/${guildId}/queue`);
+                    const queueData = await response.json();
+                    tracks = queueData.tracks || [];
+                } catch (error) {
+                    console.error('Error getting queue for playlist:', error);
+                }
+            }
+
+            try {
+                const response = await fetch('/api/playlists', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        name,
+                        description,
+                        tracks,
+                        guildId,
+                        isPublic
+                    })
+                });
+
+                if (response.ok) {
+                    hideCreatePlaylistModal();
+                    loadPlaylists(); // Refresh playlists list
+                    alert('Playlist created successfully!');
+                } else {
+                    const error = await response.json();
+                    alert(error.message || 'Error creating playlist');
+                }
+            } catch (error) {
+                console.error('Error creating playlist:', error);
+                alert('Error creating playlist');
+            }
+        });
+
+        // Handle import playlist form submission
+        document.getElementById('importPlaylistForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const url = document.getElementById('importUrl').value;
+            const name = document.getElementById('importName').value;
+            const description = document.getElementById('importDescription').value;
+            const isPublic = document.getElementById('importPublic').checked;
+
+            try {
+                const response = await fetch('/api/playlists/import', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        url,
+                        name: name || undefined,
+                        description: description || undefined,
+                        guildId,
+                        isPublic
+                    })
+                });
+
+                const result = await response.json();
+                if (response.ok) {
+                    hideImportPlaylistModal();
+                    loadPlaylists(); // Refresh playlists list
+                    alert(result.message);
+                } else {
+                    alert(result.message || 'Error importing playlist');
+                }
+            } catch (error) {
+                console.error('Error importing playlist:', error);
+                alert('Error importing playlist');
+            }
+        });
+
+        // Logout function
+        async function logout() {
+            try {
+                await fetch('/auth/logout', { method: 'POST' });
+                window.location.href = '/';
+            } catch (error) {
+                console.error('Logout error:', error);
+            }
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', initGuildDashboard);
+
+        // Allow Enter key to add track
+        document.getElementById('search-input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                addTrack();
+            }
+        });
+    </script>
+</body>
+</html>

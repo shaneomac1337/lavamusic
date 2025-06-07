@@ -35,6 +35,7 @@
   "homepage": "https://github.com/appujet/lavamusic#readme",
   "devDependencies": {
     "@appujet/eslint-config": "^0.0.3",
+    "@fastify/static": "^8.2.0",
     "@types/i18n": "^0.13.12",
     "@types/node": "^22.14.1",
     "@types/signale": "^1.4.7",
@@ -46,10 +47,12 @@
     "typescript": "^5.8.3"
   },
   "dependencies": {
+    "@fastify/cookie": "^11.0.2",
     "@fastify/cors": "^11.0.1",
     "@fastify/helmet": "^13.0.1",
     "@fastify/jwt": "^9.1.0",
     "@fastify/sensible": "^6.0.3",
+    "@fastify/websocket": "^11.1.0",
     "@prisma/client": "^6.6.0",
     "@swc/core": "^1.11.21",
     "@top-gg/sdk": "^3.1.6",

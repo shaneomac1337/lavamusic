@@ -51,10 +51,17 @@ model Role {
 }
 
 model Playlist {
-  id     String  @id @default(uuid())
-  userId String
-  name   String
-  tracks String? // Store the array of encoded tracks as a JSON string
+  id          String   @id @default(uuid())
+  userId      String
+  guildId     String?  // Optional: guild-specific playlists
+  name        String
+  description String?
+  tracks      String?  // Store the array of encoded tracks as a JSON string
+  isPublic    Boolean  @default(false) // Allow sharing between servers
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  playCount   Int      @default(0)
+  trackCount  Int      @default(0)
 
   @@unique([userId, name])
 }

@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lavamusic Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .card-hover {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .card-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+        .status-online { color: #10b981; }
+        .status-offline { color: #ef4444; }
+        .status-idle { color: #f59e0b; }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <!-- Navigation -->
+    <nav class="gradient-bg shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <h1 class="text-white text-xl font-bold">
+                            <i class="fas fa-music mr-2"></i>
+                            Lavamusic Dashboard
+                        </h1>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="text-white" id="user-info">
+                        <i class="fas fa-user mr-2"></i>
+                        <span id="username">Loading...</span>
+                    </div>
+                    <button onclick="logout()" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition duration-300">
+                        <i class="fas fa-sign-out-alt mr-2"></i>
+                        Logout
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white overflow-hidden shadow rounded-lg">
+                <div class="p-5">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-server text-2xl text-blue-500"></i>
+                        </div>
+                        <div class="ml-5 w-0 flex-1">
+                            <dl>
+                                <dt class="text-sm font-medium text-gray-500 truncate">Total Guilds</dt>
+                                <dd class="text-lg font-medium text-gray-900" id="total-guilds">-</dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white overflow-hidden shadow rounded-lg">
+                <div class="p-5">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-users text-2xl text-green-500"></i>
+                        </div>
+                        <div class="ml-5 w-0 flex-1">
+                            <dl>
+                                <dt class="text-sm font-medium text-gray-500 truncate">Total Users</dt>
+                                <dd class="text-lg font-medium text-gray-900" id="total-users">-</dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white overflow-hidden shadow rounded-lg">
+                <div class="p-5">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-play text-2xl text-purple-500"></i>
+                        </div>
+                        <div class="ml-5 w-0 flex-1">
+                            <dl>
+                                <dt class="text-sm font-medium text-gray-500 truncate">Active Players</dt>
+                                <dd class="text-lg font-medium text-gray-900" id="active-players">-</dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white overflow-hidden shadow rounded-lg">
+                <div class="p-5">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-clock text-2xl text-yellow-500"></i>
+                        </div>
+                        <div class="ml-5 w-0 flex-1">
+                            <dl>
+                                <dt class="text-sm font-medium text-gray-500 truncate">Uptime</dt>
+                                <dd class="text-lg font-medium text-gray-900" id="uptime">-</dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Guilds Section -->
+        <div class="bg-white shadow overflow-hidden sm:rounded-md">
+            <div class="px-4 py-5 sm:px-6">
+                <h3 class="text-lg leading-6 font-medium text-gray-900">Your Servers</h3>
+                <p class="mt-1 max-w-2xl text-sm text-gray-500">
+                    Manage your Discord servers where Lavamusic is present.
+                </p>
+            </div>
+            <ul class="divide-y divide-gray-200" id="guilds-list">
+                <!-- Guilds will be loaded here -->
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        let socket;
+        let dashboardData = null;
+
+        // Initialize dashboard
+        async function initDashboard() {
+            try {
+                const response = await fetch('/api/dashboard-data');
+                if (!response.ok) {
+                    throw new Error('Failed to load dashboard data');
+                }
+                
+                dashboardData = await response.json();
+                updateUI();
+                initSocket();
+            } catch (error) {
+                console.error('Error loading dashboard:', error);
+                window.location.href = '/auth/discord';
+            }
+        }
+
+        // Update UI with dashboard data
+        function updateUI() {
+            if (!dashboardData) return;
+
+            // Update user info
+            document.getElementById('username').textContent = dashboardData.user.username;
+
+            // Update stats
+            document.getElementById('total-guilds').textContent = dashboardData.botStats.guilds;
+            document.getElementById('total-users').textContent = dashboardData.botStats.users.toLocaleString();
+            document.getElementById('active-players').textContent = dashboardData.botStats.players;
+            document.getElementById('uptime').textContent = formatUptime(dashboardData.botStats.uptime);
+
+            // Update guilds list
+            updateGuildsList();
+        }
+
+        // Update guilds list
+        function updateGuildsList() {
+            const guildsList = document.getElementById('guilds-list');
+            guildsList.innerHTML = '';
+
+            console.log('Updating guilds list with data:', dashboardData.guilds);
+            dashboardData.guilds.forEach(guild => {
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    <div class="px-4 py-4 flex items-center justify-between hover:bg-gray-50 cursor-pointer card-hover" onclick="openGuild('${guild.id}')" style="border: 2px solid red; background-color: #f0f0f0;">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0 h-10 w-10">
+                                ${guild.icon 
+                                    ? `<img class="h-10 w-10 rounded-full" src="https://cdn.discordapp.com/icons/${guild.id}/${guild.icon}.png" alt="${guild.name}">`
+                                    : `<div class="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center text-gray-600 font-bold">${guild.name.charAt(0)}</div>`
+                                }
+                            </div>
+                            <div class="ml-4">
+                                <div class="text-sm font-medium text-gray-900">${guild.name}</div>
+                                <div class="text-sm text-gray-500">
+                                    ${guild.memberCount} members
+                                    ${guild.botPresent ? '<span class="status-online">• Bot Present</span>' : '<span class="status-offline">• Bot Not Present</span>'}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-4">
+                            ${guild.player ? `
+                                <div class="text-sm text-gray-500">
+                                    ${guild.player.playing ? '<i class="fas fa-play status-online"></i>' : '<i class="fas fa-pause status-idle"></i>'}
+                                    ${guild.player.queueLength} in queue
+                                </div>
+                            ` : ''}
+                            <i class="fas fa-chevron-right text-gray-400"></i>
+                        </div>
+                    </div>
+                `;
+                guildsList.appendChild(li);
+            });
+        }
+
+        // Initialize Socket.IO
+        function initSocket() {
+            try {
+                socket = io();
+
+                socket.on('connect', () => {
+                    console.log('Connected to dashboard');
+                });
+
+                socket.on('disconnect', () => {
+                    console.log('Disconnected from dashboard');
+                });
+
+                // Listen for real-time updates
+                socket.on('trackStart', (data) => {
+                    console.log('Track started:', data);
+                    // Update UI for track start
+                });
+
+                socket.on('playerUpdate', (data) => {
+                    console.log('Player updated:', data);
+                    // Update player status in UI
+                });
+            } catch (error) {
+                console.log('Socket.io not available (demo mode)');
+            }
+        }
+
+        // Open guild dashboard
+        function openGuild(guildId) {
+            console.log('Opening guild:', guildId);
+            window.location.href = `/guild/${guildId}`;
+        }
+
+        // Logout function
+        async function logout() {
+            try {
+                await fetch('/auth/logout', { method: 'POST' });
+                window.location.href = '/';
+            } catch (error) {
+                console.error('Logout error:', error);
+            }
+        }
+
+        // Format uptime
+        function formatUptime(seconds) {
+            const days = Math.floor(seconds / 86400);
+            const hours = Math.floor((seconds % 86400) / 3600);
+            const minutes = Math.floor((seconds % 3600) / 60);
+            
+            if (days > 0) {
+                return `${days}d ${hours}h ${minutes}m`;
+            } else if (hours > 0) {
+                return `${hours}h ${minutes}m`;
+            } else {
+                return `${minutes}m`;
+            }
+        }
+
+        // Initialize dashboard on page load
+        document.addEventListener('DOMContentLoaded', initDashboard);
+    </script>
+</body>
+</html>

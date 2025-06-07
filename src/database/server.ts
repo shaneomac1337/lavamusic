@@ -118,11 +118,7 @@ export default class ServerData {
 		});
 	}
 
-	public async getUserPlaylists(userId: string): Promise<Playlist[]> {
-		return await this.prisma.playlist.findMany({
-			where: { userId },
-		});
-	}
+
 
 	public async createPlaylist(userId: string, name: string): Promise<void> {
 		await this.prisma.playlist.create({ data: { userId, name } });
@@ -264,6 +260,101 @@ export default class ServerData {
 		// Deserialize the tracks JSON string back into an array
 		const tracks = JSON.parse(playlist.tracks!);
 		return tracks;
+	}
+
+	// Enhanced playlist management methods
+	public async createPlaylistAdvanced(
+		userId: string,
+		name: string,
+		tracks: string,
+		options: {
+			guildId?: string;
+			description?: string;
+			isPublic?: boolean;
+		} = {}
+	): Promise<Playlist> {
+		const trackCount = tracks ? JSON.parse(tracks).length : 0;
+
+		return await this.prisma.playlist.create({
+			data: {
+				userId,
+				name,
+				tracks,
+				guildId: options.guildId,
+				description: options.description,
+				isPublic: options.isPublic || false,
+				trackCount,
+			},
+		});
+	}
+
+	public async updatePlaylistAdvanced(
+		playlistId: string,
+		updates: {
+			name?: string;
+			description?: string;
+			tracks?: string;
+			isPublic?: boolean;
+		}
+	): Promise<Playlist> {
+		const updateData: any = { ...updates };
+
+		if (updates.tracks) {
+			updateData.trackCount = JSON.parse(updates.tracks).length;
+		}
+
+		return await this.prisma.playlist.update({
+			where: { id: playlistId },
+			data: updateData,
+		});
+	}
+
+	public async getPlaylistById(playlistId: string): Promise<Playlist | null> {
+		return await this.prisma.playlist.findUnique({
+			where: { id: playlistId },
+		});
+	}
+
+	public async getUserPlaylists(userId: string, guildId?: string): Promise<Playlist[]> {
+		return await this.prisma.playlist.findMany({
+			where: {
+				userId,
+				...(guildId && { OR: [{ guildId }, { guildId: null }] }),
+			},
+			orderBy: { updatedAt: 'desc' },
+		});
+	}
+
+	public async getPublicPlaylists(limit: number = 20): Promise<Playlist[]> {
+		return await this.prisma.playlist.findMany({
+			where: { isPublic: true },
+			orderBy: { playCount: 'desc' },
+			take: limit,
+		});
+	}
+
+	public async incrementPlayCount(playlistId: string): Promise<void> {
+		await this.prisma.playlist.update({
+			where: { id: playlistId },
+			data: { playCount: { increment: 1 } },
+		});
+	}
+
+	public async searchPlaylists(query: string, userId?: string): Promise<Playlist[]> {
+		return await this.prisma.playlist.findMany({
+			where: {
+				OR: [
+					{ name: { contains: query } },
+					{ description: { contains: query } },
+				],
+				AND: [
+					{ isPublic: true },
+					...(userId ? [{ userId: { not: userId } }] : []),
+				],
+			},
+			orderBy: { playCount: 'desc' },
+			take: 10,
+		});
 	}
 }
 

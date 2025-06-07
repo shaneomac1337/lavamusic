@@ -2,7 +2,7 @@ services:
     ## services for lavalink
     lavalink:
         container_name: lavamusic-lavalink
-        image: ghcr.io/lavalink-devs/lavalink:latest
+        image: ghcr.io/lavalink-devs/lavalink:4.1.1
         restart: unless-stopped
         environment:
             - _JAVA_OPTIONS=-Xmx6G
@@ -70,6 +70,11 @@ services:
         #    - DATABASE_URL= put your database url here (mongodb or postgres)
         #   - DATABASE_URL=postgresql://lavamusic:lavamusic@postgres:5432/lavamusic (for postgres)
         #   - DATABASE_URL=mongodb://mongoadmin:mongopassword@mongodb:27017/lavamusic?authSource=admin (for mongodb)
+            # web dashboard settings
+            - WEB_DASHBOARD=true
+            - DASHBOARD_PORT=3001
+            - DASHBOARD_SECRET=your-secret-key-here
+            - CLIENT_SECRET=your-discord-client-secret-here
 
         volumes:
             # mount .env from the same directory or use environment variables
@@ -81,6 +86,8 @@ services:
                 condition: service_healthy
         networks:
             - lavalink
+        ports:
+            - "3001:3001"  # Web dashboard port
 networks:
     lavalink:
         name: lavalink
