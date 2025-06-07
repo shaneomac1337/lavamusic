@@ -25,6 +25,7 @@ const LavalinkNodeSchema = z.object({
 const envSchema = z.object({
 	TOKEN: z.string(),
 	CLIENT_ID: z.string(),
+	CLIENT_SECRET: z.string().optional(),
 	DEFAULT_LANGUAGE: z.string().default('EnglishUS'),
 	PREFIX: z.string().default('!'),
 	OWNER_IDS: z.preprocess(val => (typeof val === 'string' ? JSON.parse(val) : val), z.string().array().optional()),
@@ -63,6 +64,14 @@ const envSchema = z.object({
 	),
 	NODES: z.preprocess(val => (typeof val === 'string' ? JSON.parse(val) : val), z.array(LavalinkNodeSchema)),
 	GENIUS_API: z.string().optional(),
+	WEB_DASHBOARD: z.preprocess(val => val === 'true', z.boolean().default(false)),
+	DASHBOARD_PORT: z.preprocess(val => {
+		if (typeof val === 'string') {
+			return Number.parseInt(val, 10);
+		}
+		return val;
+	}, z.number().default(3001)),
+	DASHBOARD_SECRET: z.string().optional(),
 });
 
 type Env = z.infer<typeof envSchema>;

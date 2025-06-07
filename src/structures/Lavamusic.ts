@@ -23,6 +23,7 @@ import { T, i18n, initI18n, localization } from "./I18n";
 import LavalinkClient from "./LavalinkClient";
 import Logger from "./Logger";
 import type { Command } from "./index";
+import { WebServer } from "../web/server";
 
 export default class Lavamusic extends Client {
   public commands: Collection<string, any> = new Collection();
@@ -38,6 +39,7 @@ export default class Lavamusic extends Client {
   public utils = Utils;
   public env: typeof env = env;
   public manager!: LavalinkClient;
+  public webServer?: WebServer;
   public embed(): EmbedBuilder {
     return new EmbedBuilder();
   }
@@ -56,6 +58,12 @@ export default class Lavamusic extends Client {
     this.logger.info("Successfully loaded events!");
     loadPlugins(this);
     await this.login(token);
+
+    // Start web dashboard if enabled
+    if (env.WEB_DASHBOARD) {
+      this.webServer = new WebServer(this);
+      await this.webServer.start();
+    }
 
     this.on(Events.InteractionCreate, async (interaction: Interaction) => {
       if (interaction.isButton() && interaction.guildId) {
