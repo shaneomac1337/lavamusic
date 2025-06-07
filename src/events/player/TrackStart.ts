@@ -34,7 +34,7 @@ export default class TrackStart extends Event {
 		const channel = guild.channels.cache.get(player.textChannelId) as TextChannel;
 		if (!channel) return;
 
-		this.client.utils.updateStatus(this.client, guild.id);
+		this.client.utils.updateStatus(this.client);
 
 		const locale = await this.client.db.getLanguage(guild.id);
 
