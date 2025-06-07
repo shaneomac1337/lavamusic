@@ -30,7 +30,19 @@ I've successfully implemented advanced features for your Discord music bot dashb
 - **Visual Enhancements**: Hover effects and better spacing
 - **Track Numbering**: Clear position indicators
 
-### 5. **🔧 Quality of Life Improvements**
+### 5. **🎤 Voice Channel Management**
+- **Join My Channel**: One-click button to make bot join your current voice channel
+- **Connection Status**: Visual indicator showing if bot is connected to voice
+- **Smart Channel Switching**: Automatically moves bot if you're in a different channel
+- **Permission Checking**: Validates bot permissions before attempting to join
+
+### 6. **� Configurable Text Channel**
+- **Bot Messages Channel**: Configure where bot sends notifications and messages
+- **GUI Configuration**: Easy dropdown selection in dashboard settings
+- **Permission Validation**: Automatically checks bot permissions before saving
+- **Smart Fallback**: Uses voice channel if no text channel is configured
+
+### 7. **�🔧 Quality of Life Improvements**
 - **Enhanced UI**: Better styling with gradients and animations
 - **Responsive Design**: Works well on mobile and desktop
 - **Real-time Updates**: Live synchronization with Discord bot
@@ -40,14 +52,17 @@ I've successfully implemented advanced features for your Discord music bot dashb
 
 ### Backend API Endpoints Added:
 ```
-POST /api/guilds/:guildId/player/force-play     - Force play track
-POST /api/guilds/:guildId/player/seek           - Seek to position
-POST /api/guilds/:guildId/player/repeat         - Toggle repeat mode
-POST /api/guilds/:guildId/player/fairplay       - Toggle fair play
-POST /api/guilds/:guildId/queue/move            - Move track in queue
-POST /api/guilds/:guildId/queue/jump/:index     - Jump to track
-POST /api/guilds/:guildId/queue/clear           - Clear entire queue
-POST /api/guilds/:guildId/queue/shuffle         - Shuffle queue
+POST /api/guilds/:guildId/player/force-play        - Force play track
+POST /api/guilds/:guildId/player/seek              - Seek to position
+POST /api/guilds/:guildId/player/repeat            - Toggle repeat mode
+POST /api/guilds/:guildId/player/fairplay          - Toggle fair play
+POST /api/guilds/:guildId/player/join-my-channel   - Join user's voice channel
+POST /api/guilds/:guildId/queue/move               - Move track in queue
+POST /api/guilds/:guildId/queue/jump/:index        - Jump to track
+POST /api/guilds/:guildId/queue/clear              - Clear entire queue
+POST /api/guilds/:guildId/queue/shuffle            - Shuffle queue
+GET  /api/guilds/:guildId/channels                 - Get available text channels
+PUT  /api/guilds/:guildId/settings                 - Update guild settings (including text channel)
 ```
 
 ### Frontend Features Added:
@@ -88,6 +103,17 @@ POST /api/guilds/:guildId/queue/shuffle         - Shuffle queue
 - **Repeat**: Click to cycle through Off → Track → Queue
 - **Fair Play**: Toggle to enable fair queue distribution
 - **Seek**: Click anywhere on the progress bar to jump to that position
+
+### Voice Channel Management:
+- **Join My Channel**: Click the green "Join My Channel" button
+- **Bot Status**: Check the connection indicator in the top-right of the player
+- **Auto-Switch**: Bot will move to your channel if you're in a different one
+
+### Text Channel Configuration:
+- **Settings**: Go to "Quick Settings" section in the dashboard
+- **Select Channel**: Choose from dropdown of available text channels
+- **Default Behavior**: Leave empty to use voice channel for messages
+- **Save**: Click "Save Settings" to apply changes
 
 ## 📊 Benefits
 
