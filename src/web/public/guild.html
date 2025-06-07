@@ -47,6 +47,13 @@
         .control-button:hover {
             transform: scale(1.05);
         }
+        .connection-status {
+            font-weight: 500;
+        }
+        .channel-name {
+            color: #059669;
+            font-weight: 600;
+        }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
@@ -81,10 +88,18 @@
             <!-- Music Player -->
             <div class="lg:col-span-2">
                 <div class="bg-white shadow rounded-lg p-6">
-                    <h2 class="text-lg font-medium text-gray-900 mb-4">
-                        <i class="fas fa-play mr-2"></i>
-                        Music Player
-                    </h2>
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-lg font-medium text-gray-900">
+                            <i class="fas fa-play mr-2"></i>
+                            Music Player
+                        </h2>
+                        <div id="connection-status" class="text-sm">
+                            <span class="text-gray-500">
+                                <i class="fas fa-circle text-red-500 mr-1"></i>
+                                Not Connected
+                            </span>
+                        </div>
+                    </div>
                     
                     <!-- Current Track -->
                     <div id="current-track" class="mb-6 p-4 bg-gray-50 rounded-lg">
@@ -124,6 +139,14 @@
                         </button>
                         <button onclick="stopPlayer()" class="bg-red-500 hover:bg-red-600 text-white p-3 rounded-full">
                             <i class="fas fa-stop"></i>
+                        </button>
+                    </div>
+
+                    <!-- Join Channel Button -->
+                    <div class="flex justify-center mb-6">
+                        <button onclick="joinMyChannel()" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-md control-button" title="Join your current voice channel">
+                            <i class="fas fa-sign-in-alt mr-2"></i>
+                            Join My Channel
                         </button>
                     </div>
 
@@ -239,6 +262,16 @@
                                 <option value="German">German</option>
                                 <option value="French">French</option>
                                 <option value="Spanish">Spanish</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">
+                                Bot Messages Channel
+                                <span class="text-xs text-gray-500">(Where bot sends notifications)</span>
+                            </label>
+                            <select id="text-channel-select" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500">
+                                <option value="">Use voice channel (default)</option>
+                                <!-- Channels will be loaded dynamically -->
                             </select>
                         </div>
                         <button onclick="saveSettings()" class="w-full bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-md">
@@ -395,6 +428,7 @@
                 initSocket();
                 loadQueue();
                 loadPlaylists();
+                loadTextChannels();
             } catch (error) {
                 console.error('Error loading guild dashboard:', error);
                 window.location.href = '/dashboard';
@@ -404,14 +438,20 @@
         // Update guild UI
         function updateGuildUI(guildData) {
             document.getElementById('guild-name').textContent = guildData.name;
-            
+
             if (guildData.settings) {
                 document.getElementById('prefix-input').value = guildData.settings.prefix || '!';
                 document.getElementById('language-select').value = guildData.settings.language || 'EnglishUS';
+                document.getElementById('text-channel-select').value = guildData.settings.textChannelId || '';
             }
 
             if (guildData.player) {
                 currentPlayer = guildData.player;
+                console.log('Initial player data:', currentPlayer);
+                updatePlayerUI();
+            } else {
+                // No player exists
+                currentPlayer = null;
                 updatePlayerUI();
             }
         }
@@ -421,7 +461,7 @@
         // Socket.IO initialization
         function initSocket() {
             socket = io();
-            
+
             socket.emit('join-guild', guildId);
 
             socket.on('trackStart', (data) => {
@@ -434,6 +474,21 @@
                 if (data.guildId === guildId) {
                     currentPlayer = { ...currentPlayer, ...data };
                     updatePlayerUI();
+                }
+            });
+
+            socket.on('playerCreate', (data) => {
+                if (data.guildId === guildId) {
+                    console.log('Player created/connected:', data);
+                    refreshGuildData();
+                }
+            });
+
+            socket.on('playerDestroy', (data) => {
+                if (data.guildId === guildId) {
+                    console.log('Player destroyed/disconnected:', data);
+                    currentPlayer = null;
+                    updateConnectionStatus(false, null, null);
                 }
             });
         }
@@ -513,7 +568,15 @@
 
         // Enhanced player UI update
         function updatePlayerUI() {
-            if (!currentPlayer) return;
+            if (!currentPlayer) {
+                // No player - show disconnected status
+                updateConnectionStatus(false, null, null);
+                return;
+            }
+
+            // Update connection status - check both connected flag and voiceChannelId
+            const isConnected = currentPlayer.connected && currentPlayer.voiceChannelId;
+            updateConnectionStatus(isConnected, currentPlayer.voiceChannelId, currentPlayer.voiceChannelName);
 
             const playPauseBtn = document.getElementById('play-pause-btn');
             const playPauseIcon = playPauseBtn.querySelector('i');
@@ -551,6 +614,30 @@
                 document.getElementById('track-thumbnail').classList.add('hidden');
                 document.getElementById('no-track').classList.remove('hidden');
                 updateProgressBar(0, 0);
+            }
+        }
+
+        // Update connection status display
+        function updateConnectionStatus(connected, voiceChannelId, voiceChannelName) {
+            const statusElement = document.getElementById('connection-status');
+
+            console.log('Updating connection status:', { connected, voiceChannelId, voiceChannelName });
+
+            if (connected && voiceChannelId) {
+                const channelDisplay = voiceChannelName ? voiceChannelName : 'Voice Channel';
+                statusElement.innerHTML = `
+                    <span class="text-green-600 connection-status">
+                        <i class="fas fa-circle text-green-500 mr-1"></i>
+                        Connected to <span class="channel-name">${channelDisplay}</span>
+                    </span>
+                `;
+            } else {
+                statusElement.innerHTML = `
+                    <span class="text-gray-500 connection-status">
+                        <i class="fas fa-circle text-red-500 mr-1"></i>
+                        Not Connected
+                    </span>
+                `;
             }
         }
 
@@ -730,6 +817,67 @@
             }
         }
 
+        // Join user's voice channel
+        async function joinMyChannel() {
+            try {
+                const response = await fetch(`/api/guilds/${guildId}/player/join-my-channel`, {
+                    method: 'POST'
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    switch (response.status) {
+                        case 400:
+                            alert('You need to be in a voice channel first!');
+                            break;
+                        case 403:
+                            alert('Bot does not have permission to join your voice channel');
+                            break;
+                        case 404:
+                            alert('You are not a member of this server');
+                            break;
+                        default:
+                            alert(errorData.message || 'Error joining voice channel');
+                    }
+                    return;
+                }
+
+                const result = await response.json();
+                if (result.success) {
+                    alert(result.message);
+
+                    // Immediately update the connection status with channel name
+                    updateConnectionStatus(true, result.channelId, result.channelName);
+
+                    // Refresh guild data after a short delay to ensure player is fully connected
+                    setTimeout(async () => {
+                        await refreshGuildData();
+                    }, 1000);
+                } else {
+                    alert('Failed to join your voice channel');
+                }
+            } catch (error) {
+                console.error('Error joining voice channel:', error);
+                alert('Error joining voice channel. Please try again.');
+            }
+        }
+
+        // Refresh guild data
+        async function refreshGuildData() {
+            try {
+                const response = await fetch(`/api/guilds/${guildId}`);
+                if (response.ok) {
+                    const guildData = await response.json();
+                    if (guildData.player) {
+                        currentPlayer = guildData.player;
+                        updatePlayerUI();
+                    }
+                }
+            } catch (error) {
+                console.error('Error refreshing guild data:', error);
+            }
+        }
+
         // Volume control
         document.getElementById('volume-slider').addEventListener('input', async (e) => {
             const volume = parseInt(e.target.value);
@@ -899,10 +1047,36 @@
             }
         }
 
+        // Load available text channels
+        async function loadTextChannels() {
+            try {
+                const response = await fetch(`/api/guilds/${guildId}/channels`);
+                const data = await response.json();
+
+                const select = document.getElementById('text-channel-select');
+
+                // Clear existing options except the default
+                while (select.children.length > 1) {
+                    select.removeChild(select.lastChild);
+                }
+
+                // Add channel options
+                data.channels.forEach(channel => {
+                    const option = document.createElement('option');
+                    option.value = channel.id;
+                    option.textContent = `# ${channel.name}`;
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error loading text channels:', error);
+            }
+        }
+
         // Save settings
         async function saveSettings() {
             const prefix = document.getElementById('prefix-input').value;
             const language = document.getElementById('language-select').value;
+            const textChannelId = document.getElementById('text-channel-select').value;
 
             try {
                 await fetch(`/api/guilds/${guildId}/settings`, {
@@ -910,13 +1084,33 @@
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ prefix, language })
+                    body: JSON.stringify({
+                        prefix,
+                        language,
+                        textChannelId: textChannelId || null
+                    })
                 });
 
                 alert('Settings saved successfully!');
             } catch (error) {
                 console.error('Error saving settings:', error);
-                alert('Error saving settings');
+
+                // Handle specific error cases
+                if (error.response) {
+                    const errorData = await error.response.json();
+                    switch (error.response.status) {
+                        case 400:
+                            alert('Invalid text channel selected');
+                            break;
+                        case 403:
+                            alert('Bot does not have permission to send messages in the selected channel');
+                            break;
+                        default:
+                            alert(errorData.message || 'Error saving settings');
+                    }
+                } else {
+                    alert('Error saving settings');
+                }
             }
         }
 

@@ -72,7 +72,10 @@ export async function apiRoutes(fastify: FastifyInstance, options: ApiOptions) {
 			icon: guild.iconURL(),
 			memberCount: guild.memberCount,
 			owner: guild.ownerId,
-			settings: guildData,
+			settings: {
+				...guildData,
+				textChannelName: guildData.textChannelId ? guild.channels.cache.get(guildData.textChannelId)?.name || 'Unknown Channel' : null,
+			},
 			player: player ? {
 				connected: player.connected,
 				playing: player.playing,
@@ -80,6 +83,8 @@ export async function apiRoutes(fastify: FastifyInstance, options: ApiOptions) {
 				volume: player.volume,
 				position: player.position,
 				queue: player.queue.tracks.length,
+				voiceChannelId: player.voiceChannelId,
+				voiceChannelName: player.voiceChannelId ? guild.channels.cache.get(player.voiceChannelId)?.name || 'Unknown Channel' : null,
 				current: player.queue.current ? {
 					title: player.queue.current.info.title,
 					author: player.queue.current.info.author,
@@ -245,6 +250,98 @@ export async function apiRoutes(fastify: FastifyInstance, options: ApiOptions) {
 		return { success: true, fairPlay: newFairPlay };
 	});
 
+	// Join user's voice channel
+	fastify.post('/guilds/:guildId/player/join-my-channel', {
+		preHandler: async (request) => {
+			try {
+				const token = request.cookies.token;
+				if (!token) {
+					throw new Error('No token');
+				}
+
+				const decoded = fastify.jwt.verify(token);
+				request.user = decoded;
+			} catch (err) {
+				throw fastify.httpErrors.unauthorized('Authentication required');
+			}
+		}
+	}, async (request) => {
+		const { guildId } = request.params as { guildId: string };
+		const user = request.user as any;
+
+		const guild = client.guilds.cache.get(guildId);
+		if (!guild) {
+			throw fastify.httpErrors.notFound('Guild not found');
+		}
+
+		// Find the user in the guild
+		const member = guild.members.cache.get(user.userId);
+		if (!member) {
+			throw fastify.httpErrors.notFound('You are not a member of this guild');
+		}
+
+		// Check if user is in a voice channel
+		if (!member.voice.channel) {
+			throw fastify.httpErrors.badRequest('You are not in a voice channel');
+		}
+
+		const voiceChannel = member.voice.channel;
+
+		// Check if bot has permissions to join the channel
+		const botMember = guild.members.cache.get(client.user!.id);
+		if (!botMember) {
+			throw fastify.httpErrors.internalServerError('Bot not found in guild');
+		}
+
+		const permissions = voiceChannel.permissionsFor(botMember);
+		if (!permissions?.has(['Connect', 'Speak'])) {
+			throw fastify.httpErrors.forbidden('Bot does not have permission to join your voice channel');
+		}
+
+		// Check if bot is already connected to a different channel
+		let player = client.manager.getPlayer(guildId);
+		if (player && player.connected && player.voiceChannelId !== voiceChannel.id) {
+			// Disconnect from current channel and reconnect to new one
+			await player.disconnect();
+			player.voiceChannelId = voiceChannel.id;
+			await player.connect();
+			return {
+				success: true,
+				message: `Moved to your voice channel: ${voiceChannel.name}`,
+				channelName: voiceChannel.name,
+				channelId: voiceChannel.id
+			};
+		}
+
+		// Create new player if doesn't exist
+		if (!player) {
+			// Get the configured text channel for this guild
+			const configuredTextChannelId = await client.db.getTextChannel(guildId);
+			const textChannelId = configuredTextChannelId || voiceChannel.id; // Fallback to voice channel
+
+			player = client.manager.createPlayer({
+				guildId: guild.id,
+				voiceChannelId: voiceChannel.id,
+				textChannelId: textChannelId,
+				selfMute: false,
+				selfDeaf: true,
+				vcRegion: voiceChannel.rtcRegion!,
+			});
+		}
+
+		// Connect to the voice channel
+		if (!player.connected) {
+			await player.connect();
+		}
+
+		return {
+			success: true,
+			message: `Joined your voice channel: ${voiceChannel.name}`,
+			channelName: voiceChannel.name,
+			channelId: voiceChannel.id
+		};
+	});
+
 	// Queue management
 	fastify.get('/guilds/:guildId/queue', async (request) => {
 		const { guildId } = request.params as { guildId: string };
@@ -402,7 +499,7 @@ export async function apiRoutes(fastify: FastifyInstance, options: ApiOptions) {
 	fastify.put('/guilds/:guildId/settings', async (request) => {
 		const { guildId } = request.params as { guildId: string };
 		const settings = request.body as any;
-		
+
 		const guild = client.guilds.cache.get(guildId);
 		if (!guild) {
 			throw fastify.httpErrors.notFound('Guild not found');
@@ -412,12 +509,66 @@ export async function apiRoutes(fastify: FastifyInstance, options: ApiOptions) {
 		if (settings.prefix) {
 			await client.db.setPrefix(guildId, settings.prefix);
 		}
-		
+
 		if (settings.language) {
 			await client.db.updateLanguage(guildId, settings.language);
 		}
 
+		if (settings.textChannelId !== undefined) {
+			// Validate the text channel exists and bot has access
+			if (settings.textChannelId) {
+				const textChannel = guild.channels.cache.get(settings.textChannelId);
+				if (!textChannel || textChannel.type !== 0) { // 0 = GUILD_TEXT
+					throw fastify.httpErrors.badRequest('Invalid text channel or channel not found');
+				}
+
+				// Check if bot has permission to send messages in the channel
+				const botMember = guild.members.cache.get(client.user!.id);
+				if (!botMember) {
+					throw fastify.httpErrors.internalServerError('Bot not found in guild');
+				}
+
+				const permissions = textChannel.permissionsFor(botMember);
+				if (!permissions?.has(['SendMessages', 'ViewChannel'])) {
+					throw fastify.httpErrors.forbidden('Bot does not have permission to send messages in this channel');
+				}
+			}
+
+			await client.db.setTextChannel(guildId, settings.textChannelId || null);
+		}
+
 		return { success: true };
+	});
+
+	// Get available text channels for guild
+	fastify.get('/guilds/:guildId/channels', async (request) => {
+		const { guildId } = request.params as { guildId: string };
+
+		const guild = client.guilds.cache.get(guildId);
+		if (!guild) {
+			throw fastify.httpErrors.notFound('Guild not found');
+		}
+
+		const botMember = guild.members.cache.get(client.user!.id);
+		if (!botMember) {
+			throw fastify.httpErrors.internalServerError('Bot not found in guild');
+		}
+
+		// Get text channels where bot has permission to send messages
+		const textChannels = guild.channels.cache
+			.filter(channel => {
+				if (channel.type !== 0) return false; // Only text channels
+				const permissions = channel.permissionsFor(botMember);
+				return permissions?.has(['SendMessages', 'ViewChannel']);
+			})
+			.map(channel => ({
+				id: channel.id,
+				name: channel.name,
+				position: 'position' in channel ? channel.position : 0,
+			}))
+			.sort((a, b) => a.position - b.position);
+
+		return { channels: textChannels };
 	});
 
 	// Lavalink nodes status

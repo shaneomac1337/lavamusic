@@ -46,6 +46,19 @@ export default class ServerData {
 		return guild?.language ?? env.DEFAULT_LANGUAGE;
 	}
 
+	public async setTextChannel(guildId: string, textChannelId: string | null): Promise<void> {
+		await this.prisma.guild.upsert({
+			where: { guildId },
+			update: { textChannelId },
+			create: { guildId, prefix: env.PREFIX, textChannelId },
+		});
+	}
+
+	public async getTextChannel(guildId: string): Promise<string | null> {
+		const guild = await this.get(guildId);
+		return guild?.textChannelId ?? null;
+	}
+
 	public async getSetup(guildId: string): Promise<Setup | null> {
 		return await this.prisma.setup.findUnique({ where: { guildId } });
 	}
