@@ -516,7 +516,6 @@
 				"text": "The text to say"
 			}
 		},
-
 		"developer": {
 			"description": "Shows information about the bot developer"
 		}
@@ -651,5 +650,7 @@
 	"Leave a guild": "Rời khỏi một guild",
 	"List all guilds the bot is in": "Danh sách tất cả guild mà bot đang ở",
 	"Restart the bot": "Khởi động lại bot",
-	"The loop mode you want to set": "The loop mode you want to set"
+	"The loop mode you want to set": "The loop mode you want to set",
+	"Debug radio detection system": "Debug radio detection system",
+	"Debug action to perform": "Debug action to perform"
 }
