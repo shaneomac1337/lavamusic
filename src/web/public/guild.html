@@ -383,6 +383,18 @@
                     <!-- Add Track -->
                     <div class="border-t pt-4">
                         <h3 class="text-md font-medium text-gray-900 mb-2">Add Track</h3>
+
+                        <!-- Search Source Selector -->
+                        <div class="mb-3">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Search Source</label>
+                            <select id="search-source-select" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm">
+                                <option value="youtubemusic" selected>🎵 YouTube Music</option>
+                                <option value="spotify">🟢 Spotify</option>
+                                <option value="youtube">🔴 YouTube</option>
+                                <option value="soundcloud">🟠 SoundCloud</option>
+                            </select>
+                        </div>
+
                         <div class="flex space-x-2 mb-3">
                             <div class="flex-1 relative">
                                 <input type="text" id="search-input" placeholder="Search for a song or paste URL..." class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500" autocomplete="off">
@@ -782,6 +794,18 @@
             <!-- Add Track Section -->
             <div class="mb-4 p-4 border rounded-lg">
                 <h4 class="text-md font-medium text-gray-900 mb-2">Add Track</h4>
+
+                <!-- Search Source Selector for Playlist -->
+                <div class="mb-3">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Search Source</label>
+                    <select id="playlist-search-source-select" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-sm">
+                        <option value="youtubemusic" selected>🎵 YouTube Music</option>
+                        <option value="spotify">🟢 Spotify</option>
+                        <option value="youtube">🔴 YouTube</option>
+                        <option value="soundcloud">🟠 SoundCloud</option>
+                    </select>
+                </div>
+
                 <div class="flex space-x-2">
                     <div class="flex-1 relative">
                         <input type="text" id="addTrackQuery" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" placeholder="Search for a song or paste URL..." autocomplete="off">
@@ -1180,12 +1204,13 @@
 
         async function addToQueue(query) {
             try {
+                const selectedSource = document.getElementById('search-source-select').value;
                 const response = await fetch(`/api/guilds/${guildId}/player/play`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ query })
+                    body: JSON.stringify({ query, source: selectedSource })
                 });
 
                 const result = await response.json();
@@ -1217,12 +1242,13 @@
 
         async function forcePlayTrack(query) {
             try {
+                const selectedSource = document.getElementById('search-source-select').value;
                 const response = await fetch(`/api/guilds/${guildId}/player/force-play`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ query })
+                    body: JSON.stringify({ query, source: selectedSource })
                 });
 
                 const result = await response.json();
@@ -2131,12 +2157,13 @@
             }
 
             try {
+                const selectedSource = document.getElementById('playlist-search-source-select').value;
                 const response = await fetch(`/api/playlists/${currentPlaylistId}/tracks`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ query })
+                    body: JSON.stringify({ query, source: selectedSource })
                 });
 
                 const result = await response.json();
@@ -2287,6 +2314,16 @@
             return `${minutes}:${seconds.toString().padStart(2, '0')}`;
         }
 
+        function getSourceIcon(source) {
+            const sourceIcons = {
+                'youtube': '<span class="text-xs text-red-500">🔴</span>',
+                'youtubemusic': '<span class="text-xs text-red-500">🎵</span>',
+                'soundcloud': '<span class="text-xs text-orange-500">🟠</span>',
+                'spotify': '<span class="text-xs text-green-500">🟢</span>'
+            };
+            return sourceIcons[source] || '<span class="text-xs text-gray-500">🎵</span>';
+        }
+
         // Handle create playlist form submission
         document.getElementById('createPlaylistForm').addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -2395,7 +2432,7 @@
                 // Debounce search requests
                 clearTimeout(searchTimeout);
                 searchTimeout = setTimeout(() => {
-                    fetchSearchSuggestions(query, suggestionsContainer);
+                    fetchSearchSuggestions(query, suggestionsContainer, inputId);
                 }, 300);
             });
 
@@ -2435,13 +2472,21 @@
             });
         }
 
-        async function fetchSearchSuggestions(query, suggestionsContainer) {
+        async function fetchSearchSuggestions(query, suggestionsContainer, inputId) {
             try {
                 // Show loading state
                 suggestionsContainer.innerHTML = '<div class="p-3 text-center text-gray-500"><i class="fas fa-spinner fa-spin mr-2"></i>Searching...</div>';
                 suggestionsContainer.classList.remove('hidden');
 
-                const response = await fetch(`/api/search/suggestions?q=${encodeURIComponent(query)}`);
+                // Determine which source selector to use based on input
+                let selectedSource = 'youtubemusic'; // default
+                if (inputId === 'search-input') {
+                    selectedSource = document.getElementById('search-source-select').value;
+                } else if (inputId === 'addTrackQuery') {
+                    selectedSource = document.getElementById('playlist-search-source-select').value;
+                }
+
+                const response = await fetch(`/api/search/suggestions?q=${encodeURIComponent(query)}&source=${encodeURIComponent(selectedSource)}`);
                 const data = await response.json();
 
                 currentSuggestions = data.suggestions || [];
