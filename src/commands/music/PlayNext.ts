@@ -99,26 +99,59 @@ export default class PlayNext extends Command {
 		if (!player.playing && player.queue.tracks.length > 0) await player.play({ paused: false });
 	}
 	public async autocomplete(interaction: AutocompleteInteraction): Promise<void> {
-		const focusedValue = interaction.options.getFocused(true);
+		try {
+			const focusedValue = interaction.options.getFocused(true);
 
-		if (!focusedValue?.value.trim()) {
-			return interaction.respond([]);
-		}
+			if (!focusedValue?.value.trim()) {
+				return await interaction.respond([]);
+			}
 
-		const res = await this.client.manager.search(focusedValue.value.trim(), interaction.user);
-		const songs: ApplicationCommandOptionChoiceData[] = [];
+			// Get user's preferred source
+			const userSource = await this.client.db.getUserPreferredSource(interaction.user.id);
 
-		if (res.loadType === 'search') {
-			res.tracks.slice(0, 10).forEach(track => {
-				const name = `${track.info.title} by ${track.info.author}`;
-				songs.push({
-					name: name.length > 100 ? `${name.substring(0, 97)}...` : name,
-					value: track.info.uri,
+			// Map source to search engine format
+			const sourceMap: Record<string, string> = {
+				'youtubemusic': 'ytmsearch',
+				'spotify': 'spsearch',
+				'youtube': 'ytsearch',
+				'soundcloud': 'scsearch'
+			};
+
+			const searchSource = sourceMap[userSource] || 'ytmsearch';
+			const searchQuery = `${searchSource}:${focusedValue.value.trim()}`;
+
+			const res = await this.client.manager.search(searchQuery, interaction.user);
+			const songs: ApplicationCommandOptionChoiceData[] = [];
+
+			if (res.loadType === 'search') {
+				// Add source indicator to song names (text-based for Discord compatibility)
+				const sourceIndicators: Record<string, string> = {
+					'youtubemusic': '[YTM]',
+					'spotify': '[SPOT]',
+					'youtube': '[YT]',
+					'soundcloud': '[SC]'
+				};
+
+				const sourceIndicator = sourceIndicators[userSource] || '[YTM]';
+
+				res.tracks.slice(0, 10).forEach(track => {
+					const name = `${sourceIndicator} ${track.info.title} by ${track.info.author}`;
+					songs.push({
+						name: name.length > 100 ? `${name.substring(0, 97)}...` : name,
+						value: track.info.uri,
+					});
 				});
-			});
-		}
+			}
 
-		return await interaction.respond(songs);
+			return await interaction.respond(songs);
+		} catch (error) {
+			console.error('Autocomplete error:', error);
+			try {
+				return await interaction.respond([]);
+			} catch (e) {
+				// Interaction already responded, ignore
+			}
+		}
 	}
 }
 
