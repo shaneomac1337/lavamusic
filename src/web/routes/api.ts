@@ -1480,10 +1480,13 @@ export async function apiRoutes(fastify: FastifyInstance, options: ApiOptions) {
 		// Define radio station APIs
 		const radioAPIs: Record<string, string> = {
 			'hitradio-fm-plus': 'https://radia.cz/api/v1/radio/hitradio-fm-plus/songs/now.json',
-			'radio-blanik': 'https://radia.cz/api/v1/radio/blanik-cz/songs/now.json',
+			'radio-blanik': 'https://radia.cz/api/v1/radio/radio-blanik/songs/now.json',
 			'rock-radio-sumava': 'https://radia.cz/api/v1/radio/rock-radio/songs/now.json',
 			'radio-golem': '', // No API available - stream metadata only
-			'evropa2': 'https://rds.actve.net/v1/metadata/channel/evropa2'
+			'evropa2': 'https://rds.actve.net/v1/metadata/channel/evropa2',
+			'fajn-radio': 'https://radia.cz/api/v1/radio/fajn-radio/songs/now.json',
+			'radio-beat': 'https://radia.cz/api/v1/radio/radio-beat/songs/now.json',
+			'kiss-proton': 'https://radia.cz/api/v1/radio/radio-kiss/songs/now.json'
 			// More radio stations can be added here
 		};
 
@@ -1547,13 +1550,16 @@ export async function apiRoutes(fastify: FastifyInstance, options: ApiOptions) {
 			// Parse the response based on the radio station format
 			let nowPlaying = null;
 
-			if (stationId === 'hitradio-fm-plus' || stationId === 'radio-blanik' || stationId === 'rock-radio-sumava') {
-				// Parse radia.cz API response (all three stations use same format)
+			if (stationId === 'hitradio-fm-plus' || stationId === 'radio-blanik' || stationId === 'rock-radio-sumava' || stationId === 'fajn-radio' || stationId === 'radio-beat' || stationId === 'kiss-proton') {
+				// Parse radia.cz API response (all six stations use same format)
 				// Expected format: { interpret: "ARTIST", song: "TITLE", image: "URL", beginAt: "TIME", endAt: "TIME", active: true }
 				const stationNames: Record<string, string> = {
 					'hitradio-fm-plus': 'Hitradio FM Plus',
 					'radio-blanik': 'Radio Blaník',
-					'rock-radio-sumava': 'Rock Radio Šumava'
+					'rock-radio-sumava': 'Rock Radio Šumava',
+					'fajn-radio': 'Fajn Radio',
+					'radio-beat': 'Radio Beat',
+					'kiss-proton': 'Kiss Proton'
 				};
 				const stationName = stationNames[stationId];
 

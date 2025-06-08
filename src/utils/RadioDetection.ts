@@ -63,7 +63,7 @@ export class RadioDetectionService {
 		this.radioStations.set('radio-blanik', {
 			id: 'radio-blanik',
 			name: 'Radio Blaník',
-			apiUrl: 'https://radia.cz/api/v1/radio/blanik-cz/songs/now.json',
+			apiUrl: 'https://radia.cz/api/v1/radio/radio-blanik/songs/now.json',
 			streamUrls: [
 				'https://ice2.radia.cz/blanikfm128.mp3',
 				'blanikfm128.mp3',
@@ -126,6 +126,59 @@ export class RadioDetectionService {
 			],
 			apiFormat: 'actve_net', // actve.net API format
 			color: '#f59e0b',
+			country: 'CZ'
+		});
+
+		// Add Fajn Radio
+		this.radioStations.set('fajn-radio', {
+			id: 'fajn-radio',
+			name: 'Fajn Radio',
+			apiUrl: 'https://radia.cz/api/v1/radio/fajn-radio/songs/now.json',
+			streamUrls: [
+				'https://ice.abradio.cz/fajn128.mp3',
+				'fajn128.mp3',
+				'fajn128',
+				'fajn',
+				'fajn radio'
+			],
+			apiFormat: 'radia_cz',
+			color: '#10b981', // Green color
+			country: 'CZ'
+		});
+
+		// Add Radio Beat
+		this.radioStations.set('radio-beat', {
+			id: 'radio-beat',
+			name: 'Radio Beat',
+			apiUrl: 'https://radia.cz/api/v1/radio/radio-beat/songs/now.json',
+			streamUrls: [
+				'https://icecast2.play.cz/beat128aac',
+				'beat128aac',
+				'beat128',
+				'beat',
+				'radio beat'
+			],
+			apiFormat: 'radia_cz',
+			color: '#8b5cf6', // Purple color
+			country: 'CZ'
+		});
+
+		// Add Kiss Proton
+		this.radioStations.set('kiss-proton', {
+			id: 'kiss-proton',
+			name: 'Kiss Proton',
+			apiUrl: 'https://radia.cz/api/v1/radio/radio-kiss/songs/now.json',
+			streamUrls: [
+				'https://icecast1.play.cz/kissproton128.mp3',
+				'kissproton128.mp3',
+				'kissproton128',
+				'kissproton',
+				'kiss proton',
+				'kiss',
+				'proton'
+			],
+			apiFormat: 'radia_cz',
+			color: '#ec4899', // Pink color
 			country: 'CZ'
 		});
 
