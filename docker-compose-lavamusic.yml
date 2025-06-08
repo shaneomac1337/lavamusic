@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  lavamusic:
+    container_name: lavamusic
+    build: .
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      # Add your environment variables here or use .env file
+      - NODE_ENV=production
+      - WEB_DASHBOARD=true
+      - DASHBOARD_PORT=3001
+      # Uncomment and set these if not using .env file in the image:
+      # - TOKEN=your_discord_bot_token
+      # - CLIENT_ID=your_bot_client_id
+      # - NODES=[{"id":"LavaMusic","host":"localhost","port":2333,"authorization":"youshallnotpass"}]
+    volumes:
+      # Persist logs
+      - /opt/lavamusic/bot-logs:/opt/lavamusic/logs
+    healthcheck:
+      test: 'curl -f http://localhost:3001/health || exit 1'
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s

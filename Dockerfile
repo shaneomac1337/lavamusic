@@ -1,5 +1,5 @@
 # Dockerfile for LavaMusic Discord Bot
-FROM node:24-alpine AS builder
+FROM node:lts-alpine3.22 AS builder
 
 WORKDIR /app
 
@@ -7,15 +7,15 @@ WORKDIR /app
 RUN apk add --no-cache git python3 make g++ openssl openssl-dev
 
 # Clone repository
-ARG REPO_URL=https://github.com/appujet/lavamusic.git
+ARG REPO_URL=https://github.com/shaneomac1337/lavamusic.git
 ARG BRANCH=main
 RUN git clone --depth 1 --branch ${BRANCH} ${REPO_URL} .
 
 # Install dependencies and build
-RUN npm ci && npm run build && npx prisma generate
+RUN npm install && npm run build && npx prisma generate
 
 # Production stage
-FROM node:24-alpine
+FROM node:lts-alpine3.22
 
 WORKDIR /opt/lavamusic
 
@@ -32,7 +32,7 @@ COPY --from=builder /app/ ./
 COPY .env* ./
 
 # Install production dependencies
-RUN npm ci --only=production && npm cache clean --force
+RUN npm install --only=production && npm cache clean --force
 
 # Set permissions
 RUN chmod +x docker-entrypoint.sh && mkdir -p logs && chown -R lavamusic:lavamusic /opt/lavamusic
