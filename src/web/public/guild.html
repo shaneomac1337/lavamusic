@@ -863,6 +863,7 @@
                 loadTextChannels();
                 loadFilterStatus();
                 loadAdvancedSettings();
+                loadUserPreferences();
             } catch (error) {
                 console.error('Error loading guild dashboard:', error);
                 window.location.href = '/dashboard';
@@ -2322,6 +2323,63 @@
                 'spotify': '<span class="text-xs text-green-500">🟢</span>'
             };
             return sourceIcons[source] || '<span class="text-xs text-gray-500">🎵</span>';
+        }
+
+        // Load user preferences and set up source change handlers
+        async function loadUserPreferences() {
+            try {
+                const response = await fetch('/api/search/sources');
+                const data = await response.json();
+
+                // Set default source in both selectors
+                const mainSelector = document.getElementById('search-source-select');
+                const playlistSelector = document.getElementById('playlist-search-source-select');
+
+                if (mainSelector && data.default) {
+                    mainSelector.value = data.default;
+                }
+                if (playlistSelector && data.default) {
+                    playlistSelector.value = data.default;
+                }
+
+                // Add change handlers to sync preferences
+                if (mainSelector) {
+                    mainSelector.addEventListener('change', async (e) => {
+                        await updateUserPreferredSource(e.target.value);
+                        // Sync with playlist selector
+                        if (playlistSelector) {
+                            playlistSelector.value = e.target.value;
+                        }
+                    });
+                }
+
+                if (playlistSelector) {
+                    playlistSelector.addEventListener('change', async (e) => {
+                        await updateUserPreferredSource(e.target.value);
+                        // Sync with main selector
+                        if (mainSelector) {
+                            mainSelector.value = e.target.value;
+                        }
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading user preferences:', error);
+            }
+        }
+
+        // Update user's preferred source
+        async function updateUserPreferredSource(source) {
+            try {
+                await fetch('/api/search/source', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ source })
+                });
+            } catch (error) {
+                console.error('Error updating user preference:', error);
+            }
         }
 
         // Handle create playlist form submission

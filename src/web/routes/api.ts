@@ -301,7 +301,10 @@ export async function apiRoutes(fastify: FastifyInstance, options: ApiOptions) {
 	});
 
 	// Get available search sources
-	fastify.get('/search/sources', async () => {
+	fastify.get('/search/sources', async (request) => {
+		const user = request.user as any;
+		const userPreferredSource = user ? await client.db.getUserPreferredSource(user.id) : 'youtubemusic';
+
 		return {
 			sources: [
 				{ id: 'youtubemusic', name: 'YouTube Music', icon: 'fab fa-youtube' },
@@ -309,8 +312,26 @@ export async function apiRoutes(fastify: FastifyInstance, options: ApiOptions) {
 				{ id: 'youtube', name: 'YouTube', icon: 'fab fa-youtube' },
 				{ id: 'soundcloud', name: 'SoundCloud', icon: 'fab fa-soundcloud' }
 			],
-			default: 'youtubemusic'
+			default: userPreferredSource
 		};
+	});
+
+	// Update user's preferred search source
+	fastify.post('/search/source', async (request) => {
+		const user = request.user as any;
+		const { source } = request.body as { source: string };
+
+		if (!user) {
+			return { success: false, error: 'Not authenticated' };
+		}
+
+		const validSources = ['youtubemusic', 'spotify', 'youtube', 'soundcloud'];
+		if (!validSources.includes(source)) {
+			return { success: false, error: 'Invalid source' };
+		}
+
+		await client.db.setUserPreferredSource(user.id, source);
+		return { success: true, source };
 	});
 
 	// Search suggestions for autocomplete
