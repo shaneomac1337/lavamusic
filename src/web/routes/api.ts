@@ -674,7 +674,7 @@ export async function apiRoutes(fastify: FastifyInstance, options: ApiOptions) {
 	fastify.get('/guilds/:guildId/queue', async (request) => {
 		const { guildId } = request.params as { guildId: string };
 		const player = client.manager.getPlayer(guildId);
-		
+
 		if (!player) {
 			throw fastify.httpErrors.notFound('Player not found');
 		}
@@ -694,6 +694,31 @@ export async function apiRoutes(fastify: FastifyInstance, options: ApiOptions) {
 				duration: track.info.duration,
 				uri: track.info.uri,
 				thumbnail: track.info.artworkUrl,
+			})),
+		};
+	});
+
+	// Get queue with full track data for playlist creation
+	fastify.get('/guilds/:guildId/queue/full', async (request) => {
+		const { guildId } = request.params as { guildId: string };
+		const player = client.manager.getPlayer(guildId);
+
+		if (!player) {
+			throw fastify.httpErrors.notFound('Player not found');
+		}
+
+		return {
+			current: player.queue.current ? {
+				encoded: player.queue.current.encoded,
+				info: player.queue.current.info,
+				pluginInfo: player.queue.current.pluginInfo,
+				userData: player.queue.current.userData
+			} : null,
+			tracks: player.queue.tracks.map((track) => ({
+				encoded: track.encoded,
+				info: track.info,
+				pluginInfo: track.pluginInfo,
+				userData: track.userData
 			})),
 		};
 	});
