@@ -473,6 +473,26 @@
 				"voice": "Voice Type"
 			}
 		},
+		"radio": {
+			"description": "Display and play available radio stations",
+			"title": "📻 Available Radio Stations",
+			"description_text": "Choose a radio station to start streaming live music!",
+			"stations_available": "🎵 {count} Stations Available",
+			"how_to_use": "🎯 How to Use",
+			"how_to_use_text": "• Click a button below to start playing\n• Use `/play <station name>` for direct access\n• Radio streams automatically detect current songs",
+			"errors": {
+				"no_stations": "❌ No radio stations are currently available",
+				"server_only": "❌ This command can only be used in a server",
+				"station_not_found": "❌ Radio station not found.",
+				"load_failed": "❌ Could not load {station}. Please try again.",
+				"play_failed": "❌ Failed to play {station}. Please try again."
+			},
+			"messages": {
+				"now_playing": "🎵 Now playing **{station}**! {flag}",
+				"refreshed": "✅ Radio stations refreshed!",
+				"button_permission": "❌ Only the user who ran this command can use these buttons."
+			}
+		},
 		"addsong": {
 			"description": "Adds a song to the playlist",
 			"options": {
