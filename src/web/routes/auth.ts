@@ -1,9 +1,26 @@
-import type { FastifyInstance, FastifyPluginOptions } from 'fastify';
+import type { FastifyInstance, FastifyPluginOptions, FastifyRequest } from 'fastify';
 import type { Lavamusic } from '../../structures/index';
 import { env } from '../../env';
 
 interface AuthOptions extends FastifyPluginOptions {
 	client: Lavamusic;
+}
+
+// Helper function to construct redirect URI consistently
+function getRedirectUri(request: FastifyRequest): string {
+	if (env.DASHBOARD_BASE_URL) {
+		// Use configured base URL for production (e.g., https://music.komplexaci.cz)
+		return `${env.DASHBOARD_BASE_URL}/auth/discord/callback`;
+	} else {
+		// Fallback to request-based construction for local development
+		const isLocalhost = request.hostname === 'localhost' || request.hostname === '127.0.0.1';
+		if (isLocalhost) {
+			return `${request.protocol}://${request.hostname}:${env.DASHBOARD_PORT}/auth/discord/callback`;
+		} else {
+			// Production without explicit base URL - assume standard ports
+			return `${request.protocol}://${request.hostname}/auth/discord/callback`;
+		}
+	}
 }
 
 export async function authRoutes(fastify: FastifyInstance, options: AuthOptions) {
@@ -12,11 +29,14 @@ export async function authRoutes(fastify: FastifyInstance, options: AuthOptions)
 	// Discord OAuth2 login
 	fastify.get('/discord', async (request, reply) => {
 		const clientId = env.CLIENT_ID;
-		const redirectUri = `${request.protocol}://${request.hostname}:${env.DASHBOARD_PORT}/auth/discord/callback`;
-		const scope = 'identify guilds';
 
+		// Construct redirect URI - handle reverse proxy scenarios
+		const redirectUri = getRedirectUri(request);
+
+		const scope = 'identify guilds';
 		const discordAuthUrl = `https://discord.com/api/oauth2/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent(scope)}`;
 
+		console.log(`OAuth redirect URI: ${redirectUri}`);
 		reply.redirect(discordAuthUrl);
 	});
 
@@ -29,6 +49,9 @@ export async function authRoutes(fastify: FastifyInstance, options: AuthOptions)
 		}
 
 		try {
+			// Construct the same redirect URI as used in the authorization request
+			const redirectUri = getRedirectUri(request);
+
 			// Exchange code for access token
 			const tokenResponse = await fetch('https://discord.com/api/oauth2/token', {
 				method: 'POST',
@@ -40,7 +63,7 @@ export async function authRoutes(fastify: FastifyInstance, options: AuthOptions)
 					client_secret: env.CLIENT_SECRET || '',
 					grant_type: 'authorization_code',
 					code,
-					redirect_uri: `${request.protocol}://${request.hostname}:${env.DASHBOARD_PORT}/auth/discord/callback`,
+					redirect_uri: redirectUri,
 				}),
 			});
 
@@ -94,9 +117,10 @@ export async function authRoutes(fastify: FastifyInstance, options: AuthOptions)
 
 			// Set cookie and redirect
 			console.log('Setting JWT token cookie for user:', userData.username);
+			const isProduction = !!(env.DASHBOARD_BASE_URL && env.DASHBOARD_BASE_URL.startsWith('https://'));
 			reply.setCookie('token', token, {
 				httpOnly: true,
-				secure: false, // Set to false for localhost
+				secure: isProduction, // Use secure cookies for HTTPS in production
 				sameSite: 'lax',
 				path: '/', // Ensure cookie is available for all paths
 				maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
