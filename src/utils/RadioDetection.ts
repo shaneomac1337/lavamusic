@@ -65,9 +65,9 @@ export class RadioDetectionService {
 			name: 'Radio Blaník',
 			apiUrl: 'https://radia.cz/api/v1/radio/blanik-cz/songs/now.json',
 			streamUrls: [
-				'https://ice.radia.cz/blanikcz128.mp3',
-				'blanikcz128.mp3',
-				'blanikcz',
+				'https://ice2.radia.cz/blanikfm128.mp3',
+				'blanikfm128.mp3',
+				'blanikfm',
 				'blanik',
 				'radio blaník'
 			],
