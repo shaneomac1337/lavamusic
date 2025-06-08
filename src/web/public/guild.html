@@ -8,6 +8,114 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
     <style>
+        /* Light mode (default) */
+        body {
+            background-color: #f7fafc;
+            color: #1a202c;
+            transition: all 0.3s ease;
+        }
+
+        .card {
+            background-color: white;
+            border-color: #e2e8f0;
+        }
+
+        .text-primary {
+            color: #1a202c;
+        }
+
+        .text-secondary {
+            color: #4a5568;
+        }
+
+        .btn-toggle {
+            background-color: #e2e8f0;
+            color: #1a202c;
+        }
+
+        .btn-toggle:hover {
+            background-color: #cbd5e0;
+        }
+
+        /* Dark mode */
+        .dark body {
+            background-color: #1a202c;
+            color: #e2e8f0;
+        }
+
+        .dark .card {
+            background-color: #2d3748;
+            border-color: #4a5568;
+        }
+
+        .dark .text-primary {
+            color: #e2e8f0;
+        }
+
+        .dark .text-secondary {
+            color: #a0aec0;
+        }
+
+        .dark .btn-toggle {
+            background-color: #4a5568;
+            color: #e2e8f0;
+        }
+
+        .dark .btn-toggle:hover {
+            background-color: #2d3748;
+        }
+
+        .dark .bg-white {
+            background-color: #2d3748 !important;
+        }
+
+        .dark .bg-gray-50 {
+            background-color: #1a202c !important;
+        }
+
+        .dark .hover\:bg-gray-50:hover {
+            background-color: #4a5568 !important;
+        }
+
+        .dark .bg-gray-100 {
+            background-color: #1a202c !important;
+        }
+
+        .dark .bg-gray-200 {
+            background-color: #4a5568 !important;
+        }
+
+        .dark .text-gray-900 {
+            color: #e2e8f0 !important;
+        }
+
+        .dark .text-gray-700 {
+            color: #a0aec0 !important;
+        }
+
+        .dark .text-gray-500 {
+            color: #718096 !important;
+        }
+
+        .dark .border-gray-300 {
+            border-color: #4a5568 !important;
+        }
+
+        .dark .border-gray-200 {
+            border-color: #4a5568 !important;
+        }
+
+        .dark input, .dark select, .dark textarea {
+            background-color: #4a5568 !important;
+            color: #e2e8f0 !important;
+            border-color: #718096 !important;
+        }
+
+        .dark input:focus, .dark select:focus, .dark textarea:focus {
+            border-color: #667eea !important;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1) !important;
+        }
+
         .gradient-bg {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         }
@@ -29,6 +137,9 @@
         }
         .advanced-controls {
             background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+        }
+        .dark .advanced-controls {
+            background: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);
         }
         .force-play-btn {
             background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
@@ -70,8 +181,14 @@
         .search-suggestion:hover {
             background-color: #f3f4f6;
         }
+        .dark .search-suggestion:hover {
+            background-color: #4a5568;
+        }
         .search-suggestion.selected {
             background-color: #e5e7eb;
+        }
+        .dark .search-suggestion.selected {
+            background-color: #4a5568;
         }
         .suggestion-thumbnail {
             width: 40px;
@@ -90,6 +207,9 @@
             overflow: hidden;
             text-overflow: ellipsis;
         }
+        .dark .suggestion-title {
+            color: #e2e8f0;
+        }
         .suggestion-author {
             color: #6b7280;
             font-size: 0.875rem;
@@ -97,10 +217,16 @@
             overflow: hidden;
             text-overflow: ellipsis;
         }
+        .dark .suggestion-author {
+            color: #a0aec0;
+        }
         .suggestion-duration {
             color: #9ca3af;
             font-size: 0.75rem;
             white-space: nowrap;
+        }
+        .dark .suggestion-duration {
+            color: #718096;
         }
         .filter-btn {
             transition: all 0.2s ease;
@@ -154,6 +280,11 @@
                     </div>
                 </div>
                 <div class="flex items-center space-x-4">
+                    <!-- Dark Mode Toggle -->
+                    <button id="darkModeToggle" class="btn-toggle p-2 rounded-lg transition-all duration-300">
+                        <i id="moonIcon" class="fas fa-moon"></i>
+                        <i id="sunIcon" class="fas fa-sun" style="display: none;"></i>
+                    </button>
                     <button onclick="logout()" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition duration-300">
                         <i class="fas fa-sign-out-alt mr-2"></i>
                         Logout
@@ -1070,16 +1201,17 @@
                     // Handle specific error messages
                     let errorMessage = result.message || 'Failed to add track to queue';
                     if (response.status === 400 && result.message?.includes('voice channel')) {
-                        alert('You must be in a voice channel to play music');
+                        showTemporaryMessage('You must be in a voice channel to play music', 'error');
                     } else if (response.status === 403 && result.message?.includes('permission')) {
-                        alert('Bot doesn\'t have permission to join your voice channel');
+                        showTemporaryMessage('Bot doesn\'t have permission to join your voice channel', 'error');
                     } else {
                         console.error('Failed to add track to queue:', errorMessage);
+                        showTemporaryMessage(errorMessage, 'error');
                     }
                 }
             } catch (error) {
                 console.error('Error adding track to queue:', error);
-                alert('Error adding track to queue. Please try again.');
+                showTemporaryMessage('Error adding track to queue. Please try again.', 'error');
             }
         }
 
@@ -1104,16 +1236,16 @@
                     // Handle specific error messages
                     let errorMessage = result.message || 'Failed to force play track';
                     if (response.status === 400 && result.message?.includes('voice channel')) {
-                        alert('You must be in a voice channel to play music');
+                        showTemporaryMessage('You must be in a voice channel to play music', 'error');
                     } else if (response.status === 403 && result.message?.includes('permission')) {
-                        alert('Bot doesn\'t have permission to join your voice channel');
+                        showTemporaryMessage('Bot doesn\'t have permission to join your voice channel', 'error');
                     } else {
-                        alert(errorMessage);
+                        showTemporaryMessage(errorMessage, 'error');
                     }
                 }
             } catch (error) {
                 console.error('Error force playing track:', error);
-                alert('Error force playing track. Please try again.');
+                showTemporaryMessage('Error force playing track. Please try again.', 'error');
             }
         }
 
@@ -1121,7 +1253,7 @@
         async function forcePlay() {
             const query = document.getElementById('search-input').value.trim();
             if (!query) {
-                alert('Please enter a song to force play');
+                showTemporaryMessage('Please enter a song to force play', 'error');
                 return;
             }
 
@@ -1243,7 +1375,7 @@
                 }
             } catch (error) {
                 console.error('Error playing radio station:', error);
-                alert(`Failed to play ${name}: ${error.message}`);
+                showTemporaryMessage(`Failed to play ${name}: ${error.message}`, 'error');
 
                 // Restore button
                 const button = buttonElement || event.target.closest('button');
@@ -1315,7 +1447,7 @@
                     currentFairPlay = result.fairPlay;
                     updateFairPlayButton();
                     if (currentFairPlay) {
-                        alert('Fair Play enabled - Queue reordered fairly');
+                        showTemporaryMessage('Fair Play enabled - Queue reordered fairly', 'success');
                         // Queue will be updated via Socket.IO
                     }
                 }
@@ -1338,9 +1470,6 @@
         }
 
         async function shuffleQueue() {
-            if (!confirm('Are you sure you want to shuffle the queue?')) {
-                return;
-            }
 
             try {
                 const response = await fetch(`/api/guilds/${guildId}/queue/shuffle`, {
@@ -1349,19 +1478,16 @@
 
                 const result = await response.json();
                 if (result.success) {
-                    alert('Queue shuffled successfully!');
+                    showTemporaryMessage('Queue shuffled successfully!', 'success');
                     // Queue will be updated via Socket.IO
                 }
             } catch (error) {
                 console.error('Error shuffling queue:', error);
-                alert('Error shuffling queue');
+                showTemporaryMessage('Error shuffling queue', 'error');
             }
         }
 
         async function clearQueue() {
-            if (!confirm('Are you sure you want to clear the entire queue?')) {
-                return;
-            }
 
             try {
                 const response = await fetch(`/api/guilds/${guildId}/queue/clear`, {
@@ -1370,12 +1496,12 @@
 
                 const result = await response.json();
                 if (result.success) {
-                    alert(result.message);
+                    showTemporaryMessage(result.message, 'success');
                     // Queue will be updated via Socket.IO
                 }
             } catch (error) {
                 console.error('Error clearing queue:', error);
-                alert('Error clearing queue');
+                showTemporaryMessage('Error clearing queue', 'error');
             }
         }
 
@@ -1390,23 +1516,23 @@
                     const errorData = await response.json();
                     switch (response.status) {
                         case 400:
-                            alert('You need to be in a voice channel first!');
+                            showTemporaryMessage('You need to be in a voice channel first!', 'error');
                             break;
                         case 403:
-                            alert('Bot does not have permission to join your voice channel');
+                            showTemporaryMessage('Bot does not have permission to join your voice channel', 'error');
                             break;
                         case 404:
-                            alert('You are not a member of this server');
+                            showTemporaryMessage('You are not a member of this server', 'error');
                             break;
                         default:
-                            alert(errorData.message || 'Error joining voice channel');
+                            showTemporaryMessage(errorData.message || 'Error joining voice channel', 'error');
                     }
                     return;
                 }
 
                 const result = await response.json();
                 if (result.success) {
-                    alert(result.message);
+                    showTemporaryMessage(result.message, 'success');
 
                     // Immediately update the connection status with channel name
                     updateConnectionStatus(true, result.channelId, result.channelName);
@@ -1416,11 +1542,11 @@
                         await refreshGuildData();
                     }, 1000);
                 } else {
-                    alert('Failed to join your voice channel');
+                    showTemporaryMessage('Failed to join your voice channel', 'error');
                 }
             } catch (error) {
                 console.error('Error joining voice channel:', error);
-                alert('Error joining voice channel. Please try again.');
+                showTemporaryMessage('Error joining voice channel. Please try again.', 'error');
             }
         }
 
@@ -1672,9 +1798,6 @@
         }
 
         async function jumpToTrack(index) {
-            if (!confirm(`Jump to track ${index + 1}? This will skip all tracks before it.`)) {
-                return;
-            }
 
             try {
                 const response = await fetch(`/api/guilds/${guildId}/queue/jump/${index}`, {
@@ -1687,7 +1810,7 @@
                 }
             } catch (error) {
                 console.error('Error jumping to track:', error);
-                alert('Error jumping to track');
+                showTemporaryMessage('Error jumping to track', 'error');
             }
         }
 
@@ -1771,7 +1894,7 @@
                     })
                 });
 
-                alert('Settings saved successfully!');
+                showTemporaryMessage('Settings saved successfully!', 'success');
             } catch (error) {
                 console.error('Error saving settings:', error);
 
@@ -1780,16 +1903,16 @@
                     const errorData = await error.response.json();
                     switch (error.response.status) {
                         case 400:
-                            alert('Invalid text channel selected');
+                            showTemporaryMessage('Invalid text channel selected', 'error');
                             break;
                         case 403:
-                            alert('Bot does not have permission to send messages in the selected channel');
+                            showTemporaryMessage('Bot does not have permission to send messages in the selected channel', 'error');
                             break;
                         default:
-                            alert(errorData.message || 'Error saving settings');
+                            showTemporaryMessage(errorData.message || 'Error saving settings', 'error');
                     }
                 } else {
-                    alert('Error saving settings');
+                    showTemporaryMessage('Error saving settings', 'error');
                 }
             }
         }
@@ -1846,19 +1969,16 @@
 
                 const result = await response.json();
                 if (result.success) {
-                    alert(result.message);
+                    showTemporaryMessage(result.message, 'success');
                     // Queue will be updated via Socket.IO
                 }
             } catch (error) {
                 console.error('Error loading playlist:', error);
-                alert('Error loading playlist');
+                showTemporaryMessage('Error loading playlist', 'error');
             }
         }
 
         async function deletePlaylist(playlistId) {
-            if (!confirm('Are you sure you want to delete this playlist?')) {
-                return;
-            }
 
             try {
                 const response = await fetch(`/api/playlists/${playlistId}`, {
@@ -1867,12 +1987,13 @@
 
                 if (response.ok) {
                     loadPlaylists(); // Refresh playlists list
+                    showTemporaryMessage('Playlist deleted successfully', 'success');
                 } else {
-                    alert('Error deleting playlist');
+                    showTemporaryMessage('Error deleting playlist', 'error');
                 }
             } catch (error) {
                 console.error('Error deleting playlist:', error);
-                alert('Error deleting playlist');
+                showTemporaryMessage('Error deleting playlist', 'error');
             }
         }
 
@@ -1891,7 +2012,7 @@
                 const queueData = await response.json();
 
                 if (!queueData.tracks || queueData.tracks.length === 0) {
-                    alert('Queue is empty. Add some tracks first!');
+                    showTemporaryMessage('Queue is empty. Add some tracks first!', 'error');
                     return;
                 }
 
@@ -1900,7 +2021,7 @@
                 showCreatePlaylistModal();
             } catch (error) {
                 console.error('Error getting queue:', error);
-                alert('Error accessing queue');
+                showTemporaryMessage('Error accessing queue', 'error');
             }
         }
 
@@ -1959,7 +2080,7 @@
                 document.getElementById('playlistDetailsModal').classList.remove('hidden');
             } catch (error) {
                 console.error('Error loading playlist details:', error);
-                alert('Error loading playlist details');
+                showTemporaryMessage('Error loading playlist details', 'error');
             }
         }
 
@@ -1986,6 +2107,12 @@
                         </div>
                     </div>
                     <div class="flex space-x-1">
+                        <button onclick="playTrackFromPlaylist('${track.uri.replace(/'/g, "\\'")}', '${track.title.replace(/'/g, "\\'")}', false)" class="text-green-600 hover:text-green-800 p-1" title="Add to queue">
+                            <i class="fas fa-plus text-xs"></i>
+                        </button>
+                        <button onclick="playTrackFromPlaylist('${track.uri.replace(/'/g, "\\'")}', '${track.title.replace(/'/g, "\\'")}', true)" class="text-blue-600 hover:text-blue-800 p-1" title="Force play now">
+                            <i class="fas fa-play text-xs"></i>
+                        </button>
                         <button onclick="removeTrackFromPlaylist(${index})" class="text-red-600 hover:text-red-800 p-1" title="Remove track">
                             <i class="fas fa-times text-xs"></i>
                         </button>
@@ -1999,7 +2126,7 @@
 
             const query = document.getElementById('addTrackQuery').value.trim();
             if (!query) {
-                alert('Please enter a song name or URL');
+                showTemporaryMessage('Please enter a song name or URL', 'error');
                 return;
             }
 
@@ -2016,20 +2143,57 @@
                 if (response.ok) {
                     document.getElementById('addTrackQuery').value = '';
                     showPlaylistDetails(currentPlaylistId); // Refresh the view
-                    alert(result.message);
+                    showTemporaryMessage(result.message, 'success');
                 } else {
-                    alert(result.message || 'Error adding track');
+                    showTemporaryMessage(result.message || 'Error adding track', 'error');
                 }
             } catch (error) {
                 console.error('Error adding track:', error);
-                alert('Error adding track');
+                showTemporaryMessage('Error adding track', 'error');
+            }
+        }
+
+        async function playTrackFromPlaylist(trackUri, trackTitle, forcePlay = false) {
+            try {
+                const endpoint = forcePlay ? 'force-play' : 'add';
+                const response = await fetch(`/api/guilds/${guildId}/player/${endpoint}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ query: trackUri })
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    let message = forcePlay ?
+                        `Now force playing: ${trackTitle}` :
+                        `Added to queue: ${trackTitle}`;
+
+                    if (result.autoJoined) {
+                        message += ' (Bot automatically joined your voice channel)';
+                    }
+
+                    // Show success message briefly
+                    showTemporaryMessage(message, 'success');
+                } else {
+                    // Handle specific error messages
+                    let errorMessage = result.message || 'Error playing track';
+                    if (result.message?.includes('voice channel')) {
+                        errorMessage = 'You must be in a voice channel to play music';
+                    } else if (result.message?.includes('permission')) {
+                        errorMessage = 'Bot doesn\'t have permission to join your voice channel';
+                    }
+                    showTemporaryMessage(errorMessage, 'error');
+                }
+            } catch (error) {
+                console.error('Error playing track from playlist:', error);
+                showTemporaryMessage('Error playing track. Please try again.', 'error');
             }
         }
 
         async function removeTrackFromPlaylist(trackIndex) {
             if (!currentPlaylistId) return;
-
-            if (!confirm('Remove this track from the playlist?')) return;
 
             try {
                 const response = await fetch(`/api/playlists/${currentPlaylistId}/tracks/${trackIndex}`, {
@@ -2039,14 +2203,44 @@
                 const result = await response.json();
                 if (response.ok) {
                     showPlaylistDetails(currentPlaylistId); // Refresh the view
-                    alert(result.message);
+                    // No notification needed - the track disappearing from the list is feedback enough
                 } else {
-                    alert(result.message || 'Error removing track');
+                    showTemporaryMessage(result.message || 'Error removing track', 'error');
                 }
             } catch (error) {
                 console.error('Error removing track:', error);
-                alert('Error removing track');
+                showTemporaryMessage('Error removing track', 'error');
             }
+        }
+
+        // Helper function to show temporary messages instead of alerts
+        function showTemporaryMessage(message, type = 'info') {
+            // Remove any existing message
+            const existingMessage = document.getElementById('temp-message');
+            if (existingMessage) {
+                existingMessage.remove();
+            }
+
+            // Create new message element
+            const messageDiv = document.createElement('div');
+            messageDiv.id = 'temp-message';
+            messageDiv.className = `fixed top-4 left-1/2 transform -translate-x-1/2 z-50 px-4 py-2 rounded-lg shadow-lg transition-all duration-300 ${
+                type === 'success' ? 'bg-green-500 text-white' :
+                type === 'error' ? 'bg-red-500 text-white' :
+                'bg-blue-500 text-white'
+            }`;
+            messageDiv.textContent = message;
+
+            // Add to page
+            document.body.appendChild(messageDiv);
+
+            // Auto-remove after 3 seconds
+            setTimeout(() => {
+                if (messageDiv) {
+                    messageDiv.style.opacity = '0';
+                    setTimeout(() => messageDiv.remove(), 300);
+                }
+            }, 3000);
         }
 
         async function loadCurrentPlaylist() {
@@ -2069,21 +2263,21 @@
                     if (result.autoJoined) {
                         message += ' (Bot automatically joined your voice channel)';
                     }
-                    alert(message);
+                    showTemporaryMessage(message, 'success');
                 } else {
                     // Handle specific error messages
                     let errorMessage = result.message || 'Error loading playlist';
                     if (response.status === 400 && result.message?.includes('voice channel')) {
-                        alert('You must be in a voice channel to load a playlist');
+                        showTemporaryMessage('You must be in a voice channel to load a playlist', 'error');
                     } else if (response.status === 403 && result.message?.includes('permission')) {
-                        alert('Bot doesn\'t have permission to join your voice channel');
+                        showTemporaryMessage('Bot doesn\'t have permission to join your voice channel', 'error');
                     } else {
-                        alert(errorMessage);
+                        showTemporaryMessage(errorMessage, 'error');
                     }
                 }
             } catch (error) {
                 console.error('Error loading playlist:', error);
-                alert('Error loading playlist. Please try again.');
+                showTemporaryMessage('Error loading playlist. Please try again.', 'error');
             }
         }
 
@@ -2106,7 +2300,7 @@
 
             if (includeQueue) {
                 try {
-                    const response = await fetch(`/api/guilds/${guildId}/queue`);
+                    const response = await fetch(`/api/guilds/${guildId}/queue/full`);
                     const queueData = await response.json();
                     tracks = queueData.tracks || [];
                 } catch (error) {
@@ -2132,14 +2326,14 @@
                 if (response.ok) {
                     hideCreatePlaylistModal();
                     loadPlaylists(); // Refresh playlists list
-                    alert('Playlist created successfully!');
+                    showTemporaryMessage('Playlist created successfully!', 'success');
                 } else {
                     const error = await response.json();
-                    alert(error.message || 'Error creating playlist');
+                    showTemporaryMessage(error.message || 'Error creating playlist', 'error');
                 }
             } catch (error) {
                 console.error('Error creating playlist:', error);
-                alert('Error creating playlist');
+                showTemporaryMessage('Error creating playlist', 'error');
             }
         });
 
@@ -2171,13 +2365,13 @@
                 if (response.ok) {
                     hideImportPlaylistModal();
                     loadPlaylists(); // Refresh playlists list
-                    alert(result.message);
+                    showTemporaryMessage(result.message, 'success');
                 } else {
-                    alert(result.message || 'Error importing playlist');
+                    showTemporaryMessage(result.message || 'Error importing playlist', 'error');
                 }
             } catch (error) {
                 console.error('Error importing playlist:', error);
-                alert('Error importing playlist');
+                showTemporaryMessage('Error importing playlist', 'error');
             }
         });
 
@@ -2390,9 +2584,9 @@
                     updateAdvancedSettingsUI();
 
                     if (result.enabled) {
-                        alert('24/7 Mode enabled - Bot will stay in voice channel');
+                        showTemporaryMessage('24/7 Mode enabled - Bot will stay in voice channel', 'success');
                     } else {
-                        alert('24/7 Mode disabled - Bot will leave when queue is empty');
+                        showTemporaryMessage('24/7 Mode disabled - Bot will leave when queue is empty', 'success');
                     }
                 }
             } catch (error) {
@@ -2415,9 +2609,9 @@
                     updateAdvancedSettingsUI();
 
                     if (result.enabled) {
-                        alert('Autoplay enabled - Similar tracks will play when queue ends');
+                        showTemporaryMessage('Autoplay enabled - Similar tracks will play when queue ends', 'success');
                     } else {
-                        alert('Autoplay disabled - Playback will stop when queue ends');
+                        showTemporaryMessage('Autoplay disabled - Playback will stop when queue ends', 'success');
                     }
                 }
             } catch (error) {
@@ -2509,7 +2703,12 @@
 
                 if (response.ok) {
                     const result = await response.json();
-                    currentFilters[filterType] = result.enabled;
+                    // Map 8d filter to rotation property for consistency
+                    if (filterType === '8d') {
+                        currentFilters.rotation = result.enabled;
+                    } else {
+                        currentFilters[filterType] = result.enabled;
+                    }
                     updateFilterUI();
                 }
             } catch (error) {
@@ -2552,9 +2751,6 @@
         }
 
         async function resetFilters() {
-            if (!confirm('Are you sure you want to reset all audio filters?')) {
-                return;
-            }
 
             try {
                 const response = await fetch(`/api/guilds/${guildId}/filters/reset`, {
@@ -2575,7 +2771,7 @@
                         speed: 1
                     };
                     updateFilterUI();
-                    alert('All filters have been reset!');
+                    showTemporaryMessage('All filters have been reset!', 'success');
                 }
             } catch (error) {
                 console.error('Error resetting filters:', error);
@@ -2592,9 +2788,42 @@
             }
         }
 
+        // Dark mode toggle functionality
+        function initDarkMode() {
+            const darkModeToggle = document.getElementById('darkModeToggle');
+            const moonIcon = document.getElementById('moonIcon');
+            const sunIcon = document.getElementById('sunIcon');
+            const html = document.documentElement;
+
+            // Check for saved theme preference or default to dark mode
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+
+            function setTheme(isDark) {
+                if (isDark) {
+                    html.classList.add('dark');
+                    moonIcon.style.display = 'none';
+                    sunIcon.style.display = 'inline';
+                } else {
+                    html.classList.remove('dark');
+                    moonIcon.style.display = 'inline';
+                    sunIcon.style.display = 'none';
+                }
+            }
+
+            // Initialize theme
+            setTheme(savedTheme === 'dark');
+
+            darkModeToggle.addEventListener('click', () => {
+                const isDark = !html.classList.contains('dark');
+                setTheme(isDark);
+                localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            });
+        }
+
         // Initialize on page load
         document.addEventListener('DOMContentLoaded', () => {
             initGuildDashboard();
+            initDarkMode();
 
             // Setup search autocomplete for both search inputs
             setupSearchAutocomplete('search-input', 'search-suggestions');

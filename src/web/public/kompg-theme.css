@@ -1,0 +1,929 @@
+/* KOMPG Theme for Music Dashboard - Matching komplexaci.cz styling */
+
+:root {
+    /* KOMPG Color Variables - Improved Readability */
+    --primary-color: #6e4ff6;
+    --secondary-color: #ff4757;
+    --dark-bg: #1f2937;
+    --darker-bg: #111827;
+    --light-text: #ffffff;
+    --medium-text: #d1d5db;
+    --accent-color: #00d2ff;
+    --discord-color: #5865F2;
+    --transition: all 0.3s ease;
+    --card-bg: #374151;
+    --border-color: #4b5563;
+}
+
+/* Override Tailwind with KOMPG styling */
+body {
+    font-family: 'Roboto', sans-serif !important;
+    background-color: var(--dark-bg) !important;
+    color: var(--light-text) !important;
+    line-height: 1.6;
+    overflow-x: hidden;
+    position: relative;
+}
+
+/* Typography matching KOMPG */
+h1, h2, h3, h4, h5, h6 {
+    font-family: 'Exo 2', sans-serif !important;
+    font-weight: 700 !important;
+    line-height: 1.2;
+    margin-bottom: 15px;
+    color: var(--light-text) !important;
+}
+
+/* Navigation Bar - KOMPG Style */
+.gradient-bg {
+    background: rgba(10, 10, 10, 0.9) !important;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+.gradient-bg h1 {
+    background: linear-gradient(135deg, var(--primary-color), var(--accent-color)) !important;
+    -webkit-background-clip: text !important;
+    background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+    color: var(--primary-color) !important;
+}
+
+/* Buttons - Subtle KOMPG Style */
+.bg-white {
+    background: #6b7280 !important;
+    color: white !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+    border: none !important;
+    font-family: 'Exo 2', sans-serif !important;
+    font-weight: 600 !important;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.bg-white:hover {
+    background: #9ca3af !important;
+    color: white !important;
+}
+
+/* Cards - KOMPG Style */
+.bg-white.shadow {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3) !important;
+    border-radius: 15px !important;
+    position: relative;
+    overflow: hidden;
+}
+
+.bg-white.shadow::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(156, 163, 175, 0.1),
+        transparent
+    );
+    transition: left 0.6s ease;
+}
+
+.bg-white.shadow:hover::before {
+    left: 100%;
+}
+
+.bg-white.shadow:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3) !important;
+    border-color: rgba(156, 163, 175, 0.2) !important;
+}
+
+/* Text Colors - KOMPG Style with Better Readability */
+.text-gray-900 {
+    color: var(--light-text) !important;
+    font-weight: 500 !important;
+}
+
+.text-gray-500 {
+    color: var(--medium-text) !important;
+    font-weight: 400 !important;
+}
+
+.text-gray-400 {
+    color: var(--medium-text) !important;
+    font-weight: 400 !important;
+}
+
+.text-gray-300 {
+    color: var(--light-text) !important;
+    font-weight: 400 !important;
+}
+
+.text-white {
+    color: var(--light-text) !important;
+    font-weight: 500 !important;
+}
+
+.text-purple-600 {
+    color: var(--primary-color) !important;
+    font-weight: 500 !important;
+}
+
+.text-yellow-300 {
+    color: var(--accent-color) !important;
+    font-weight: 500 !important;
+}
+
+.text-purple-200 {
+    color: var(--medium-text) !important;
+    font-weight: 400 !important;
+}
+
+/* Background Colors - KOMPG Style with Better Readability */
+.bg-gray-100 {
+    background-color: var(--card-bg) !important;
+    color: var(--light-text) !important;
+}
+
+.bg-gray-200 {
+    background-color: var(--dark-bg) !important;
+    color: var(--light-text) !important;
+}
+
+.bg-gray-600 {
+    background: #9ca3af !important;
+    color: #111827 !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+    font-weight: 500 !important;
+}
+
+.bg-gray-600:hover {
+    background: #d1d5db !important;
+    color: #111827 !important;
+}
+
+.bg-gray-700 {
+    background: #6b7280 !important;
+    color: white !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+    font-weight: 500 !important;
+}
+
+.bg-gray-700:hover {
+    background: #9ca3af !important;
+    color: #111827 !important;
+}
+
+.bg-gray-800 {
+    background: #4b5563 !important;
+    color: white !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+    font-weight: 500 !important;
+}
+
+.bg-gray-800:hover {
+    background: #6b7280 !important;
+    color: white !important;
+}
+
+/* Links - KOMPG Style */
+a {
+    color: var(--accent-color) !important;
+    transition: var(--transition);
+}
+
+a:hover {
+    color: var(--primary-color) !important;
+}
+
+/* Status indicators - KOMPG Style */
+.status-online {
+    color: #10b981 !important;
+}
+
+.status-offline {
+    color: #ef4444 !important;
+}
+
+.status-idle {
+    color: #f59e0b !important;
+}
+
+/* Hero Section - KOMPG Style */
+.gradient-bg .max-w-7xl {
+    position: relative;
+}
+
+.gradient-bg .max-w-7xl::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background:
+        radial-gradient(circle at 20% 80%, rgba(255, 70, 85, 0.15) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(156, 163, 175, 0.15) 0%, transparent 50%),
+        radial-gradient(circle at 40% 40%, rgba(0, 212, 255, 0.1) 0%, transparent 50%);
+    animation: neonGeometricShift 12s ease-in-out infinite;
+    z-index: 0;
+    pointer-events: none;
+}
+
+@keyframes neonGeometricShift {
+    0%, 100% {
+        transform: translateX(0) rotate(0deg) scale(1);
+        filter: hue-rotate(0deg);
+    }
+    25% {
+        transform: translateX(5px) rotate(1deg) scale(1.02);
+        filter: hue-rotate(90deg);
+    }
+    50% {
+        transform: translateX(-5px) rotate(-1deg) scale(0.98);
+        filter: hue-rotate(180deg);
+    }
+    75% {
+        transform: translateX(3px) rotate(0.5deg) scale(1.01);
+        filter: hue-rotate(270deg);
+    }
+}
+
+/* Animated Background Particles */
+.particles-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: -1;
+    opacity: 0.3;
+}
+
+.particle {
+    position: absolute;
+    background: var(--accent-color);
+    border-radius: 50%;
+    opacity: 0.02;
+    animation: float 30s infinite linear;
+}
+
+.particle:nth-child(odd) {
+    background: var(--primary-color);
+    animation-duration: 35s;
+    opacity: 0.015;
+}
+
+.particle:nth-child(3n) {
+    background: var(--secondary-color);
+    animation-duration: 40s;
+    opacity: 0.01;
+}
+
+@keyframes float {
+    0% {
+        transform: translateY(100vh) translateX(-100px) rotate(0deg);
+        opacity: 0;
+    }
+    10% {
+        opacity: 0.02;
+    }
+    90% {
+        opacity: 0.02;
+    }
+    100% {
+        transform: translateY(-100px) translateX(100px) rotate(360deg);
+        opacity: 0;
+    }
+}
+
+/* Custom scrollbar - KOMPG Style */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--darker-bg);
+}
+
+::-webkit-scrollbar-thumb {
+    background: #6b7280;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #9ca3af;
+}
+
+/* Dashboard-specific styling */
+.bg-red-500 {
+    background: linear-gradient(135deg, #ff6b7a, var(--secondary-color)) !important;
+    color: white !important;
+    box-shadow: 0 2px 8px rgba(255, 71, 87, 0.3) !important;
+    transition: all 0.3s ease !important;
+}
+
+.bg-red-500:hover {
+    background: linear-gradient(135deg, var(--secondary-color), #ff6b7a) !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 12px rgba(255, 71, 87, 0.4) !important;
+}
+
+.bg-green-600 {
+    background: linear-gradient(135deg, #34d399, #10b981) !important;
+    color: white !important;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3) !important;
+    transition: all 0.3s ease !important;
+}
+
+.bg-green-600:hover {
+    background: linear-gradient(135deg, #10b981, #34d399) !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4) !important;
+}
+
+.bg-blue-600 {
+    background: #6b7280 !important;
+    color: white !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+}
+
+.bg-blue-600:hover {
+    background: #9ca3af !important;
+    color: white !important;
+}
+
+.bg-purple-500, .bg-purple-600 {
+    background: #6b7280 !important;
+    color: white !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+}
+
+.bg-purple-500:hover, .bg-purple-600:hover {
+    background: #9ca3af !important;
+    color: white !important;
+}
+
+/* Input fields - KOMPG Style with Better Readability */
+input[type="text"], input[type="number"], input[type="range"], select, textarea {
+    background: var(--card-bg) !important;
+    border: 1px solid var(--border-color) !important;
+    color: var(--light-text) !important;
+    border-radius: 8px !important;
+    transition: all 0.3s ease !important;
+    font-weight: 400 !important;
+    padding: 8px 12px !important;
+}
+
+input[type="text"]:focus, input[type="number"]:focus, select:focus, textarea:focus {
+    border-color: #9ca3af !important;
+    box-shadow: 0 0 4px rgba(156, 163, 175, 0.3) !important;
+    outline: none !important;
+}
+
+/* Range sliders - KOMPG Style */
+input[type="range"] {
+    -webkit-appearance: none !important;
+    appearance: none !important;
+    background: rgba(255, 255, 255, 0.1) !important;
+    border-radius: 5px !important;
+    height: 6px !important;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none !important;
+    appearance: none !important;
+    width: 18px !important;
+    height: 18px !important;
+    border-radius: 50% !important;
+    background: #9ca3af !important;
+    cursor: pointer !important;
+    box-shadow: 0 0 4px rgba(0, 0, 0, 0.2) !important;
+}
+
+input[type="range"]::-moz-range-thumb {
+    width: 18px !important;
+    height: 18px !important;
+    border-radius: 50% !important;
+    background: #9ca3af !important;
+    cursor: pointer !important;
+    border: none !important;
+    box-shadow: 0 0 4px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* Progress bars - KOMPG Style */
+.progress-bar {
+    background: rgba(255, 255, 255, 0.1) !important;
+    border-radius: 10px !important;
+    overflow: hidden !important;
+}
+
+.progress-fill {
+    background: #9ca3af !important;
+    transition: width 0.3s ease !important;
+    box-shadow: 0 0 4px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Radio progress bars - Red for LIVE */
+.radio-progress .progress-fill {
+    background: linear-gradient(135deg, var(--secondary-color), #c0392b) !important;
+    box-shadow: 0 0 10px rgba(255, 71, 87, 0.3) !important;
+}
+
+/* Modal styling - KOMPG Style */
+.fixed.inset-0 {
+    background: rgba(10, 10, 10, 0.85) !important;
+    backdrop-filter: blur(8px) !important;
+    -webkit-backdrop-filter: blur(8px) !important;
+}
+
+/* Card hover effects */
+.card-hover:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Status indicators with KOMPG colors */
+.text-green-600, .text-green-500 {
+    color: #10b981 !important;
+    text-shadow: 0 0 5px rgba(16, 185, 129, 0.5) !important;
+}
+
+.text-red-500, .text-red-600 {
+    color: var(--secondary-color) !important;
+    text-shadow: 0 0 5px rgba(255, 71, 87, 0.5) !important;
+}
+
+.text-blue-500, .text-blue-600 {
+    color: var(--accent-color) !important;
+    text-shadow: 0 0 5px rgba(0, 210, 255, 0.5) !important;
+}
+
+/* Queue and playlist items - Better Readability */
+.bg-gray-50 {
+    background: var(--card-bg) !important;
+    border: 1px solid var(--border-color) !important;
+    color: var(--light-text) !important;
+}
+
+.bg-gray-50:hover, .hover\\:bg-gray-100:hover {
+    background: #4b5563 !important;
+    border-color: #6b7280 !important;
+    color: var(--light-text) !important;
+}
+
+/* Footer styling */
+.bg-gray-800 {
+    background: var(--darker-bg) !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.text-gray-400 {
+    color: var(--medium-text) !important;
+}
+
+/* Completely remove all purple highlighting and flashing effects */
+::selection {
+    background-color: rgba(156, 163, 175, 0.3) !important;
+    color: var(--light-text) !important;
+}
+
+::-moz-selection {
+    background-color: rgba(156, 163, 175, 0.3) !important;
+    color: var(--light-text) !important;
+}
+
+/* Remove ALL focus outlines and purple effects */
+*, *:focus, *:hover, *:active {
+    outline: none !important;
+}
+
+button:focus, input:focus, select:focus, textarea:focus, a:focus {
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+/* Override Tailwind focus classes */
+.focus\\:ring-purple-500:focus,
+.focus\\:ring-purple-600:focus,
+.focus\\:ring-blue-500:focus,
+.focus\\:ring:focus,
+.focus\\:outline-none:focus {
+    outline: none !important;
+    box-shadow: none !important;
+    ring: none !important;
+}
+
+/* Remove any hover ring effects */
+.hover\\:ring:hover,
+.hover\\:ring-purple-500:hover,
+.hover\\:ring-purple-600:hover {
+    box-shadow: none !important;
+    ring: none !important;
+}
+
+/* Remove transition effects that cause flashing */
+.transition-all,
+.transition,
+.transition-colors {
+    transition: none !important;
+}
+
+/* Specific styling for toggle buttons (Repeat, Fair Play, Shuffle, Clear) */
+button[onclick*="toggleRepeat"],
+button[onclick*="toggleFairPlay"],
+button[onclick*="toggleShuffle"],
+button[onclick*="clearQueue"],
+.toggle-button {
+    background: #6b7280 !important;
+    color: white !important;
+    border: 1px solid #9ca3af !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+    transition: all 0.3s ease !important;
+}
+
+button[onclick*="toggleRepeat"]:hover,
+button[onclick*="toggleFairPlay"]:hover,
+button[onclick*="toggleShuffle"]:hover,
+button[onclick*="clearQueue"]:hover,
+.toggle-button:hover {
+    background: #9ca3af !important;
+    color: white !important;
+    border-color: #d1d5db !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Active/enabled state for toggle buttons */
+button[onclick*="toggleRepeat"].active,
+button[onclick*="toggleFairPlay"].active,
+button[onclick*="toggleShuffle"].active,
+.toggle-button.active {
+    background: #4b5563 !important;
+    color: white !important;
+    border-color: #6b7280 !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* Override any dark button classes */
+.bg-gray-900 {
+    background: #6b7280 !important;
+    color: white !important;
+    border: 1px solid #9ca3af !important;
+}
+
+.bg-gray-900:hover {
+    background: #9ca3af !important;
+    color: white !important;
+    border-color: #d1d5db !important;
+}
+
+/* Audio Filter Buttons - Bass Boost, Audio Effects */
+button[onclick*="setBassBoost"],
+button[onclick*="toggle8D"],
+button[onclick*="toggleNightcore"],
+button[onclick*="toggleKaraoke"],
+button[onclick*="toggleVibrato"],
+button[onclick*="toggleTremolo"],
+button[onclick*="toggleLowPass"],
+.filter-button,
+.bass-button,
+.effect-button {
+    background: #6b7280 !important;
+    color: white !important;
+    border: 1px solid #9ca3af !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+}
+
+button[onclick*="setBassBoost"]:hover,
+button[onclick*="toggle8D"]:hover,
+button[onclick*="toggleNightcore"]:hover,
+button[onclick*="toggleKaraoke"]:hover,
+button[onclick*="toggleVibrato"]:hover,
+button[onclick*="toggleTremolo"]:hover,
+button[onclick*="toggleLowPass"]:hover,
+.filter-button:hover,
+.bass-button:hover,
+.effect-button:hover {
+    background: #9ca3af !important;
+    color: white !important;
+    border-color: #d1d5db !important;
+}
+
+/* Active state for audio filter buttons */
+button[onclick*="setBassBoost"].active,
+button[onclick*="toggle8D"].active,
+button[onclick*="toggleNightcore"].active,
+button[onclick*="toggleKaraoke"].active,
+button[onclick*="toggleVibrato"].active,
+button[onclick*="toggleTremolo"].active,
+button[onclick*="toggleLowPass"].active,
+.filter-button.active,
+.bass-button.active,
+.effect-button.active {
+    background: #4b5563 !important;
+    color: white !important;
+    border-color: #6b7280 !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* Override any black/very dark backgrounds */
+.bg-black {
+    background: #6b7280 !important;
+    color: white !important;
+}
+
+.bg-black:hover {
+    background: #9ca3af !important;
+    color: white !important;
+}
+
+/* General Readability Improvements */
+body {
+    font-family: 'Exo 2', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+    line-height: 1.6 !important;
+    color: var(--light-text) !important;
+    background: var(--dark-bg) !important;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    color: var(--light-text) !important;
+    font-weight: 600 !important;
+    line-height: 1.4 !important;
+}
+
+p, span, div {
+    color: var(--light-text) !important;
+    line-height: 1.6 !important;
+}
+
+/* Better contrast for labels and small text */
+label {
+    color: var(--light-text) !important;
+    font-weight: 500 !important;
+    font-size: 0.9rem !important;
+}
+
+small {
+    color: var(--medium-text) !important;
+    font-weight: 400 !important;
+}
+
+/* Modal content readability */
+.modal-content, .dialog-content {
+    background: var(--card-bg) !important;
+    color: var(--light-text) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 12px !important;
+}
+
+/* Better button text readability */
+button {
+    font-weight: 500 !important;
+    letter-spacing: 0.5px !important;
+}
+
+/* Improve link readability */
+a {
+    color: var(--accent-color) !important;
+    font-weight: 500 !important;
+    text-decoration: none !important;
+}
+
+a:hover {
+    color: var(--light-text) !important;
+    text-decoration: underline !important;
+}
+
+/* Completely remove ALL purple hover effects */
+*:hover {
+    box-shadow: none !important;
+}
+
+/* Override any remaining purple/blue hover effects */
+.hover\\:bg-purple-500:hover,
+.hover\\:bg-purple-600:hover,
+.hover\\:bg-blue-500:hover,
+.hover\\:bg-blue-600:hover {
+    background: #9ca3af !important;
+    color: white !important;
+}
+
+/* Music player button overrides */
+button[class*="bg-"]:hover {
+    box-shadow: none !important;
+    border-color: transparent !important;
+}
+
+/* Remove any Tailwind hover ring effects */
+.hover\\:ring-2:hover,
+.hover\\:ring-4:hover,
+.hover\\:ring:hover {
+    box-shadow: none !important;
+    ring: none !important;
+}
+
+/* Override any focus-visible effects */
+*:focus-visible {
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+/* Remove any transform hover effects that might show purple */
+*:hover {
+    transform: none !important;
+}
+
+/* Specific override for music control buttons */
+.music-controls button:hover,
+.player-controls button:hover {
+    background: #9ca3af !important;
+    color: white !important;
+    box-shadow: none !important;
+    border-color: transparent !important;
+}
+
+/* Page Structure and Visual Separation */
+.container, .max-w-7xl {
+    border: 1px solid var(--border-color) !important;
+    border-radius: 12px !important;
+    background: var(--card-bg) !important;
+    margin: 20px auto !important;
+    padding: 24px !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Hero section styling */
+.gradient-bg {
+    background: linear-gradient(135deg, var(--dark-bg) 0%, var(--darker-bg) 100%) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 16px !important;
+    margin-bottom: 32px !important;
+    padding: 48px 24px !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* Feature sections */
+.grid > div {
+    background: var(--card-bg) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 12px !important;
+    padding: 24px !important;
+    margin: 12px !important;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2) !important;
+    transition: all 0.3s ease !important;
+}
+
+.grid > div:hover {
+    background: #4b5563 !important;
+    border-color: #6b7280 !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Section headers */
+h1, h2, h3 {
+    border-bottom: 2px solid var(--border-color) !important;
+    padding-bottom: 12px !important;
+    margin-bottom: 24px !important;
+}
+
+/* Stats cards */
+.bg-white.overflow-hidden.shadow {
+    background: var(--card-bg) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 12px !important;
+    margin: 12px !important;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* Navigation and header */
+.bg-gray-800 {
+    background: var(--darker-bg) !important;
+    border-bottom: 2px solid var(--border-color) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Content sections separation */
+.space-y-6 > * {
+    border: 1px solid var(--border-color) !important;
+    border-radius: 12px !important;
+    padding: 20px !important;
+    background: var(--card-bg) !important;
+    margin-bottom: 24px !important;
+}
+
+/* Guild list items */
+.hover\\:bg-gray-50 {
+    background: var(--card-bg) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 8px !important;
+    margin: 8px 0 !important;
+    padding: 16px !important;
+}
+
+.hover\\:bg-gray-50:hover {
+    background: #4b5563 !important;
+    border-color: #6b7280 !important;
+}
+
+/* Landing Page Specific Styling */
+/* Override inline gradient styles */
+.gradient-bg {
+    background: linear-gradient(135deg, var(--dark-bg) 0%, var(--darker-bg) 100%) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 0 !important; /* Keep full width for nav and hero */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Features section background */
+.bg-white {
+    background: var(--card-bg) !important;
+    border-top: 2px solid var(--border-color) !important;
+    border-bottom: 2px solid var(--border-color) !important;
+    padding: 48px 0 !important;
+}
+
+/* Feature cards styling */
+.card-hover.bg-white {
+    background: var(--darker-bg) !important;
+    border: 2px solid var(--border-color) !important;
+    border-radius: 12px !important;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3) !important;
+    margin: 16px !important;
+    transition: all 0.3s ease !important;
+}
+
+.card-hover.bg-white:hover {
+    background: #4b5563 !important;
+    border-color: #6b7280 !important;
+    transform: translateY(-4px) !important;
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* Feature icons */
+.bg-purple-500 {
+    background: #6b7280 !important;
+    border: 1px solid var(--border-color) !important;
+}
+
+/* Section headers */
+.text-purple-600 {
+    color: var(--accent-color) !important;
+    border-bottom: 2px solid var(--border-color) !important;
+    padding-bottom: 8px !important;
+    display: inline-block !important;
+}
+
+/* Main content containers */
+.max-w-7xl {
+    background: transparent !important;
+    border: none !important;
+    margin: 0 auto !important;
+    padding: 0 1rem !important;
+}
+
+/* Hero section specific */
+.gradient-bg .max-w-7xl {
+    background: transparent !important;
+    border: none !important;
+    padding: 4rem 1rem !important;
+}
+
+/* Features section container */
+.bg-white .max-w-7xl {
+    background: transparent !important;
+    border: none !important;
+    padding: 3rem 1rem !important;
+}
+
+/* Footer styling */
+.bg-gray-800 {
+    background: var(--darker-bg) !important;
+    border-top: 2px solid var(--border-color) !important;
+    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Navigation improvements */
+nav.gradient-bg {
+    border-radius: 0 !important;
+    border: none !important;
+    border-bottom: 2px solid var(--border-color) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Grid layout improvements */
+.md\\:grid {
+    gap: 24px !important;
+}
+
+.space-y-10 > * + * {
+    margin-top: 24px !important;
+}
