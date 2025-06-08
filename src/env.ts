@@ -72,6 +72,7 @@ const envSchema = z.object({
 		return val;
 	}, z.number().default(3001)),
 	DASHBOARD_SECRET: z.string().optional(),
+	DASHBOARD_BASE_URL: z.string().optional(),
 });
 
 type Env = z.infer<typeof envSchema>;
