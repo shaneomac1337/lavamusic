@@ -84,23 +84,75 @@ export default class Help extends Command {
 			return await ctx.sendMessage({ embeds: [helpEmbed] });
 		}
 
-		const fields = categories.map(category => ({
-			name: category,
-			value: commands
-				.filter(cmd => cmd.category === category)
-				.map(cmd => `\`${cmd.name}\``)
-				.join(', '),
-			inline: false,
-		}));
+		// Define category descriptions and emojis for better organization
+		const categoryInfo: Record<string, { emoji: string; description: string; priority: number }> = {
+			music: {
+				emoji: '🎵',
+				description: 'Music playback, queue management, and audio controls',
+				priority: 1
+			},
+			filters: {
+				emoji: '🎛️',
+				description: 'Audio filters and effects (bassboost, nightcore, etc.)',
+				priority: 2
+			},
+			playlist: {
+				emoji: '📋',
+				description: 'Create and manage custom playlists',
+				priority: 3
+			},
+			config: {
+				emoji: '⚙️',
+				description: 'Server configuration and bot settings',
+				priority: 4
+			},
+			general: {
+				emoji: '🔧',
+				description: 'General utility commands',
+				priority: 5
+			},
+			info: {
+				emoji: 'ℹ️',
+				description: 'Bot information and help commands',
+				priority: 6
+			}
+		};
+
+		// Sort categories by priority
+		const sortedCategories = categories.sort((a, b) => {
+			const priorityA = categoryInfo[a]?.priority || 999;
+			const priorityB = categoryInfo[b]?.priority || 999;
+			return priorityA - priorityB;
+		});
+
+		const fields = sortedCategories.map(category => {
+			const info = categoryInfo[category] || { emoji: '📁', description: 'Other commands', priority: 999 };
+			const categoryCommands = commands.filter(cmd => cmd.category === category);
+
+			return {
+				name: `${info.emoji} ${category.charAt(0).toUpperCase() + category.slice(1)} (${categoryCommands.length})`,
+				value: `${info.description}\n\`${categoryCommands.map(cmd => cmd.name).join('`, `')}\``,
+				inline: false,
+			};
+		});
+
+		// Add special features section
+		const specialFeatures = [
+			'📻 **Radio Stations** - Stream live Czech and Slovak radio with automatic song detection',
+			'🗣️ **Text-to-Speech** - Convert text to speech with the `say` command',
+			'🌐 **Web Dashboard** - Control the bot through a web interface',
+			'🎯 **Auto-Join** - Bot automatically joins your voice channel when needed',
+			'🔄 **Real-time Updates** - Live song detection and queue updates'
+		];
 
 		const helpEmbed = embed
 			.setColor(client.color.main)
-			.setTitle(ctx.locale('cmd.help.title'))
+			.setTitle(`${ctx.locale('cmd.help.title')} 🎵`)
 			.setDescription(
 				ctx.locale('cmd.help.content', {
 					bot: client.user?.username,
 					prefix: guild.prefix,
-				}),
+				}) + '\n\n**🌟 Special Features:**\n' + specialFeatures.join('\n')
 			)
 			.setFooter({
 				text: ctx.locale('cmd.help.footer', { prefix: guild.prefix }),

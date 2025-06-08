@@ -156,7 +156,7 @@ export default class Radio extends Command {
 			if (interaction.user.id !== ctx.author.id) {
 				await interaction.reply({
 					content: ctx.locale('cmd.radio.messages.button_permission'),
-					ephemeral: true,
+					flags: 64, // MessageFlags.Ephemeral
 				});
 				return;
 			}
@@ -212,8 +212,9 @@ export default class Radio extends Command {
 				const track = result.tracks[0];
 
 				// Clear queue and play radio (radio should be exclusive)
-				player.queue.clear();
-				await player.play(track);
+				player.queue.tracks.splice(0, player.queue.tracks.length);
+				await player.queue.add(track);
+				await player.play();
 
 				const flag = station.country === 'CZ' ? '🇨🇿' : station.country === 'SK' ? '🇸🇰' : '📻';
 				await interaction.editReply({

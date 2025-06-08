@@ -518,6 +518,9 @@
 		},
 		"developer": {
 			"description": "Shows information about the bot developer"
+		},
+		"radio": {
+			"description": "Display and play available radio stations"
 		}
 	},
 	"buttons": {
