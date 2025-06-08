@@ -300,9 +300,22 @@ export async function apiRoutes(fastify: FastifyInstance, options: ApiOptions) {
 		};
 	});
 
+	// Get available search sources
+	fastify.get('/search/sources', async () => {
+		return {
+			sources: [
+				{ id: 'youtubemusic', name: 'YouTube Music', icon: 'fab fa-youtube' },
+				{ id: 'spotify', name: 'Spotify', icon: 'fab fa-spotify' },
+				{ id: 'youtube', name: 'YouTube', icon: 'fab fa-youtube' },
+				{ id: 'soundcloud', name: 'SoundCloud', icon: 'fab fa-soundcloud' }
+			],
+			default: 'youtubemusic'
+		};
+	});
+
 	// Search suggestions for autocomplete
 	fastify.get('/search/suggestions', async (request) => {
-		const { q } = request.query as { q: string };
+		const { q, source } = request.query as { q: string; source?: string };
 
 		if (!q || q.trim().length < 2) {
 			return { suggestions: [] };
@@ -314,7 +327,17 @@ export async function apiRoutes(fastify: FastifyInstance, options: ApiOptions) {
 				return { suggestions: [] };
 			}
 
-			const searchResult = await client.manager.search(q.trim(), { id: 'dashboard-search' });
+			// Map dashboard source names to search engine formats
+			const sourceMap: Record<string, string> = {
+				'youtubemusic': 'ytmsearch',
+				'spotify': 'spsearch',
+				'youtube': 'ytsearch',
+				'soundcloud': 'scsearch'
+			};
+
+			const searchSource = sourceMap[source || 'youtubemusic'] || 'ytmsearch';
+			const searchQuery = `${searchSource}:${q.trim()}`;
+			const searchResult = await client.manager.search(searchQuery, { id: 'dashboard-search' });
 			const suggestions = [];
 
 			if (searchResult.loadType === 'search' && searchResult.tracks.length > 0) {
@@ -328,6 +351,7 @@ export async function apiRoutes(fastify: FastifyInstance, options: ApiOptions) {
 						uri: track.info.uri,
 						thumbnail: track.info.artworkUrl,
 						displayName: name.length > 80 ? `${name.substring(0, 77)}...` : name,
+						source: searchSource,
 					});
 				}
 			}
@@ -356,7 +380,7 @@ export async function apiRoutes(fastify: FastifyInstance, options: ApiOptions) {
 		}
 	}, async (request) => {
 		const { guildId } = request.params as { guildId: string };
-		const { query } = request.body as { query: string };
+		const { query, source } = request.body as { query: string; source?: string };
 		const user = request.user as any;
 
 		const guild = client.guilds.cache.get(guildId);
@@ -425,7 +449,17 @@ export async function apiRoutes(fastify: FastifyInstance, options: ApiOptions) {
 			}
 		}
 
-		const result = await player.search({ query }, { id: 'dashboard' });
+		// Map dashboard source names to search engine formats
+		const sourceMap: Record<string, string> = {
+			'youtubemusic': 'ytmsearch',
+			'spotify': 'spsearch',
+			'youtube': 'ytsearch',
+			'soundcloud': 'scsearch'
+		};
+
+		const searchSource = sourceMap[source || 'youtubemusic'] || 'ytmsearch';
+		const searchQuery = `${searchSource}:${query}`;
+		const result = await player.search({ query: searchQuery }, { id: 'dashboard' });
 		if (!result || !result.tracks.length) {
 			throw fastify.httpErrors.badRequest('No tracks found');
 		}
@@ -763,7 +797,7 @@ export async function apiRoutes(fastify: FastifyInstance, options: ApiOptions) {
 		}
 	}, async (request) => {
 		const { guildId } = request.params as { guildId: string };
-		const { query } = request.body as { query: string };
+		const { query, source } = request.body as { query: string; source?: string };
 		const user = request.user as any;
 
 		const guild = client.guilds.cache.get(guildId);
@@ -832,7 +866,17 @@ export async function apiRoutes(fastify: FastifyInstance, options: ApiOptions) {
 			}
 		}
 
-		const result = await player.search({ query }, { id: 'dashboard-force' });
+		// Map dashboard source names to search engine formats
+		const sourceMap: Record<string, string> = {
+			'youtubemusic': 'ytmsearch',
+			'spotify': 'spsearch',
+			'youtube': 'ytsearch',
+			'soundcloud': 'scsearch'
+		};
+
+		const searchSource = sourceMap[source || 'youtubemusic'] || 'ytmsearch';
+		const searchQuery = `${searchSource}:${query}`;
+		const result = await player.search({ query: searchQuery }, { id: 'dashboard-force' });
 		if (!result || !result.tracks.length) {
 			throw fastify.httpErrors.badRequest('No tracks found');
 		}
@@ -1295,7 +1339,7 @@ export async function apiRoutes(fastify: FastifyInstance, options: ApiOptions) {
 	fastify.post('/playlists/:playlistId/tracks', async (request) => {
 		const user = request.user as any;
 		const { playlistId } = request.params as { playlistId: string };
-		const { query } = request.body as { query: string };
+		const { query, source } = request.body as { query: string; source?: string };
 
 		// Check if user owns the playlist
 		const playlist = await client.db.getPlaylistById(playlistId);
@@ -1309,8 +1353,18 @@ export async function apiRoutes(fastify: FastifyInstance, options: ApiOptions) {
 				throw fastify.httpErrors.serviceUnavailable('Music service is not available. Please try again later.');
 			}
 
-			// Search for the track
-			const searchResult = await client.manager.search(query, { id: 'dashboard' });
+			// Search for the track with specified source
+			// Map dashboard source names to search engine formats
+			const sourceMap: Record<string, string> = {
+				'youtubemusic': 'ytmsearch',
+				'spotify': 'spsearch',
+				'youtube': 'ytsearch',
+				'soundcloud': 'scsearch'
+			};
+
+			const searchSource = sourceMap[source || 'youtubemusic'] || 'ytmsearch';
+			const searchQuery = `${searchSource}:${query}`;
+			const searchResult = await client.manager.search(searchQuery, { id: 'dashboard' });
 			if (!searchResult.tracks.length) {
 				throw fastify.httpErrors.notFound('No tracks found for this search');
 			}
