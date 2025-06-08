@@ -521,6 +521,15 @@
 		},
 		"radio": {
 			"description": "Display and play available radio stations"
+		},
+		"source": {
+			"description": "Manage your preferred music search source",
+			"options": {
+				"set": "Set your preferred search source",
+				"show": "Show your current search source",
+				"list": "List all available search sources",
+				"source": "The search source you want to use"
+			}
 		}
 	},
 	"buttons": {

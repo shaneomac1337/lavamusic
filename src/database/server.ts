@@ -1,4 +1,4 @@
-import { type Dj, type Guild, type Playlist, PrismaClient, type Role, type Setup, type Stay } from '@prisma/client';
+import { type Dj, type Guild, type Playlist, PrismaClient, type Role, type Setup, type Stay, type User } from '@prisma/client';
 import { env } from '../env';
 
 export default class ServerData {
@@ -367,6 +367,34 @@ export default class ServerData {
 			},
 			orderBy: { playCount: 'desc' },
 			take: 10,
+		});
+	}
+
+	// User preference methods
+	public async getUserPreferredSource(userId: string): Promise<string> {
+		const user = await this.prisma.user.findUnique({
+			where: { userId },
+		});
+		return user?.preferredSource || 'youtubemusic';
+	}
+
+	public async setUserPreferredSource(userId: string, source: string): Promise<void> {
+		await this.prisma.user.upsert({
+			where: { userId },
+			update: { preferredSource: source },
+			create: { userId, preferredSource: source },
+		});
+	}
+
+	public async getUser(userId: string): Promise<User | null> {
+		return await this.prisma.user.findUnique({
+			where: { userId },
+		});
+	}
+
+	public async createUser(userId: string): Promise<User> {
+		return await this.prisma.user.create({
+			data: { userId },
 		});
 	}
 }

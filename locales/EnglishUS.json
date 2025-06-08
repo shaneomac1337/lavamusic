@@ -493,6 +493,24 @@
 				"button_permission": "❌ Only the user who ran this command can use these buttons."
 			}
 		},
+		"source": {
+			"description": "Manage your preferred music search source",
+			"options": {
+				"set": "Set your preferred search source",
+				"show": "Show your current search source",
+				"list": "List all available search sources",
+				"source": "The search source you want to use"
+			},
+			"errors": {
+				"invalid_source": "❌ Invalid search source. Use `/source list` to see available sources."
+			},
+			"messages": {
+				"source_set": "✅ Your default search source has been set to {icon} **{name}**",
+				"current_source": "🎵 Your current search source: {icon} **{name}**",
+				"available_sources": "🎵 Available Search Sources",
+				"usage_hint": "Use `/source set <source>` to change your preference"
+			}
+		},
 		"addsong": {
 			"description": "Adds a song to the playlist",
 			"options": {
