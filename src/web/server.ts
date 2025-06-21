@@ -12,6 +12,7 @@ import type { Lavamusic } from '../structures/index';
 import { dashboardRoutes } from './routes/dashboard';
 import { apiRoutes } from './routes/api';
 import { authRoutes } from './routes/auth';
+import { AudioStreamManager } from '../utils/AudioStreamManager';
 
 export class WebServer {
 	private app: FastifyInstance;
@@ -248,6 +249,11 @@ export class WebServer {
 	public async start(): Promise<void> {
 		try {
 			const port = env.DASHBOARD_PORT || 3001;
+
+			// Initialize AudioStreamManager for FloweryTTS
+			const audioStreamManager = AudioStreamManager.getInstance();
+			await audioStreamManager.initialize();
+
 			await this.app.listen({ port, host: '0.0.0.0' });
 			this.setupSocketIO();
 			this.client.logger.success(`Web dashboard started on port ${port}`);
@@ -259,6 +265,10 @@ export class WebServer {
 
 	public async stop(): Promise<void> {
 		try {
+			// Shutdown AudioStreamManager
+			const audioStreamManager = AudioStreamManager.getInstance();
+			await audioStreamManager.shutdown();
+
 			await this.app.close();
 			this.client.logger.info('Web dashboard stopped');
 		} catch (error) {

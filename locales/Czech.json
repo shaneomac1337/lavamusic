@@ -733,5 +733,20 @@
 	"Restart the bot": "Restartovat bota",
 	"The loop mode you want to set": "Režim opakování, který chcete nastavit",
 	"Debug radio detection system": "Ladit systém detekce rádia",
-	"Debug action to perform": "Ladicí akce k provedení"
+	"Debug action to perform": "Ladicí akce k provedení",
+	"TTS provider to use (default": "TTS provider to use (default",
+	"Generate text-to-speech using FloweryTTS with advanced options": "Generate text-to-speech using FloweryTTS with advanced options",
+	"Text to convert to speech (max 2048 characters for FloweryTTS)": "Text to convert to speech (max 2048 characters for FloweryTTS)",
+	"TTS provider to use": "TTS provider to use",
+	"Voice ID to use (FloweryTTS only)": "Voice ID to use (FloweryTTS only)",
+	"Speech speed (0": {
+		"5-3": {
+			"0, FloweryTTS only)": "Speech speed (0.5-3.0, FloweryTTS only)"
+		}
+	},
+	"Auto-translate text to voice language (FloweryTTS only)": "Auto-translate text to voice language (FloweryTTS only)",
+	"List available TTS voices from FloweryTTS": "List available TTS voices from FloweryTTS",
+	"What to do with voices": "What to do with voices",
+	"Search query for voice names (when using search action)": "Search query for voice names (when using search action)",
+	"Audio quality/format (FloweryTTS only)": "Audio quality/format (FloweryTTS only)"
 }
