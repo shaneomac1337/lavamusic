@@ -22,12 +22,28 @@ export class Utils {
 		return `${Math.floor(ms / dayMs)}d ${Math.floor((ms % dayMs) / hourMs)}h`;
 	}
 
+	private static statusUpdateTimeout: NodeJS.Timeout | null = null;
+	private static lastStatusUpdate: string = '';
+
 	public static updateStatus(client: Lavamusic, guildId?: string): void {
+		// Debounce status updates to prevent rapid changes
+		if (this.statusUpdateTimeout) {
+			clearTimeout(this.statusUpdateTimeout);
+		}
+
+		this.statusUpdateTimeout = setTimeout(() => {
+			this.performStatusUpdate(client, guildId);
+		}, 1000); // Wait 1 second before updating to allow multiple events to settle
+	}
+
+	private static performStatusUpdate(client: Lavamusic, guildId?: string): void {
 		const { user } = client;
 		if (!user) return;
 
-		// Get all active players with current tracks
-		const activePlayers = Array.from(client.manager.players.values()).filter(p => p.queue?.current);
+		// Get all active players with current tracks (more robust filtering)
+		const activePlayers = Array.from(client.manager.players.values()).filter(p =>
+			p.connected && p.queue?.current && p.playing && !p.paused
+		);
 		const totalPlayers = activePlayers.length;
 
 		let activityName: string;
@@ -49,7 +65,7 @@ export class Utils {
 					activityType = client.env.BOT_ACTIVITY_TYPE;
 				}
 			} else {
-				// Multiple servers playing
+				// Multiple servers playing - show count
 				activityName = `🎶 Music in ${totalPlayers} servers`;
 				activityType = ActivityType.Listening;
 			}
@@ -59,15 +75,22 @@ export class Utils {
 			activityType = client.env.BOT_ACTIVITY_TYPE;
 		}
 
-		user.setPresence({
-			activities: [
-				{
-					name: activityName,
-					type: activityType,
-				},
-			],
-			status: client.env.BOT_STATUS as any,
-		});
+		// Only update if the status actually changed
+		if (this.lastStatusUpdate !== activityName) {
+			this.lastStatusUpdate = activityName;
+
+			user.setPresence({
+				activities: [
+					{
+						name: activityName,
+						type: activityType,
+					},
+				],
+				status: client.env.BOT_STATUS as any,
+			});
+
+			console.log(`🎵 Bot status updated: "${activityName}" (${totalPlayers} active players)`);
+		}
 	}
 
 	public static chunk(array: any[], size: number) {
