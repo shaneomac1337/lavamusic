@@ -25,6 +25,8 @@ const commandDescriptions = {
     'lyrics': 'Get lyrics for the currently playing track',
     'grab': 'Send the currently playing song to your DM',
     'search': 'Search for a song',
+    'tts': 'Advanced text-to-speech with FloweryTTS and DuncteBot support',
+    'voices': 'List available TTS voices from FloweryTTS',
     'remove': 'Remove a song from the queue',
     'skipto': 'Skip to a specific song in the queue',
     'replay': 'Replay the current track',

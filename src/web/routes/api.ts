@@ -1,5 +1,7 @@
 import type { FastifyInstance, FastifyPluginOptions } from 'fastify';
 import type { Lavamusic } from '../../structures/index';
+import { FloweryTTS } from '../../utils/FloweryTTS';
+import { AudioStreamManager } from '../../utils/AudioStreamManager';
 
 interface ApiOptions extends FastifyPluginOptions {
 	client: Lavamusic;
@@ -303,7 +305,7 @@ export async function apiRoutes(fastify: FastifyInstance, options: ApiOptions) {
 	// Get available search sources
 	fastify.get('/search/sources', async (request) => {
 		const user = request.user as any;
-		const userPreferredSource = user ? await client.db.getUserPreferredSource(user.id) : 'youtubemusic';
+		const userPreferredSource = (user && user.id) ? await client.db.getUserPreferredSource(user.id) : 'youtubemusic';
 
 		return {
 			sources: [
@@ -485,7 +487,17 @@ export async function apiRoutes(fastify: FastifyInstance, options: ApiOptions) {
 			throw fastify.httpErrors.badRequest('No tracks found');
 		}
 
-		await player.queue.add(result.tracks[0]);
+		const track = result.tracks[0];
+
+		// Add requester information for dashboard tracking
+		track.requester = {
+			id: user.userId,
+			username: user.username,
+			discriminator: user.discriminator || '0',
+			avatar: user.avatar
+		};
+
+		await player.queue.add(track);
 		if (!player.playing) {
 			await player.play();
 		}
@@ -725,6 +737,429 @@ export async function apiRoutes(fastify: FastifyInstance, options: ApiOptions) {
 		};
 	});
 
+	// Text-to-Speech (TTS) with auto-join
+	fastify.post('/guilds/:guildId/tts/speak', {
+		preHandler: async (request) => {
+			try {
+				const token = request.cookies.token;
+				if (!token) {
+					throw new Error('No token');
+				}
+
+				const decoded = fastify.jwt.verify(token);
+				request.user = decoded;
+			} catch (err) {
+				throw fastify.httpErrors.unauthorized('Authentication required');
+			}
+		}
+	}, async (request) => {
+		const { guildId } = request.params as { guildId: string };
+		const { text } = request.body as { text: string };
+		const user = request.user as any;
+
+		const guild = client.guilds.cache.get(guildId);
+		if (!guild) {
+			throw fastify.httpErrors.notFound('Guild not found');
+		}
+
+		// Find the user in the guild
+		const member = guild.members.cache.get(user.userId);
+		if (!member) {
+			throw fastify.httpErrors.notFound('You are not a member of this guild');
+		}
+
+		// Validate text input
+		if (!text || text.trim().length === 0) {
+			throw fastify.httpErrors.badRequest('Text is required for TTS');
+		}
+
+		if (text.length > 200) {
+			throw fastify.httpErrors.badRequest('Text must be 200 characters or less');
+		}
+
+		let player = client.manager.getPlayer(guildId);
+
+		// Auto-join logic: If no player or not connected, try to join user's voice channel
+		if (!player || !player.connected) {
+			// Check if user is in a voice channel
+			if (!member.voice.channel) {
+				throw fastify.httpErrors.badRequest('You must be in a voice channel to use TTS');
+			}
+
+			const voiceChannel = member.voice.channel;
+
+			// Check if bot has permissions to join the channel
+			const botMember = guild.members.cache.get(client.user!.id);
+			if (!botMember) {
+				throw fastify.httpErrors.internalServerError('Bot not found in guild');
+			}
+
+			const permissions = voiceChannel.permissionsFor(botMember);
+			if (!permissions?.has(['Connect', 'Speak'])) {
+				throw fastify.httpErrors.forbidden('Bot does not have permission to join your voice channel');
+			}
+
+			// Create new player if doesn't exist
+			if (!player) {
+				// Get the configured text channel for this guild
+				const configuredTextChannelId = await client.db.getTextChannel(guildId);
+				const textChannelId = configuredTextChannelId || voiceChannel.id; // Fallback to voice channel
+
+				player = client.manager.createPlayer({
+					guildId: guild.id,
+					voiceChannelId: voiceChannel.id,
+					textChannelId: textChannelId,
+					selfMute: false,
+					selfDeaf: true,
+					vcRegion: voiceChannel.rtcRegion!,
+				});
+
+				console.log(`🤖 Auto-created player for guild ${guildId} via dashboard TTS`);
+			}
+
+			// Connect to the voice channel
+			if (!player.connected) {
+				await player.connect();
+				console.log(`🔗 Auto-connected to voice channel ${voiceChannel.name} via dashboard TTS`);
+			}
+
+			// If bot is in a different voice channel, move to user's channel
+			if (player.voiceChannelId !== voiceChannel.id) {
+				await player.disconnect();
+				player.voiceChannelId = voiceChannel.id;
+				await player.connect();
+				console.log(`🔄 Moved bot to user's voice channel ${voiceChannel.name} via dashboard TTS`);
+			}
+		}
+
+		try {
+			// Use DuncteBot TTS (simple format without language prefix)
+			// Language is controlled by the ttsLanguage setting in Lavalink config
+			const query = `speak:${text.trim()}`;
+			const result = await player.search({ query }, { id: 'dashboard-tts' });
+
+			if (!result || !result.tracks || result.tracks.length === 0) {
+				throw fastify.httpErrors.badRequest('TTS generation failed - no audio track created');
+			}
+
+			const track = result.tracks[0];
+
+			// Add requester information for dashboard tracking
+			track.requester = {
+				id: user.userId,
+				username: user.username,
+				discriminator: user.discriminator || '0',
+				avatar: user.avatar
+			};
+
+			await player.queue.add(track);
+
+			if (!player.playing && !player.paused) {
+				await player.play();
+			}
+
+			// Emit queue update
+			if (webServer) {
+				webServer.emitQueueUpdateForGuild(guildId);
+			}
+
+			return {
+				success: true,
+				message: `TTS added to queue: "${text.substring(0, 50)}${text.length > 50 ? '...' : ''}"`,
+				text: text,
+				textLength: text.length,
+				track: {
+					title: track.info.title,
+					author: track.info.author,
+					duration: track.info.duration
+				},
+				autoJoined: !player || !player.connected // Indicate if auto-join happened
+			};
+		} catch (error: any) {
+			console.error('TTS Error:', error);
+			throw fastify.httpErrors.internalServerError(`TTS failed: ${error.message || 'Unknown error'}`);
+		}
+	});
+
+	// FloweryTTS - Get available voices
+	fastify.get('/tts/flowery/voices', async () => {
+		try {
+			const voicesData = await FloweryTTS.getVoices();
+			return {
+				success: true,
+				...voicesData
+			};
+		} catch (error: any) {
+			console.error('Error fetching FloweryTTS voices:', error);
+			throw fastify.httpErrors.internalServerError(`Failed to fetch voices: ${error.message}`);
+		}
+	});
+
+	// FloweryTTS - Get popular voices
+	fastify.get('/tts/flowery/voices/popular', async () => {
+		try {
+			const popularVoices = await FloweryTTS.getPopularVoices();
+			return {
+				success: true,
+				voices: popularVoices,
+				count: popularVoices.length
+			};
+		} catch (error: any) {
+			console.error('Error fetching popular FloweryTTS voices:', error);
+			throw fastify.httpErrors.internalServerError(`Failed to fetch popular voices: ${error.message}`);
+		}
+	});
+
+	// FloweryTTS - Get voices by language
+	fastify.get('/tts/flowery/voices/language/:languageCode', async (request) => {
+		const { languageCode } = request.params as { languageCode: string };
+
+		try {
+			const voices = await FloweryTTS.getVoicesByLanguage(languageCode);
+			return {
+				success: true,
+				voices,
+				count: voices.length,
+				language: languageCode
+			};
+		} catch (error: any) {
+			console.error(`Error fetching FloweryTTS voices for language ${languageCode}:`, error);
+			throw fastify.httpErrors.internalServerError(`Failed to fetch voices for language: ${error.message}`);
+		}
+	});
+
+	// FloweryTTS - Get Czech voices
+	fastify.get('/tts/flowery/voices/czech', async () => {
+		try {
+			const czechVoices = await FloweryTTS.getCzechVoices();
+			return {
+				success: true,
+				voices: czechVoices,
+				count: czechVoices.length,
+				language: 'Czech'
+			};
+		} catch (error: any) {
+			console.error('Error fetching Czech FloweryTTS voices:', error);
+			throw fastify.httpErrors.internalServerError(`Failed to fetch Czech voices: ${error.message}`);
+		}
+	});
+
+	// FloweryTTS - Get English voices
+	fastify.get('/tts/flowery/voices/english', async () => {
+		try {
+			const englishVoices = await FloweryTTS.getEnglishVoices();
+			return {
+				success: true,
+				voices: englishVoices,
+				count: englishVoices.length,
+				language: 'English'
+			};
+		} catch (error: any) {
+			console.error('Error fetching English FloweryTTS voices:', error);
+			throw fastify.httpErrors.internalServerError(`Failed to fetch English voices: ${error.message}`);
+		}
+	});
+
+	// FloweryTTS - Get Japanese voices
+	fastify.get('/tts/flowery/voices/japanese', async () => {
+		try {
+			const japaneseVoices = await FloweryTTS.getJapaneseVoices();
+			return {
+				success: true,
+				voices: japaneseVoices,
+				count: japaneseVoices.length,
+				language: 'Japanese'
+			};
+		} catch (error: any) {
+			console.error('Error fetching Japanese FloweryTTS voices:', error);
+			throw fastify.httpErrors.internalServerError(`Failed to fetch Japanese voices: ${error.message}`);
+		}
+	});
+
+	// FloweryTTS - Generate TTS with auto-join
+	fastify.post('/guilds/:guildId/tts/flowery', {
+		preHandler: async (request) => {
+			try {
+				const token = request.cookies.token;
+				if (!token) {
+					throw new Error('No token');
+				}
+
+				const decoded = fastify.jwt.verify(token);
+				request.user = decoded;
+			} catch (err) {
+				throw fastify.httpErrors.unauthorized('Authentication required');
+			}
+		}
+	}, async (request) => {
+		const { guildId } = request.params as { guildId: string };
+		const { text, voice, speed, translate, silence, audio_format } = request.body as {
+			text: string;
+			voice?: string;
+			speed?: number;
+			translate?: boolean;
+			silence?: number;
+			audio_format?: string;
+		};
+		const user = request.user as any;
+
+		const guild = client.guilds.cache.get(guildId);
+		if (!guild) {
+			throw fastify.httpErrors.notFound('Guild not found');
+		}
+
+		// Validate input
+		if (!text || text.trim().length === 0) {
+			throw fastify.httpErrors.badRequest('Text is required for TTS');
+		}
+
+		if (text.length > FloweryTTS.getCharacterLimit()) {
+			throw fastify.httpErrors.badRequest(`Text must be ${FloweryTTS.getCharacterLimit()} characters or less`);
+		}
+
+		// Find the user in the guild
+		const member = guild.members.cache.get(user.userId);
+		if (!member) {
+			throw fastify.httpErrors.notFound('You are not a member of this guild');
+		}
+
+		let player = client.manager.getPlayer(guildId);
+		let autoJoined = false;
+
+		// Auto-join logic: If no player or not connected, try to join user's voice channel
+		if (!player || !player.connected) {
+			// Check if user is in a voice channel
+			if (!member.voice.channel) {
+				throw fastify.httpErrors.badRequest('You must be in a voice channel to use TTS');
+			}
+
+			const voiceChannel = member.voice.channel;
+
+			// Check if bot has permissions to join the channel
+			const botMember = guild.members.cache.get(client.user!.id);
+			if (!botMember) {
+				throw fastify.httpErrors.internalServerError('Bot not found in guild');
+			}
+
+			const permissions = voiceChannel.permissionsFor(botMember);
+			if (!permissions?.has(['Connect', 'Speak'])) {
+				throw fastify.httpErrors.forbidden('Bot does not have permission to join your voice channel');
+			}
+
+			// Create new player if doesn't exist
+			if (!player) {
+				// Get the configured text channel for this guild
+				const configuredTextChannelId = await client.db.getTextChannel(guildId);
+				const textChannelId = configuredTextChannelId || voiceChannel.id; // Fallback to voice channel
+
+				player = client.manager.createPlayer({
+					guildId: guild.id,
+					voiceChannelId: voiceChannel.id,
+					textChannelId: textChannelId,
+					selfMute: false,
+					selfDeaf: true,
+					vcRegion: voiceChannel.rtcRegion!,
+				});
+
+				console.log(`🤖 Auto-created player for guild ${guildId} via FloweryTTS dashboard`);
+				autoJoined = true;
+			}
+
+			// Connect to the voice channel
+			if (!player.connected) {
+				await player.connect();
+				console.log(`🔗 Auto-connected to voice channel ${voiceChannel.name} via FloweryTTS dashboard`);
+				autoJoined = true;
+			}
+
+			// If bot is in a different voice channel, move to user's channel
+			if (player.voiceChannelId !== voiceChannel.id) {
+				await player.disconnect();
+				player.voiceChannelId = voiceChannel.id;
+				await player.connect();
+				console.log(`🔄 Moved bot to user's voice channel ${voiceChannel.name} via FloweryTTS dashboard`);
+				autoJoined = true;
+			}
+		}
+
+		try {
+			// Generate TTS using FloweryTTS
+			const ttsResult = await FloweryTTS.generateTTS({
+				text: text.trim(),
+				voice,
+				speed,
+				translate,
+				silence,
+				audio_format: audio_format as any || 'mp3'
+			});
+
+			if (!ttsResult.success || !ttsResult.audioBuffer) {
+				throw fastify.httpErrors.badRequest(`FloweryTTS generation failed: ${ttsResult.error || 'Unknown error'}`);
+			}
+
+			// Create a temporary audio stream
+			const audioStreamManager = AudioStreamManager.getInstance();
+			await audioStreamManager.initialize(); // Ensure server is running
+
+			const streamUrl = audioStreamManager.createStreamFromTTS(ttsResult, audio_format as string || 'mp3');
+			if (!streamUrl) {
+				throw fastify.httpErrors.internalServerError('Failed to create audio stream');
+			}
+
+			// Search for the audio using Lavalink (this creates a track object)
+			const result = await player.search({ query: streamUrl }, { id: 'flowery-tts-dashboard' });
+
+			if (!result || !result.tracks || result.tracks.length === 0) {
+				throw fastify.httpErrors.badRequest('Failed to create audio track from FloweryTTS');
+			}
+
+			const track = result.tracks[0];
+
+			// Customize track info for better display
+			track.info.title = `TTS: ${text.substring(0, 50)}${text.length > 50 ? '...' : ''}`;
+			track.info.author = `FloweryTTS${voice ? ` (${voice})` : ''}`;
+			track.info.duration = ttsResult.duration || 30000; // Fallback duration
+
+			// Add requester information for dashboard tracking
+			track.requester = {
+				id: user.userId,
+				username: user.username,
+				discriminator: user.discriminator || '0',
+				avatar: user.avatar
+			};
+
+			await player.queue.add(track);
+
+			if (!player.playing && !player.paused) {
+				await player.play();
+			}
+
+			// Emit queue update
+			if (webServer) {
+				webServer.emitQueueUpdateForGuild(guildId);
+			}
+
+			return {
+				success: true,
+				message: `FloweryTTS added to queue: "${text.substring(0, 50)}${text.length > 50 ? '...' : ''}"`,
+				text: text,
+				textLength: text.length,
+				voice: ttsResult.voiceUsed,
+				speed: speed || 1.0,
+				translate: translate || false,
+				track: {
+					title: track.info.title,
+					author: track.info.author,
+					duration: track.info.duration
+				},
+				autoJoined
+			};
+		} catch (error: any) {
+			console.error('FloweryTTS Error:', error);
+			throw fastify.httpErrors.internalServerError(`FloweryTTS failed: ${error.message || 'Unknown error'}`);
+		}
+	});
+
 	// Queue management
 	fastify.get('/guilds/:guildId/queue', async (request) => {
 		const { guildId } = request.params as { guildId: string };
@@ -903,6 +1338,14 @@ export async function apiRoutes(fastify: FastifyInstance, options: ApiOptions) {
 		}
 
 		const track = result.tracks[0];
+
+		// Add requester information for dashboard tracking
+		track.requester = {
+			id: user.userId,
+			username: user.username,
+			discriminator: user.discriminator || '0',
+			avatar: user.avatar
+		};
 
 		// Add to front of queue
 		player.queue.splice(0, 0, track);
@@ -1335,6 +1778,15 @@ export async function apiRoutes(fastify: FastifyInstance, options: ApiOptions) {
 			try {
 				// Decode the track and add to queue
 				const track = client.manager.utils.buildTrack(trackData, { id: 'dashboard' });
+
+				// Add requester information for dashboard tracking
+				track.requester = {
+					id: user.userId,
+					username: user.username,
+					discriminator: user.discriminator || '0',
+					avatar: user.avatar
+				};
+
 				await player.queue.add(track);
 			} catch (error) {
 				console.error('Error adding track to queue:', error);

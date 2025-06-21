@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TTS Dashboard Test</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-gray-100">
+    <div class="max-w-md mx-auto mt-10 p-6 bg-white rounded-lg shadow-lg">
+        <h1 class="text-xl font-bold mb-4">
+            <i class="fas fa-microphone mr-2"></i>
+            TTS Dashboard Test
+        </h1>
+        
+        <!-- TTS Section (copied from guild.html) -->
+        <div class="space-y-4">
+            <!-- TTS Text Input -->
+            <div class="relative">
+                <textarea
+                    id="tts-text"
+                    placeholder="Enter text to speak (max 200 characters)..."
+                    maxlength="200"
+                    rows="3"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none text-sm"
+                ></textarea>
+                <div class="absolute bottom-2 right-2 text-xs text-gray-400">
+                    <span id="tts-char-count">0</span>/200
+                </div>
+            </div>
+
+            <!-- TTS Controls -->
+            <div class="flex space-x-2">
+                <button
+                    onclick="testTTS()"
+                    id="tts-speak-btn"
+                    class="flex-1 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 flex items-center justify-center"
+                >
+                    <i class="fas fa-microphone mr-2"></i>
+                    <span id="tts-btn-text">Test TTS</span>
+                </button>
+                <button
+                    onclick="clearTTSText()"
+                    class="bg-gray-500 hover:bg-gray-600 text-white px-3 py-2 rounded-md text-sm transition-all duration-200"
+                    title="Clear text"
+                >
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <!-- TTS Info -->
+            <div class="text-xs text-gray-500 bg-gray-50 p-2 rounded">
+                <i class="fas fa-info-circle mr-1"></i>
+                Czech language support • Auto-joins voice channel • Adds to music queue
+            </div>
+            
+            <!-- Test Results -->
+            <div id="test-results" class="mt-4 p-3 rounded-md hidden">
+                <!-- Results will appear here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Test TTS functionality
+        function testTTS() {
+            const textArea = document.getElementById('tts-text');
+            const speakBtn = document.getElementById('tts-speak-btn');
+            const btnText = document.getElementById('tts-btn-text');
+            const resultsDiv = document.getElementById('test-results');
+            const text = textArea.value.trim();
+
+            // Clear previous results
+            resultsDiv.classList.add('hidden');
+
+            if (!text) {
+                showTestResult('Please enter some text to test', 'error');
+                return;
+            }
+
+            if (text.length > 200) {
+                showTestResult('Text must be 200 characters or less', 'error');
+                return;
+            }
+
+            // Update button state
+            speakBtn.disabled = true;
+            btnText.textContent = 'Testing...';
+            speakBtn.classList.add('opacity-50');
+
+            // Simulate API call (replace with actual API call when testing with server)
+            setTimeout(() => {
+                // Reset button state
+                speakBtn.disabled = false;
+                btnText.textContent = 'Test TTS';
+                speakBtn.classList.remove('opacity-50');
+
+                // Show test results
+                showTestResult(`✅ TTS test successful!\n📝 Text: "${text}"\n📊 Length: ${text.length} characters\n🎤 Would be sent to DuncteBot TTS engine`, 'success');
+                
+                // Clear text after successful test
+                textArea.value = '';
+                updateTTSCharCount();
+            }, 1500);
+        }
+
+        function clearTTSText() {
+            document.getElementById('tts-text').value = '';
+            updateTTSCharCount();
+        }
+
+        function updateTTSCharCount() {
+            const textArea = document.getElementById('tts-text');
+            const charCount = document.getElementById('tts-char-count');
+            const currentLength = textArea.value.length;
+            
+            charCount.textContent = currentLength;
+            
+            // Change color based on character count
+            if (currentLength > 180) {
+                charCount.style.color = '#ef4444'; // red
+            } else if (currentLength > 150) {
+                charCount.style.color = '#f59e0b'; // yellow
+            } else {
+                charCount.style.color = '#9ca3af'; // gray
+            }
+        }
+
+        function showTestResult(message, type) {
+            const resultsDiv = document.getElementById('test-results');
+            
+            if (type === 'success') {
+                resultsDiv.className = 'mt-4 p-3 rounded-md bg-green-50 border border-green-200 text-green-800';
+            } else {
+                resultsDiv.className = 'mt-4 p-3 rounded-md bg-red-50 border border-red-200 text-red-800';
+            }
+            
+            resultsDiv.innerHTML = message.replace(/\n/g, '<br>');
+            resultsDiv.classList.remove('hidden');
+        }
+
+        // Initialize character counter
+        document.addEventListener('DOMContentLoaded', () => {
+            const ttsTextArea = document.getElementById('tts-text');
+            ttsTextArea.addEventListener('input', updateTTSCharCount);
+            
+            // Allow Enter key to trigger TTS (Shift+Enter for new line)
+            ttsTextArea.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    testTTS();
+                }
+            });
+        });
+    </script>
+</body>
+</html>

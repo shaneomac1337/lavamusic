@@ -249,6 +249,41 @@
         .choice-force-btn:hover {
             background-color: #c2410c !important;
         }
+
+        /* Voice Browser Styles */
+        .voice-filter-btn {
+            padding: 0.25rem 0.75rem;
+            font-size: 0.875rem;
+            border-radius: 9999px;
+            border: 1px solid #d1d5db;
+            background-color: white;
+            color: #374151;
+            transition: all 0.2s;
+        }
+        .voice-filter-btn:hover {
+            background-color: #f9fafb;
+        }
+        .voice-filter-btn.active {
+            background-color: #3b82f6;
+            color: white;
+            border-color: #3b82f6;
+        }
+        .voice-card {
+            background-color: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        .voice-card:hover {
+            border-color: #93c5fd;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+        .voice-card.selected {
+            border-color: #3b82f6;
+            background-color: #eff6ff;
+        }
         /* Ensure Evropa 2 button is visible */
         #radio-evropa2 {
             background-color: #f59e0b !important;
@@ -505,6 +540,130 @@
                             8 stations available
                         </div>
                     </div>
+
+                    <!-- Text-to-Speech Section -->
+                    <div class="border-t pt-4 mt-4">
+                        <h3 class="text-md font-medium text-gray-900 mb-3">
+                            <i class="fas fa-microphone mr-2"></i>
+                            Text-to-Speech
+                        </h3>
+                        <div class="space-y-3">
+                            <!-- TTS Provider Selection -->
+                            <div class="mb-3">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">TTS Provider</label>
+                                <div class="flex space-x-2">
+                                    <button
+                                        onclick="selectTTSProvider('flowery')"
+                                        id="tts-provider-flowery"
+                                        class="flex-1 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 flex items-center justify-center"
+                                    >
+                                        <i class="fas fa-star mr-2"></i>
+                                        FloweryTTS
+                                        <span class="ml-1 text-xs bg-white bg-opacity-20 px-1 rounded">NEW</span>
+                                    </button>
+                                    <button
+                                        onclick="selectTTSProvider('duncte')"
+                                        id="tts-provider-duncte"
+                                        class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 flex items-center justify-center"
+                                    >
+                                        <i class="fas fa-robot mr-2"></i>
+                                        DuncteBot
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- FloweryTTS Options (shown when FloweryTTS is selected) -->
+                            <div id="flowery-options" class="space-y-3">
+                                <!-- Voice Selection -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Voice</label>
+                                    <select id="tts-voice-select" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-sm">
+                                        <option value="">Loading voices...</option>
+                                    </select>
+                                    <!-- Voice Browser Button -->
+                                    <button id="voice-browser-btn" class="mt-2 px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600 transition-colors">
+                                        🎭 Browse All Voices
+                                    </button>
+                                </div>
+
+                                <!-- Speed Control -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Speed</label>
+                                    <div class="flex items-center space-x-3">
+                                        <input type="range" id="tts-speed-slider" min="0.5" max="3" step="0.1" value="1" class="flex-1">
+                                        <span id="tts-speed-value" class="text-sm text-gray-600 w-12 text-center">1.0x</span>
+                                    </div>
+                                </div>
+
+                                <!-- Audio Quality/Format Selection -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Audio Quality</label>
+                                    <select id="tts-quality" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-sm">
+                                        <option value="aac">🎶 AAC - Good Quality, Small Size (Recommended)</option>
+                                        <option value="ogg_opus">🎧 OGG Opus - High Quality, Efficient</option>
+                                        <option value="flac">🏆 FLAC - Lossless, Best Quality</option>
+                                    </select>
+                                    <p class="text-xs text-gray-500 mt-1">Higher quality = larger file size and longer processing time</p>
+                                </div>
+
+                                <!-- Translation Toggle -->
+                                <div class="flex items-center">
+                                    <input type="checkbox" id="tts-translate" class="mr-2">
+                                    <label for="tts-translate" class="text-sm text-gray-700">Auto-translate to voice language</label>
+                                </div>
+
+                                <!-- Text Clearing Toggle -->
+                                <div class="flex items-center">
+                                    <input type="checkbox" id="tts-clear-text" class="mr-2">
+                                    <label for="tts-clear-text" class="text-sm text-gray-700" title="When disabled, text stays in the input for easy reuse">Clear text after speaking</label>
+                                </div>
+                            </div>
+
+                            <!-- DuncteBot Info (shown when DuncteBot is selected) -->
+                            <div id="duncte-info" class="text-sm text-gray-600 bg-blue-50 p-2 rounded hidden">
+                                <i class="fas fa-info-circle mr-1 text-blue-500"></i>
+                                <strong>Language:</strong> Czech (configured in server settings)
+                            </div>
+
+                            <!-- TTS Text Input -->
+                            <div class="relative">
+                                <textarea
+                                    id="tts-text"
+                                    placeholder="Enter text to speak..."
+                                    rows="3"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none text-sm"
+                                ></textarea>
+                                <div class="absolute bottom-2 right-2 text-xs text-gray-400">
+                                    <span id="tts-char-count">0</span>/<span id="tts-char-limit">2048</span>
+                                </div>
+                            </div>
+
+                            <!-- TTS Controls -->
+                            <div class="flex space-x-2">
+                                <button
+                                    onclick="speakText()"
+                                    id="tts-speak-btn"
+                                    class="flex-1 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 flex items-center justify-center"
+                                >
+                                    <i class="fas fa-microphone mr-2"></i>
+                                    <span id="tts-btn-text">Speak</span>
+                                </button>
+                                <button
+                                    onclick="clearTTSText()"
+                                    class="bg-gray-500 hover:bg-gray-600 text-white px-3 py-2 rounded-md text-sm transition-all duration-200"
+                                    title="Clear text"
+                                >
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+
+                            <!-- TTS Info -->
+                            <div id="tts-info" class="text-xs text-gray-500 bg-gray-50 p-2 rounded">
+                                <i class="fas fa-info-circle mr-1"></i>
+                                <span id="tts-info-text">FloweryTTS • 850+ voices • Multiple languages • Auto-joins voice channel</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -532,6 +691,8 @@
                         <p class="text-gray-500 text-center py-4">Loading playlists...</p>
                     </div>
                 </div>
+
+
 
                 <!-- Audio Filters -->
                 <div class="bg-white shadow rounded-lg p-6">
@@ -665,16 +826,19 @@
                     <div class="space-y-4">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Bot Prefix</label>
-                            <input type="text" id="prefix-input" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500">
+                            <div class="w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-gray-600">
+                                <span class="font-mono">!</span>
+                                <span class="text-xs text-gray-500 ml-2">(Fixed prefix)</span>
+                            </div>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Language</label>
                             <select id="language-select" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500">
-                                <option value="EnglishUS">English (US)</option>
-                                <option value="Czech">Czech</option>
-                                <option value="German">German</option>
-                                <option value="French">French</option>
-                                <option value="Spanish">Spanish</option>
+                                <option value="Czech" selected>🇨🇿 Czech (Default)</option>
+                                <option value="EnglishUS">🇺🇸 English (US)</option>
+                                <option value="German">🇩🇪 German</option>
+                                <option value="French">🇫🇷 French</option>
+                                <option value="Spanish">🇪🇸 Spanish</option>
                             </select>
                         </div>
                         <div>
@@ -839,6 +1003,74 @@
         </div>
     </div>
 
+    <!-- Voice Browser Modal -->
+    <div id="voice-browser-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+                <!-- Modal Header -->
+                <div class="bg-gradient-to-r from-blue-500 to-purple-600 text-white p-4">
+                    <div class="flex justify-between items-center">
+                        <h3 class="text-xl font-bold">🎭 Voice Browser</h3>
+                        <button id="close-voice-browser" class="text-white hover:text-gray-200 text-2xl">&times;</button>
+                    </div>
+                    <p class="text-blue-100 text-sm mt-1">Browse and preview FloweryTTS voices</p>
+                </div>
+
+                <!-- Modal Content -->
+                <div class="p-4 overflow-y-auto max-h-[calc(90vh-120px)]">
+                    <!-- Search and Filters -->
+                    <div class="mb-4 space-y-3">
+                        <!-- Search Bar -->
+                        <div class="relative">
+                            <input type="text" id="voice-search" placeholder="Search voices by name..."
+                                   class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                                </svg>
+                            </div>
+                        </div>
+
+                        <!-- Filter Buttons -->
+                        <div class="flex flex-wrap gap-2">
+                            <button class="voice-filter-btn active" data-filter="all">All Voices</button>
+                            <button class="voice-filter-btn" data-filter="english">🇺🇸 English</button>
+                            <button class="voice-filter-btn" data-filter="czech">🇨🇿 Czech</button>
+                            <button class="voice-filter-btn" data-filter="japanese">🇯🇵 Japanese</button>
+                            <button class="voice-filter-btn" data-filter="male">👨 Male</button>
+                            <button class="voice-filter-btn" data-filter="female">👩 Female</button>
+                            <button class="voice-filter-btn" data-filter="neural">🧠 Neural</button>
+                        </div>
+                    </div>
+
+                    <!-- Voice Grid -->
+                    <div id="voice-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <!-- Voice cards will be populated here -->
+                    </div>
+
+                    <!-- Loading State -->
+                    <div id="voice-loading" class="text-center py-8">
+                        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
+                        <p class="text-gray-600 mt-2">Loading voices...</p>
+                    </div>
+
+                    <!-- No Results -->
+                    <div id="voice-no-results" class="text-center py-8 hidden">
+                        <p class="text-gray-600">No voices found matching your criteria.</p>
+                    </div>
+                </div>
+
+                <!-- Modal Footer -->
+                <div class="bg-gray-50 px-4 py-3 border-t">
+                    <div class="flex justify-between items-center text-sm text-gray-600">
+                        <span id="voice-count">0 voices</span>
+                        <span>Click a voice to select it</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         let socket;
         let guildId;
@@ -875,9 +1107,12 @@
             document.getElementById('guild-name').textContent = guildData.name;
 
             if (guildData.settings) {
-                document.getElementById('prefix-input').value = guildData.settings.prefix || '!';
-                document.getElementById('language-select').value = guildData.settings.language || 'EnglishUS';
+                // Prefix is always "!" and not configurable
+                document.getElementById('language-select').value = guildData.settings.language || 'Czech';
                 document.getElementById('text-channel-select').value = guildData.settings.textChannelId || '';
+            } else {
+                // Set defaults for new guilds
+                document.getElementById('language-select').value = 'Czech';
             }
 
             if (guildData.player) {
@@ -1890,13 +2125,25 @@
                     select.removeChild(select.lastChild);
                 }
 
+                let botCommandsChannelId = null;
+
                 // Add channel options
                 data.channels.forEach(channel => {
                     const option = document.createElement('option');
                     option.value = channel.id;
                     option.textContent = `# ${channel.name}`;
                     select.appendChild(option);
+
+                    // Check if this is the bot-commands channel
+                    if (channel.name.toLowerCase() === 'bot-commands') {
+                        botCommandsChannelId = channel.id;
+                    }
                 });
+
+                // Auto-select bot-commands if it exists and no channel is currently selected
+                if (botCommandsChannelId && !select.value) {
+                    select.value = botCommandsChannelId;
+                }
             } catch (error) {
                 console.error('Error loading text channels:', error);
             }
@@ -1904,7 +2151,6 @@
 
         // Save settings
         async function saveSettings() {
-            const prefix = document.getElementById('prefix-input').value;
             const language = document.getElementById('language-select').value;
             const textChannelId = document.getElementById('text-channel-select').value;
 
@@ -1915,7 +2161,7 @@
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        prefix,
+                        prefix: '!', // Always use ! as prefix
                         language,
                         textChannelId: textChannelId || null
                     })
@@ -2881,6 +3127,615 @@
             }
         }
 
+        // TTS Functions
+        let currentTTSProvider = 'flowery'; // Default to FloweryTTS
+        let floweryVoices = [];
+
+        // Initialize TTS system
+        async function initTTS() {
+            // Load FloweryTTS voices
+            await loadFloweryVoices();
+
+            // Set up TTS speed slider
+            const speedSlider = document.getElementById('tts-speed-slider');
+            if (speedSlider) {
+                speedSlider.addEventListener('input', (e) => {
+                    document.getElementById('tts-speed-value').textContent = parseFloat(e.target.value).toFixed(1) + 'x';
+                });
+            }
+
+            // Set up TTS quality selection
+            const qualitySelect = document.getElementById('tts-quality');
+            if (qualitySelect) {
+                // Load saved quality preference
+                const savedQuality = localStorage.getItem('tts-quality') || 'aac';
+                qualitySelect.value = savedQuality;
+
+                // Save quality preference when changed
+                qualitySelect.addEventListener('change', function() {
+                    localStorage.setItem('tts-quality', this.value);
+                    updateQualityInfo();
+                });
+
+                // Update quality info on load
+                updateQualityInfo();
+            }
+
+            // Set up TTS text clearing preference
+            const clearTextCheckbox = document.getElementById('tts-clear-text');
+            if (clearTextCheckbox) {
+                // Load saved preference (default: false - keep text)
+                const shouldClearText = localStorage.getItem('tts-clear-text') === 'true';
+                clearTextCheckbox.checked = shouldClearText;
+
+                // Save preference when changed
+                clearTextCheckbox.addEventListener('change', function() {
+                    localStorage.setItem('tts-clear-text', this.checked);
+                });
+            }
+
+            // Check TTS service availability
+            await checkTTSAvailability();
+
+            // Initialize with FloweryTTS selected (or fallback to DuncteBot if FloweryTTS unavailable)
+            const savedProvider = localStorage.getItem('tts-provider') || 'flowery';
+            selectTTSProvider(savedProvider);
+        }
+
+        // Check TTS service availability
+        async function checkTTSAvailability() {
+            try {
+                // Test FloweryTTS availability
+                const floweryResponse = await fetch('/api/tts/flowery/voices', { method: 'HEAD' });
+                if (!floweryResponse.ok) {
+                    console.warn('FloweryTTS service appears to be unavailable');
+
+                    // If user had FloweryTTS selected but it's unavailable, suggest DuncteBot
+                    const savedProvider = localStorage.getItem('tts-provider');
+                    if (savedProvider === 'flowery') {
+                        showTemporaryMessage('FloweryTTS service unavailable, DuncteBot is available as fallback', 'warning');
+                    }
+                }
+            } catch (error) {
+                console.warn('Could not check TTS service availability:', error);
+            }
+        }
+
+        // Load FloweryTTS voices
+        async function loadFloweryVoices() {
+            const voiceSelect = document.getElementById('tts-voice-select');
+
+            try {
+                voiceSelect.innerHTML = '<option value="">Loading voices...</option>';
+
+                const response = await fetch('/api/tts/flowery/voices/popular');
+                const data = await response.json();
+
+                if (data.success && data.voices) {
+                    floweryVoices = data.voices;
+                    populateVoiceSelect();
+                } else {
+                    throw new Error('Failed to load voices');
+                }
+            } catch (error) {
+                console.error('Error loading FloweryTTS voices:', error);
+                // Fallback to empty list with error message
+                floweryVoices = [];
+                voiceSelect.innerHTML = '<option value="">Default Voice (voices unavailable)</option>';
+
+                // Show a subtle warning in the TTS info
+                const infoText = document.getElementById('tts-info-text');
+                if (infoText && currentTTSProvider === 'flowery') {
+                    infoText.textContent = 'FloweryTTS • Voice list unavailable • Will use default voice • English & Czech support • Auto-joins voice channel';
+                }
+            }
+        }
+
+        // Populate voice selection dropdown with improved grouping
+        function populateVoiceSelect() {
+            const voiceSelect = document.getElementById('tts-voice-select');
+            voiceSelect.innerHTML = '<option value="">Default Voice</option>';
+
+            // Group voices by language with priority for English, Czech, and Japanese
+            const englishVoices = [];
+            const czechVoices = [];
+            const japaneseVoices = [];
+            const otherVoices = {};
+
+            floweryVoices.forEach(voice => {
+                const langCode = voice.language.code.toLowerCase();
+                const langName = voice.language.name;
+
+                if (langCode.startsWith('en')) {
+                    englishVoices.push(voice);
+                } else if (langCode.startsWith('cs') || langCode.startsWith('cz') || langName.toLowerCase().includes('czech')) {
+                    czechVoices.push(voice);
+                } else if (langCode.startsWith('ja') || langName.toLowerCase().includes('japanese')) {
+                    japaneseVoices.push(voice);
+                } else {
+                    if (!otherVoices[langName]) {
+                        otherVoices[langName] = [];
+                    }
+                    otherVoices[langName].push(voice);
+                }
+            });
+
+            // Add English voices first
+            if (englishVoices.length > 0) {
+                const englishGroup = document.createElement('optgroup');
+                englishGroup.label = `🇺🇸 English (${englishVoices.length} voices)`;
+
+                englishVoices.sort((a, b) => a.name.localeCompare(b.name)).forEach(voice => {
+                    const option = document.createElement('option');
+                    option.value = voice.id;
+                    option.textContent = `${voice.name} (${voice.gender})`;
+                    englishGroup.appendChild(option);
+                });
+
+                voiceSelect.appendChild(englishGroup);
+            }
+
+            // Add Czech voices second
+            if (czechVoices.length > 0) {
+                const czechGroup = document.createElement('optgroup');
+                czechGroup.label = `🇨🇿 Czech (${czechVoices.length} voices)`;
+
+                czechVoices.sort((a, b) => a.name.localeCompare(b.name)).forEach(voice => {
+                    const option = document.createElement('option');
+                    option.value = voice.id;
+                    option.textContent = `${voice.name} (${voice.gender})`;
+                    czechGroup.appendChild(option);
+                });
+
+                voiceSelect.appendChild(czechGroup);
+            }
+
+            // Add Japanese voices third
+            if (japaneseVoices.length > 0) {
+                const japaneseGroup = document.createElement('optgroup');
+                japaneseGroup.label = `🇯🇵 Japanese (${japaneseVoices.length} voices)`;
+
+                japaneseVoices.sort((a, b) => a.name.localeCompare(b.name)).forEach(voice => {
+                    const option = document.createElement('option');
+                    option.value = voice.id;
+                    option.textContent = `${voice.name} (${voice.gender})`;
+                    japaneseGroup.appendChild(option);
+                });
+
+                voiceSelect.appendChild(japaneseGroup);
+            }
+
+            // Add other languages
+            Object.keys(otherVoices).sort().forEach(language => {
+                const optgroup = document.createElement('optgroup');
+                optgroup.label = `${language} (${otherVoices[language].length} voices)`;
+
+                otherVoices[language].sort((a, b) => a.name.localeCompare(b.name)).forEach(voice => {
+                    const option = document.createElement('option');
+                    option.value = voice.id;
+                    option.textContent = `${voice.name} (${voice.gender})`;
+                    optgroup.appendChild(option);
+                });
+
+                voiceSelect.appendChild(optgroup);
+            });
+        }
+
+        // Voice Browser functionality
+        let allVoices = [];
+        let filteredVoices = [];
+        let currentFilter = 'all';
+        let searchQuery = '';
+
+        // Initialize voice browser
+        function initVoiceBrowser() {
+            const browserBtn = document.getElementById('voice-browser-btn');
+            const modal = document.getElementById('voice-browser-modal');
+            const closeBtn = document.getElementById('close-voice-browser');
+            const searchInput = document.getElementById('voice-search');
+            const filterBtns = document.querySelectorAll('.voice-filter-btn');
+
+            if (!browserBtn) return; // Exit if button doesn't exist
+
+            // Open modal
+            browserBtn.addEventListener('click', async () => {
+                modal.classList.remove('hidden');
+                await loadAllVoices();
+            });
+
+            // Close modal
+            closeBtn.addEventListener('click', () => {
+                modal.classList.add('hidden');
+            });
+
+            // Close on background click
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.classList.add('hidden');
+                }
+            });
+
+            // Search functionality
+            searchInput.addEventListener('input', (e) => {
+                searchQuery = e.target.value.toLowerCase();
+                filterVoices();
+            });
+
+            // Filter buttons
+            filterBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    // Update active state
+                    filterBtns.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+
+                    currentFilter = btn.dataset.filter;
+                    filterVoices();
+                });
+            });
+        }
+
+        // Load all voices for browser
+        async function loadAllVoices() {
+            const loadingEl = document.getElementById('voice-loading');
+            const gridEl = document.getElementById('voice-grid');
+
+            loadingEl.classList.remove('hidden');
+            gridEl.innerHTML = '';
+
+            try {
+                const response = await fetch('/api/tts/flowery/voices');
+                const data = await response.json();
+
+                if (data.success) {
+                    allVoices = data.voices;
+                    filteredVoices = [...allVoices];
+                    renderVoiceGrid();
+                    updateVoiceCount();
+                }
+            } catch (error) {
+                console.error('Error loading voices:', error);
+                gridEl.innerHTML = '<div class="col-span-full text-center text-red-600">Error loading voices</div>';
+            } finally {
+                loadingEl.classList.add('hidden');
+            }
+        }
+
+        // Filter voices based on current criteria
+        function filterVoices() {
+            filteredVoices = allVoices.filter(voice => {
+                // Search filter
+                if (searchQuery && !voice.name.toLowerCase().includes(searchQuery)) {
+                    return false;
+                }
+
+                // Category filter
+                switch (currentFilter) {
+                    case 'english':
+                        return voice.language.code.toLowerCase().startsWith('en');
+                    case 'czech':
+                        return voice.language.code.toLowerCase().startsWith('cs') ||
+                               voice.language.name.toLowerCase().includes('czech');
+                    case 'japanese':
+                        return voice.language.code.toLowerCase().startsWith('ja') ||
+                               voice.language.name.toLowerCase().includes('japanese');
+                    case 'male':
+                        return voice.gender.toLowerCase() === 'male';
+                    case 'female':
+                        return voice.gender.toLowerCase() === 'female';
+                    case 'neural':
+                        return voice.name.toLowerCase().includes('neural');
+                    default:
+                        return true;
+                }
+            });
+
+            renderVoiceGrid();
+            updateVoiceCount();
+        }
+
+        // Render voice grid
+        function renderVoiceGrid() {
+            const gridEl = document.getElementById('voice-grid');
+            const noResultsEl = document.getElementById('voice-no-results');
+
+            if (filteredVoices.length === 0) {
+                gridEl.innerHTML = '';
+                noResultsEl.classList.remove('hidden');
+                return;
+            }
+
+            noResultsEl.classList.add('hidden');
+
+            gridEl.innerHTML = filteredVoices.map(voice => {
+                const langFlag = getLanguageFlag(voice.language.code);
+                const genderIcon = voice.gender.toLowerCase() === 'male' ? '👨' : '👩';
+
+                return `
+                    <div class="voice-card" data-voice-id="${voice.id}" onclick="selectVoice('${voice.id}', '${voice.name}')">
+                        <div class="flex items-start justify-between mb-2">
+                            <div class="flex items-center">
+                                <span class="text-lg mr-2">${langFlag}</span>
+                                <span class="text-sm text-gray-600">${genderIcon}</span>
+                            </div>
+                            <span class="text-xs text-gray-500">${voice.language.name}</span>
+                        </div>
+                        <h4 class="font-medium text-gray-900 mb-1">${voice.name}</h4>
+                        <p class="text-sm text-gray-600 mb-2">${voice.gender}</p>
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs text-blue-600 font-medium">${voice.id}</span>
+                            <button class="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded hover:bg-blue-200"
+                                    onclick="event.stopPropagation(); previewVoice('${voice.id}')">
+                                🔊 Preview
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Get language flag emoji
+        function getLanguageFlag(langCode) {
+            const code = langCode.toLowerCase();
+            if (code.startsWith('en-us') || code === 'en') return '🇺🇸';
+            if (code.startsWith('en-gb')) return '🇬🇧';
+            if (code.startsWith('en-au')) return '🇦🇺';
+            if (code.startsWith('cs') || code.startsWith('cz')) return '🇨🇿';
+            if (code.startsWith('ja')) return '🇯🇵';
+            if (code.startsWith('de')) return '🇩🇪';
+            if (code.startsWith('fr')) return '🇫🇷';
+            if (code.startsWith('es')) return '🇪🇸';
+            if (code.startsWith('it')) return '🇮🇹';
+            if (code.startsWith('pt')) return '🇵🇹';
+            if (code.startsWith('ru')) return '🇷🇺';
+            if (code.startsWith('ko')) return '🇰🇷';
+            if (code.startsWith('zh')) return '🇨🇳';
+            return '🌍';
+        }
+
+        // Select voice from browser
+        function selectVoice(voiceId, voiceName) {
+            const voiceSelect = document.getElementById('tts-voice-select');
+            voiceSelect.value = voiceId;
+
+            // Close modal
+            document.getElementById('voice-browser-modal').classList.add('hidden');
+
+            // Show feedback
+            showTemporaryMessage(`Selected voice: ${voiceName}`, 'success');
+        }
+
+        // Preview voice (placeholder - could implement actual preview)
+        function previewVoice(voiceId) {
+            showTemporaryMessage(`Preview for ${voiceId} - Feature coming soon!`, 'info');
+        }
+
+        // Update voice count display
+        function updateVoiceCount() {
+            const countEl = document.getElementById('voice-count');
+            countEl.textContent = `${filteredVoices.length} voices`;
+        }
+
+        // Update quality information display
+        function updateQualityInfo() {
+            const qualitySelect = document.getElementById('tts-quality');
+            const quality = qualitySelect?.value || 'mp3';
+            const qualityInfo = getQualityInfo(quality);
+
+            // Update the info text to include quality information
+            const infoText = document.getElementById('tts-info-text');
+            if (infoText && currentTTSProvider === 'flowery') {
+                infoText.textContent = `FloweryTTS • ${qualityInfo.name} quality • English, Czech & Japanese voices • Auto-joins voice channel`;
+            }
+        }
+
+        // Get quality information
+        function getQualityInfo(format) {
+            const qualityMap = {
+                'aac': { name: 'Good', size: 'Small', description: 'Efficient compression, good quality' },
+                'ogg_opus': { name: 'High', size: 'Medium', description: 'Modern codec, excellent quality' },
+                'flac': { name: 'Lossless', size: 'Large', description: 'Perfect quality, larger files' }
+            };
+            return qualityMap[format] || qualityMap['aac'];
+        }
+
+        // Select TTS provider
+        function selectTTSProvider(provider) {
+            currentTTSProvider = provider;
+
+            const floweryBtn = document.getElementById('tts-provider-flowery');
+            const duncteBtn = document.getElementById('tts-provider-duncte');
+            const floweryOptions = document.getElementById('flowery-options');
+            const duncteInfo = document.getElementById('duncte-info');
+            const charLimit = document.getElementById('tts-char-limit');
+            const textArea = document.getElementById('tts-text');
+            const infoText = document.getElementById('tts-info-text');
+
+            if (provider === 'flowery') {
+                // Update button styles
+                floweryBtn.className = 'flex-1 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 flex items-center justify-center';
+                duncteBtn.className = 'flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 flex items-center justify-center';
+
+                // Show/hide options
+                floweryOptions.classList.remove('hidden');
+                duncteInfo.classList.add('hidden');
+
+                // Update character limit
+                charLimit.textContent = '2048';
+                textArea.maxLength = 2048;
+                textArea.placeholder = 'Enter text to speak (max 2048 characters)...';
+
+                // Update info text with quality info
+                updateQualityInfo();
+            } else {
+                // Update button styles
+                duncteBtn.className = 'flex-1 bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 flex items-center justify-center';
+                floweryBtn.className = 'flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 flex items-center justify-center';
+
+                // Show/hide options
+                floweryOptions.classList.add('hidden');
+                duncteInfo.classList.remove('hidden');
+
+                // Update character limit
+                charLimit.textContent = '200';
+                textArea.maxLength = 200;
+                textArea.placeholder = 'Enter text to speak (max 200 characters)...';
+
+                // Update info text
+                infoText.textContent = 'DuncteBot TTS • Czech language • Auto-joins voice channel';
+            }
+
+            // Update character count display
+            updateTTSCharCount();
+
+            // Save preference
+            localStorage.setItem('tts-provider', provider);
+        }
+
+        async function speakText() {
+            const textArea = document.getElementById('tts-text');
+            const speakBtn = document.getElementById('tts-speak-btn');
+            const btnText = document.getElementById('tts-btn-text');
+            const text = textArea.value.trim();
+
+            if (!text) {
+                showTemporaryMessage('Please enter some text to speak', 'error');
+                return;
+            }
+
+            const maxLength = currentTTSProvider === 'flowery' ? 2048 : 200;
+            if (text.length > maxLength) {
+                showTemporaryMessage(`Text must be ${maxLength} characters or less`, 'error');
+                return;
+            }
+
+            // Update button state
+            speakBtn.disabled = true;
+            btnText.textContent = 'Speaking...';
+            speakBtn.classList.add('opacity-50');
+
+            try {
+                let response, requestBody;
+                let usedFallback = false;
+
+                if (currentTTSProvider === 'flowery') {
+                    // FloweryTTS request
+                    const voice = document.getElementById('tts-voice-select').value;
+                    const speed = parseFloat(document.getElementById('tts-speed-slider').value);
+                    const translate = document.getElementById('tts-translate').checked;
+                    const quality = document.getElementById('tts-quality').value;
+
+                    requestBody = {
+                        text,
+                        voice: voice || undefined,
+                        speed: speed !== 1.0 ? speed : undefined,
+                        translate: translate || undefined,
+                        audio_format: quality || 'mp3'
+                    };
+
+                    try {
+                        response = await fetch(`/api/guilds/${guildId}/tts/flowery`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(requestBody)
+                        });
+
+                        // If FloweryTTS fails and text is short enough, try DuncteBot fallback
+                        if (!response.ok && text.length <= 200) {
+                            console.warn('FloweryTTS failed, attempting DuncteBot fallback...');
+                            btnText.textContent = 'Retrying with DuncteBot...';
+
+                            response = await fetch(`/api/guilds/${guildId}/tts/speak`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ text })
+                            });
+                            usedFallback = true;
+                        }
+                    } catch (floweryError) {
+                        // Network error with FloweryTTS, try DuncteBot if text is short enough
+                        if (text.length <= 200) {
+                            console.warn('FloweryTTS network error, attempting DuncteBot fallback...', floweryError);
+                            btnText.textContent = 'Retrying with DuncteBot...';
+
+                            response = await fetch(`/api/guilds/${guildId}/tts/speak`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ text })
+                            });
+                            usedFallback = true;
+                        } else {
+                            throw floweryError;
+                        }
+                    }
+                } else {
+                    // DuncteBot TTS request
+                    response = await fetch(`/api/guilds/${guildId}/tts/speak`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ text })
+                    });
+                }
+
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    let message = result.message;
+                    if (usedFallback) {
+                        message += ' (used DuncteBot fallback)';
+                    }
+                    showTemporaryMessage(message, 'success');
+
+                    // Check user preference for text clearing
+                    const shouldClearText = localStorage.getItem('tts-clear-text') === 'true';
+                    if (shouldClearText) {
+                        textArea.value = '';
+                        updateTTSCharCount();
+                    } else {
+                        // Select all text for easy replacement/editing
+                        textArea.select();
+                    }
+
+                    // Refresh queue to show the new TTS track
+                    loadQueue();
+                } else {
+                    throw new Error(result.error || 'TTS failed');
+                }
+            } catch (error) {
+                console.error('TTS Error:', error);
+                showTemporaryMessage(`TTS failed: ${error.message}`, 'error');
+            } finally {
+                // Reset button state
+                speakBtn.disabled = false;
+                btnText.textContent = 'Speak';
+                speakBtn.classList.remove('opacity-50');
+            }
+        }
+
+        function clearTTSText() {
+            document.getElementById('tts-text').value = '';
+            updateTTSCharCount();
+        }
+
+        function updateTTSCharCount() {
+            const textArea = document.getElementById('tts-text');
+            const charCount = document.getElementById('tts-char-count');
+            const charLimit = document.getElementById('tts-char-limit');
+            const currentLength = textArea.value.length;
+            const maxLength = parseInt(charLimit.textContent);
+
+            charCount.textContent = currentLength;
+
+            // Change color based on character count percentage
+            const percentage = currentLength / maxLength;
+            if (percentage > 0.9) {
+                charCount.style.color = '#ef4444'; // red
+            } else if (percentage > 0.75) {
+                charCount.style.color = '#f59e0b'; // yellow
+            } else {
+                charCount.style.color = '#9ca3af'; // gray
+            }
+        }
+
         // Logout function
         async function logout() {
             try {
@@ -2924,9 +3779,12 @@
         }
 
         // Initialize on page load
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
             initGuildDashboard();
             initDarkMode();
+
+            // Initialize TTS system
+            await initTTS();
 
             // Setup search autocomplete for both search inputs
             setupSearchAutocomplete('search-input', 'search-suggestions');
@@ -2951,6 +3809,28 @@
             speedSlider.addEventListener('change', (e) => {
                 setSpeed(e.target.value);
             });
+
+            // Setup TTS character counter
+            const ttsTextArea = document.getElementById('tts-text');
+
+            if (ttsTextArea) {
+                ttsTextArea.addEventListener('input', updateTTSCharCount);
+
+                // Allow Enter key to trigger TTS (Shift+Enter for new line)
+                ttsTextArea.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        speakText();
+                    }
+                });
+            }
+
+            // Load saved TTS provider preference
+            const savedProvider = localStorage.getItem('tts-provider') || 'flowery';
+            selectTTSProvider(savedProvider);
+
+            // Initialize voice browser
+            initVoiceBrowser();
         });
     </script>
 </body>
