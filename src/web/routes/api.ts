@@ -640,6 +640,11 @@ export async function apiRoutes(fastify: FastifyInstance, options: ApiOptions) {
 			// Apply fair play to current queue
 			const { applyFairPlayToQueue } = await import('../../utils/functions/player');
 			await applyFairPlayToQueue(player);
+
+			// Emit queue update since queue was reordered
+			if (webServer) {
+				webServer.emitQueueUpdateForGuild(guildId);
+			}
 		}
 
 		return { success: true, fairPlay: newFairPlay };
@@ -1799,6 +1804,11 @@ export async function apiRoutes(fastify: FastifyInstance, options: ApiOptions) {
 
 		if (!player.playing) {
 			await player.play();
+		}
+
+		// Emit queue update
+		if (webServer) {
+			webServer.emitQueueUpdateForGuild(guildId);
 		}
 
 		return {
