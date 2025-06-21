@@ -3707,8 +3707,8 @@
                         textArea.select();
                     }
 
-                    // Refresh queue to show the new TTS track
-                    loadQueue();
+                    // Queue will be updated automatically via Socket.IO real-time events
+                    // No manual refresh needed
                 } else {
                     throw new Error(result.error || 'TTS failed');
                 }
