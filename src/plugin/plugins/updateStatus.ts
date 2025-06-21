@@ -8,10 +8,10 @@ const updateStatusPlugin: BotPlugin = {
 	initialize: (client: Lavamusic) => {
 		client.on('ready', () => {
 			client.utils.updateStatus(client);
-			// Update status every 30 seconds to keep it fresh
+			// Update status every 2 minutes to keep it fresh (reduced frequency due to debouncing)
 			setInterval(() => {
 				client.utils.updateStatus(client);
-			}, 30000);
+			}, 120000);
 		});
 	},
 };
