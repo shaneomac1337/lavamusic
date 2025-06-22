@@ -96,12 +96,9 @@ export async function authRoutes(fastify: FastifyInstance, options: AuthOptions)
 
 			const guildsData = await guildsResponse.json();
 
-			// Check if user is authorized (bot owner or has admin permissions in mutual guilds)
-			const isAuthorized = isUserAuthorized(userData.id, guildsData, client);
-
-			if (!isAuthorized) {
-				throw fastify.httpErrors.forbidden('You are not authorized to access this dashboard');
-			}
+			// Allow all authenticated Discord users to access the dashboard
+			// Note: Previously restricted to bot owners and server admins only
+			const isAuthorized = true; // Allow all logged-in users
 
 			// Create JWT token
 			const token = fastify.jwt.sign({
@@ -109,9 +106,9 @@ export async function authRoutes(fastify: FastifyInstance, options: AuthOptions)
 				username: userData.username,
 				discriminator: userData.discriminator,
 				avatar: userData.avatar,
-				guilds: guildsData.filter((guild: any) => 
-					client.guilds.cache.has(guild.id) && 
-					(guild.permissions & 0x8) === 0x8 // Administrator permission
+				guilds: guildsData.filter((guild: any) =>
+					client.guilds.cache.has(guild.id) // Include all mutual guilds (bot is present)
+					// Removed admin permission requirement - all users can access
 				),
 			}, { expiresIn: '7d' });
 
