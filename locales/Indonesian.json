@@ -679,5 +679,21 @@
 	"List available TTS voices from FloweryTTS": "List available TTS voices from FloweryTTS",
 	"What to do with voices": "What to do with voices",
 	"Search query for voice names (when using search action)": "Search query for voice names (when using search action)",
-	"Audio quality/format (FloweryTTS only)": "Audio quality/format (FloweryTTS only)"
+	"Audio quality/format (FloweryTTS only)": "Audio quality/format (FloweryTTS only)",
+	"Voice ID to use (FloweryTTS only) - Use /voices to browse available voices": "Voice ID to use (FloweryTTS only) - Use /voices to browse available voices",
+	"Auto-select voice by language (e": {
+		"g": {
+			", en, cs, ja, de, fr)": "Auto-select voice by language (e.g., en, cs, ja, de, fr)"
+		}
+	},
+	"Prefer male or female voice (when using language selection)": "Prefer male or female voice (when using language selection)",
+	"Voice category to browse": "Voice category to browse",
+	"Search query or filter (for search category)": "Search query or filter (for search category)",
+	"Filter by specific language code (e": {
+		"g": {
+			", en, cs, ja, de, fr)": "Filter by specific language code (e.g., en, cs, ja, de, fr)"
+		}
+	},
+	"Filter by voice gender": "Filter by voice gender",
+	"Voice ID to preview (generates a short test)": "Voice ID to preview (generates a short test)"
 }
