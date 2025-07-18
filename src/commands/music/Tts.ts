@@ -54,9 +54,25 @@ export default class Tts extends Command {
 				},
 				{
 					name: 'voice',
-					description: 'Voice ID to use (FloweryTTS only)',
+					description: 'Voice ID to use (FloweryTTS only) - Use /voices to browse available voices',
 					type: ApplicationCommandOptionType.String,
 					required: false,
+				},
+				{
+					name: 'language',
+					description: 'Auto-select voice by language (e.g., en, cs, ja, de, fr)',
+					type: ApplicationCommandOptionType.String,
+					required: false,
+				},
+				{
+					name: 'gender',
+					description: 'Prefer male or female voice (when using language selection)',
+					type: ApplicationCommandOptionType.String,
+					required: false,
+					choices: [
+						{ name: 'Female', value: 'female' },
+						{ name: 'Male', value: 'male' }
+					]
 				},
 				{
 					name: 'speed',
@@ -94,6 +110,8 @@ export default class Tts extends Command {
 		let text = '';
 		let provider = 'flowery'; // Default to FloweryTTS
 		let voice = '';
+		let language = '';
+		let gender = '';
 		let speed = 1.0;
 		let translate = false;
 		let quality = 'aac';
@@ -103,6 +121,8 @@ export default class Tts extends Command {
 			text = ctx.options?.getString('text') || '';
 			provider = ctx.options?.getString('provider') || 'flowery';
 			voice = ctx.options?.getString('voice') || '';
+			language = ctx.options?.getString('language') || '';
+			gender = ctx.options?.getString('gender') || '';
 			speed = ctx.options?.getNumber('speed') || 1.0;
 			translate = ctx.options?.getBoolean('translate') || false;
 			quality = ctx.options?.getString('quality') || 'aac';
@@ -197,7 +217,9 @@ export default class Tts extends Command {
 			]);
 
 		if (provider === 'flowery') {
-			if (voice) loadingEmbed.addFields([{ name: 'Voice', value: voice, inline: true }]);
+			if (voice) loadingEmbed.addFields([{ name: 'Voice', value: `\`${voice}\``, inline: true }]);
+			if (language) loadingEmbed.addFields([{ name: 'Language', value: language.toUpperCase(), inline: true }]);
+			if (gender) loadingEmbed.addFields([{ name: 'Gender', value: gender.charAt(0).toUpperCase() + gender.slice(1), inline: true }]);
 			if (speed !== 1.0) loadingEmbed.addFields([{ name: 'Speed', value: `${speed}x`, inline: true }]);
 			if (quality !== 'aac') loadingEmbed.addFields([{ name: 'Quality', value: quality.toUpperCase(), inline: true }]);
 			if (translate) loadingEmbed.addFields([{ name: 'Translation', value: '✅ Enabled', inline: true }]);
@@ -207,10 +229,34 @@ export default class Tts extends Command {
 
 		try {
 			if (provider === 'flowery') {
+				// Smart voice selection
+				let selectedVoice = voice;
+
+				if (!selectedVoice && language) {
+					// Auto-select voice based on language and gender preference
+					const filter: any = { languages: [language], sortBy: 'name', limit: 10 };
+					if (gender) filter.genders = [gender];
+
+					const availableVoices = await FloweryTTS.getFilteredVoices(filter);
+					if (availableVoices.length > 0) {
+						// Prefer Neural voices
+						const neuralVoices = availableVoices.filter(v => v.name.toLowerCase().includes('neural'));
+						selectedVoice = (neuralVoices.length > 0 ? neuralVoices[0] : availableVoices[0]).id;
+					}
+				}
+
+				if (!selectedVoice) {
+					// Get recommended voice based on text content
+					const recommendedVoice = await FloweryTTS.getRecommendedVoice(text, language);
+					if (recommendedVoice) {
+						selectedVoice = recommendedVoice.id;
+					}
+				}
+
 				// Use FloweryTTS
 				const ttsResult = await FloweryTTS.generateTTS({
 					text: text.trim(),
-					voice: voice || undefined,
+					voice: selectedVoice || undefined,
 					speed: speed !== 1.0 ? speed : undefined,
 					translate: translate || undefined,
 					audio_format: quality as any
@@ -237,7 +283,7 @@ export default class Tts extends Command {
 
 				const track = result.tracks[0];
 				track.info.title = `TTS: ${text.substring(0, 50)}${text.length > 50 ? '...' : ''}`;
-				track.info.author = `FloweryTTS${voice ? ` (${voice})` : ''}`;
+				track.info.author = `FloweryTTS${selectedVoice ? ` (${selectedVoice})` : ''}`;
 				track.info.duration = ttsResult.duration || 30000;
 
 				await player.queue.add(track);
@@ -246,21 +292,39 @@ export default class Tts extends Command {
 					await player.play();
 				}
 
+				// Get voice info for display
+				let voiceInfo = selectedVoice || 'Auto-selected';
+				if (selectedVoice) {
+					const voiceDetails = await FloweryTTS.findVoice(selectedVoice);
+					if (voiceDetails) {
+						voiceInfo = `${voiceDetails.name} (${voiceDetails.language.name})`;
+					}
+				}
+
 				// Success response
 				const successEmbed = embed
 					.setColor(this.client.color.green)
-					.setDescription(`✅ FloweryTTS added to queue!`)
+					.setDescription(`✅ FloweryTTS speech generated and added to queue!`)
 					.addFields([
-						{ name: 'Text', value: text.length > 100 ? text.substring(0, 100) + '...' : text, inline: false },
-						{ name: 'Voice Used', value: ttsResult.voiceUsed || 'Default', inline: true },
-						{ name: 'Speed', value: `${speed}x`, inline: true },
-						{ name: 'Quality', value: quality.toUpperCase(), inline: true },
-						{ name: 'Length', value: `${text.length} chars`, inline: true }
+						{ name: '💬 Text', value: text.length > 100 ? text.substring(0, 100) + '...' : text, inline: false },
+						{ name: '🎤 Voice', value: voiceInfo, inline: true },
+						{ name: '⚡ Speed', value: `${speed}x`, inline: true },
+						{ name: '🎵 Quality', value: quality.toUpperCase(), inline: true },
+						{ name: '📏 Length', value: `${text.length} chars`, inline: true }
 					]);
 
 				if (translate) {
-					successEmbed.addFields([{ name: 'Translation', value: '✅ Applied', inline: true }]);
+					successEmbed.addFields([{ name: '🌍 Translation', value: '✅ Applied', inline: true }]);
 				}
+
+				// Add helpful tips
+				successEmbed.addFields([
+					{
+						name: '💡 Pro Tips',
+						value: '• Use `/voices category:popular` to browse voices\n• Try `/voices preview:voice_id` to test voices\n• Use `language:` parameter for auto-selection',
+						inline: false
+					}
+				]);
 
 				return await ctx.editMessage({ embeds: [successEmbed] });
 

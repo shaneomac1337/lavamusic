@@ -915,6 +915,65 @@ export async function apiRoutes(fastify: FastifyInstance, options: ApiOptions) {
 		}
 	});
 
+	// FloweryTTS - Get filtered voices with advanced options
+	fastify.get('/tts/flowery/voices/filtered', async (request) => {
+		const query = request.query as any;
+
+		try {
+			const filter: any = {};
+
+			// Parse query parameters
+			if (query.languages) {
+				filter.languages = Array.isArray(query.languages) ? query.languages : [query.languages];
+			}
+			if (query.genders) {
+				filter.genders = Array.isArray(query.genders) ? query.genders : [query.genders];
+			}
+			if (query.sources) {
+				filter.sources = Array.isArray(query.sources) ? query.sources : [query.sources];
+			}
+			if (query.search) {
+				filter.search = query.search;
+			}
+			if (query.limit) {
+				filter.limit = parseInt(query.limit);
+			}
+			if (query.sortBy) {
+				filter.sortBy = query.sortBy;
+			}
+			if (query.sortOrder) {
+				filter.sortOrder = query.sortOrder;
+			}
+
+			const voices = await FloweryTTS.getFilteredVoices(filter);
+			return {
+				success: true,
+				voices,
+				count: voices.length,
+				filter
+			};
+		} catch (error: any) {
+			console.error('Error fetching filtered FloweryTTS voices:', error);
+			throw fastify.httpErrors.internalServerError(`Failed to fetch filtered voices: ${error.message}`);
+		}
+	});
+
+	// FloweryTTS - Get voice categories
+	fastify.get('/tts/flowery/voices/categories', async () => {
+		try {
+			const categories = FloweryTTS.getVoiceCategories();
+			return {
+				success: true,
+				categories
+			};
+		} catch (error: any) {
+			console.error('Error fetching FloweryTTS voice categories:', error);
+			throw fastify.httpErrors.internalServerError(`Failed to fetch voice categories: ${error.message}`);
+		}
+	});
+
+
+
 	// FloweryTTS - Get voices by language
 	fastify.get('/tts/flowery/voices/language/:languageCode', async (request) => {
 		const { languageCode } = request.params as { languageCode: string };

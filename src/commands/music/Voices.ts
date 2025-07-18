@@ -35,25 +35,47 @@ export default class Voices extends Command {
 			slashCommand: true,
 			options: [
 				{
-					name: 'action',
-					description: 'What to do with voices',
+					name: 'category',
+					description: 'Voice category to browse',
 					type: ApplicationCommandOptionType.String,
 					required: false,
 					choices: [
+						{ name: '⭐ Popular Voices', value: 'popular' },
 						{ name: '🇺🇸 English Voices', value: 'english' },
 						{ name: '🇨🇿 Czech Voices', value: 'czech' },
 						{ name: '🇯🇵 Japanese Voices', value: 'japanese' },
+						{ name: '🇪🇺 European Languages', value: 'european' },
+						{ name: '🌏 Asian Languages', value: 'asian' },
+						{ name: '🧠 Neural Voices', value: 'neural' },
+						{ name: '👩 Female Voices', value: 'female' },
+						{ name: '👨 Male Voices', value: 'male' },
 						{ name: '🔍 Search Voices', value: 'search' },
-						{ name: '⭐ Popular Voices', value: 'popular' },
-						{ name: '📊 Voice Stats', value: 'stats' }
+						{ name: '📊 Voice Statistics', value: 'stats' }
 					]
 				},
 				{
 					name: 'query',
-					description: 'Search query for voice names (when using search action)',
+					description: 'Search query or filter (for search category)',
 					type: ApplicationCommandOptionType.String,
 					required: false,
-				}
+				},
+				{
+					name: 'language',
+					description: 'Filter by specific language code (e.g., en, cs, ja, de, fr)',
+					type: ApplicationCommandOptionType.String,
+					required: false,
+				},
+				{
+					name: 'gender',
+					description: 'Filter by voice gender',
+					type: ApplicationCommandOptionType.String,
+					required: false,
+					choices: [
+						{ name: 'Female', value: 'female' },
+						{ name: 'Male', value: 'male' }
+					]
+				},
+
 			],
 		});
 	}
@@ -62,25 +84,31 @@ export default class Voices extends Command {
 		const embed = this.client.embed();
 
 		// Parse arguments
-		let action = 'popular'; // Default action
+		let category = 'popular';
 		let query = '';
-
+		let language = '';
+		let gender = '';
 		if (ctx.isInteraction) {
-			action = ctx.options?.getString('action') || 'popular';
+			category = ctx.options?.getString('category') || 'popular';
 			query = ctx.options?.getString('query') || '';
+			language = ctx.options?.getString('language') || '';
+			gender = ctx.options?.getString('gender') || '';
 		} else {
 			if (args.length > 0) {
 				const firstArg = args[0].toLowerCase();
-				if (['english', 'czech', 'japanese', 'search', 'popular', 'stats'].includes(firstArg)) {
-					action = firstArg;
+				const validCategories = ['english', 'czech', 'japanese', 'european', 'asian', 'neural', 'female', 'male', 'search', 'popular', 'stats'];
+				if (validCategories.includes(firstArg)) {
+					category = firstArg;
 					query = args.slice(1).join(' ');
 				} else {
 					// Treat as search query
-					action = 'search';
+					category = 'search';
 					query = args.join(' ');
 				}
 			}
 		}
+
+
 
 		// Send loading message
 		const loadingEmbed = embed
@@ -90,281 +118,465 @@ export default class Voices extends Command {
 		await ctx.sendMessage({ embeds: [loadingEmbed] });
 
 		try {
-			switch (action) {
+			switch (category) {
 				case 'english':
-					return await this.showEnglishVoices(ctx, embed);
+					return await this.showCategoryVoices(ctx, embed, 'English', { languages: ['en'], language, gender });
 
 				case 'czech':
-					return await this.showCzechVoices(ctx, embed);
+					return await this.showCategoryVoices(ctx, embed, 'Czech', { languages: ['cs', 'cz'], language, gender });
 
 				case 'japanese':
-					return await this.showJapaneseVoices(ctx, embed);
+					return await this.showCategoryVoices(ctx, embed, 'Japanese', { languages: ['ja'], language, gender });
+
+				case 'european':
+					return await this.showCategoryVoices(ctx, embed, 'European', { languages: ['de', 'fr', 'es', 'it', 'pt', 'nl', 'pl', 'ru'], language, gender });
+
+				case 'asian':
+					return await this.showCategoryVoices(ctx, embed, 'Asian', { languages: ['zh', 'ko', 'hi', 'th', 'vi'], language, gender });
+
+				case 'neural':
+					return await this.showCategoryVoices(ctx, embed, 'Neural', { search: 'neural', language, gender });
+
+				case 'female':
+					return await this.showCategoryVoices(ctx, embed, 'Female', { genders: ['female'], language });
+
+				case 'male':
+					return await this.showCategoryVoices(ctx, embed, 'Male', { genders: ['male'], language });
 
 				case 'search':
-					return await this.searchVoices(ctx, embed, query);
+					return await this.searchVoices(ctx, embed, query, { language, gender });
 
 				case 'stats':
 					return await this.showVoiceStats(ctx, embed);
 
 				case 'popular':
 				default:
-					return await this.showPopularVoices(ctx, embed);
+					return await this.showPopularVoices(ctx, embed, { language, gender });
 			}
 
 		} catch (error: any) {
 			this.client.logger.error('Voices Command Error:', error);
-			
+
 			const errorEmbed = embed
 				.setColor(this.client.color.red)
 				.setDescription(`❌ Failed to load voices: ${error.message}`)
 				.addFields([
-					{ name: 'Suggestion', value: 'FloweryTTS service might be temporarily unavailable. Try again later.', inline: false }
+					{ name: 'Suggestion', value: 'FloweryTTS service might be temporarily unavailable. Try again later.', inline: false },
+					{ name: 'Help', value: 'Use `/voices category:popular` to see recommended voices', inline: false }
 				]);
 
 			return await ctx.editMessage({ embeds: [errorEmbed] });
 		}
 	}
 
-	private async showPopularVoices(ctx: Context, embed: any): Promise<any> {
-		const voices = await FloweryTTS.getPopularVoices();
+	private async showPopularVoices(ctx: Context, embed: any, filters: { language?: string; gender?: string } = {}): Promise<any> {
+		let voices = await FloweryTTS.getPopularVoices();
 
-		const englishVoices = voices.filter(v => v.language.code.toLowerCase().startsWith('en')).slice(0, 8);
-		const czechVoices = voices.filter(v =>
-			v.language.code.toLowerCase().startsWith('cs') ||
-			v.language.name.toLowerCase().includes('czech')
-		).slice(0, 6);
-		const japaneseVoices = voices.filter(v =>
-			v.language.code.toLowerCase().startsWith('ja') ||
-			v.language.name.toLowerCase().includes('japanese')
-		).slice(0, 6);
-
-		const resultEmbed = embed
-			.setColor(this.client.color.main)
-			.setTitle('⭐ Popular TTS Voices')
-			.setDescription('Most commonly used English, Czech, and Japanese voices for TTS');
-
-		if (englishVoices.length > 0) {
-			const englishList = englishVoices.map(v => `\`${v.id}\` - ${v.name} (${v.gender})`).join('\n');
-			resultEmbed.addFields([{ name: '🇺🇸 English Voices', value: englishList, inline: false }]);
+		// Apply additional filters
+		if (filters.language) {
+			voices = voices.filter(v => v.language.code.toLowerCase().startsWith(filters.language!.toLowerCase()));
+		}
+		if (filters.gender) {
+			voices = voices.filter(v => v.gender.toLowerCase() === filters.gender!.toLowerCase());
 		}
 
-		if (czechVoices.length > 0) {
-			const czechList = czechVoices.map(v => `\`${v.id}\` - ${v.name} (${v.gender})`).join('\n');
-			resultEmbed.addFields([{ name: '🇨🇿 Czech Voices', value: czechList, inline: false }]);
-		}
-
-		if (japaneseVoices.length > 0) {
-			const japaneseList = japaneseVoices.map(v => `\`${v.id}\` - ${v.name} (${v.gender})`).join('\n');
-			resultEmbed.addFields([{ name: '🇯🇵 Japanese Voices', value: japaneseList, inline: false }]);
-		}
-
-		resultEmbed.addFields([
-			{ name: 'Usage', value: '`/tts text:Hello --voice en-US-AriaNeural`', inline: false },
-			{ name: 'More Options', value: 'Use `/voices english`, `/voices czech`, or `/voices japanese` for complete lists', inline: false }
-		]);
-
-		return await ctx.editMessage({ embeds: [resultEmbed] });
-	}
-
-	private async showEnglishVoices(ctx: Context, embed: any): Promise<any> {
-		const voices = await FloweryTTS.getEnglishVoices();
-		
-		if (voices.length === 0) {
-			const noVoicesEmbed = embed
-				.setColor(this.client.color.yellow)
-				.setDescription('⚠️ No English voices found');
-			return await ctx.editMessage({ embeds: [noVoicesEmbed] });
-		}
-
-		// Group by country/variant
-		const voiceGroups: Record<string, typeof voices> = {};
+		// Group by language for better organization
+		const languageGroups: Record<string, typeof voices> = {};
 		voices.forEach(voice => {
-			const country = voice.language.code.split('-')[1] || 'US';
-			if (!voiceGroups[country]) voiceGroups[country] = [];
-			voiceGroups[country].push(voice);
+			const langKey = `${voice.language.name} (${voice.language.code})`;
+			if (!languageGroups[langKey]) languageGroups[langKey] = [];
+			languageGroups[langKey].push(voice);
 		});
 
 		const resultEmbed = embed
 			.setColor(this.client.color.main)
-			.setTitle(`🇺🇸 English Voices (${voices.length} total)`)
-			.setDescription('Available English TTS voices grouped by region');
+			.setTitle('⭐ Popular High-Quality TTS Voices')
+			.setDescription(`${voices.length} carefully selected voices with excellent quality and natural sound`);
 
-		// Show first few groups
+		// Show top language groups
 		let fieldCount = 0;
-		for (const [country, countryVoices] of Object.entries(voiceGroups)) {
-			if (fieldCount >= 6) break; // Discord embed field limit
-			
-			const voiceList = countryVoices.slice(0, 8).map(v => `\`${v.id}\` ${v.name} (${v.gender})`).join('\n');
-			const fieldName = `${country === 'US' ? '🇺🇸' : country === 'GB' ? '🇬🇧' : '🌍'} ${country} (${countryVoices.length})`;
-			
-			resultEmbed.addFields([{ name: fieldName, value: voiceList, inline: true }]);
+		const sortedGroups = Object.entries(languageGroups).sort(([,a], [,b]) => b.length - a.length);
+
+		for (const [langName, langVoices] of sortedGroups) {
+			if (fieldCount >= 6) break; // Discord embed limit
+
+			const voiceList = langVoices.slice(0, 6).map(v => {
+				const qualityIndicator = v.name.toLowerCase().includes('neural') ? '🧠' :
+										v.source.toLowerCase().includes('azure') ? '🔷' : '🎵';
+				return `${qualityIndicator} \`${v.id}\` ${v.name} (${v.gender})`;
+			}).join('\n');
+
+			const emoji = this.getLanguageEmoji(langVoices[0].language.code);
+			resultEmbed.addFields([{
+				name: `${emoji} ${langName} (${langVoices.length})`,
+				value: voiceList,
+				inline: true
+			}]);
 			fieldCount++;
 		}
 
 		resultEmbed.addFields([
-			{ name: 'Usage', value: '`/tts text:Hello world --voice en-US-AriaNeural`', inline: false }
+			{
+				name: '🎯 Quick Usage',
+				value: '`/tts text:Hello world voice:en-US-AriaNeural`\n`/voices preview:en-US-AriaNeural` (test voice)',
+				inline: false
+			},
+			{
+				name: '🔍 Explore More',
+				value: 'Use `/voices category:english` or `/voices category:neural` for specific categories',
+				inline: false
+			}
 		]);
 
 		return await ctx.editMessage({ embeds: [resultEmbed] });
 	}
 
-	private async showCzechVoices(ctx: Context, embed: any): Promise<any> {
-		const voices = await FloweryTTS.getCzechVoices();
-		
-		if (voices.length === 0) {
-			const noVoicesEmbed = embed
-				.setColor(this.client.color.yellow)
-				.setDescription('⚠️ No Czech voices found');
-			return await ctx.editMessage({ embeds: [noVoicesEmbed] });
+	private async showCategoryVoices(ctx: Context, embed: any, categoryName: string, filters: {
+		languages?: string[];
+		genders?: string[];
+		search?: string;
+		language?: string;
+		gender?: string;
+	}): Promise<any> {
+		// Build filter object
+		const filter: any = { ...filters, sortBy: 'language', limit: 50 };
+
+		// Apply additional filters from user input
+		if (filters.language) {
+			filter.languages = [filters.language];
+		}
+		if (filters.gender) {
+			filter.genders = [filters.gender];
 		}
 
-		// Group by gender
-		const maleVoices = voices.filter(v => v.gender.toLowerCase() === 'male');
-		const femaleVoices = voices.filter(v => v.gender.toLowerCase() === 'female');
-
-		const resultEmbed = embed
-			.setColor(this.client.color.main)
-			.setTitle(`🇨🇿 Czech Voices (${voices.length} total)`)
-			.setDescription('Available Czech TTS voices');
-
-		if (femaleVoices.length > 0) {
-			const femaleList = femaleVoices.slice(0, 10).map(v => `\`${v.id}\` ${v.name}`).join('\n');
-			resultEmbed.addFields([{ name: `👩 Female Voices (${femaleVoices.length})`, value: femaleList, inline: true }]);
-		}
-
-		if (maleVoices.length > 0) {
-			const maleList = maleVoices.slice(0, 10).map(v => `\`${v.id}\` ${v.name}`).join('\n');
-			resultEmbed.addFields([{ name: `👨 Male Voices (${maleVoices.length})`, value: maleList, inline: true }]);
-		}
-
-		resultEmbed.addFields([
-			{ name: 'Usage', value: '`/tts text:Ahoj světe --voice cs-CZ-AntoninNeural`', inline: false },
-			{ name: 'Translation', value: 'Use `--translate` to auto-translate English text to Czech', inline: false }
-		]);
-
-		return await ctx.editMessage({ embeds: [resultEmbed] });
-	}
-
-	private async showJapaneseVoices(ctx: Context, embed: any): Promise<any> {
-		const voices = await FloweryTTS.getJapaneseVoices();
+		const voices = await FloweryTTS.getFilteredVoices(filter);
 
 		if (voices.length === 0) {
 			const noVoicesEmbed = embed
 				.setColor(this.client.color.yellow)
-				.setDescription('⚠️ No Japanese voices found');
+				.setDescription(`⚠️ No ${categoryName.toLowerCase()} voices found with the specified filters`)
+				.addFields([
+					{ name: 'Try', value: 'Remove some filters or try a different category', inline: false }
+				]);
 			return await ctx.editMessage({ embeds: [noVoicesEmbed] });
 		}
 
-		// Group by gender
-		const maleVoices = voices.filter(v => v.gender.toLowerCase() === 'male');
-		const femaleVoices = voices.filter(v => v.gender.toLowerCase() === 'female');
+		// Group voices intelligently
+		const groups = this.groupVoices(voices, categoryName);
 
 		const resultEmbed = embed
 			.setColor(this.client.color.main)
-			.setTitle(`🇯🇵 Japanese Voices (${voices.length} total)`)
-			.setDescription('Available Japanese TTS voices');
+			.setTitle(`${this.getCategoryEmoji(categoryName)} ${categoryName} Voices (${voices.length} total)`)
+			.setDescription(this.getCategoryDescription(categoryName));
 
-		if (femaleVoices.length > 0) {
-			const femaleList = femaleVoices.slice(0, 10).map(v => `\`${v.id}\` ${v.name}`).join('\n');
-			resultEmbed.addFields([{ name: `👩 Female Voices (${femaleVoices.length})`, value: femaleList, inline: true }]);
+		// Show groups
+		let fieldCount = 0;
+		for (const [groupName, groupVoices] of Object.entries(groups)) {
+			if (fieldCount >= 6) break;
+
+			const voiceList = groupVoices.slice(0, 8).map(v => {
+				const qualityIndicator = this.getQualityIndicator(v);
+				return `${qualityIndicator} \`${v.id}\` ${v.name}`;
+			}).join('\n');
+
+			resultEmbed.addFields([{
+				name: `${groupName} (${groupVoices.length})`,
+				value: voiceList,
+				inline: true
+			}]);
+			fieldCount++;
 		}
 
-		if (maleVoices.length > 0) {
-			const maleList = maleVoices.slice(0, 10).map(v => `\`${v.id}\` ${v.name}`).join('\n');
-			resultEmbed.addFields([{ name: `👨 Male Voices (${maleVoices.length})`, value: maleList, inline: true }]);
-		}
-
+		// Add usage examples
+		const exampleVoice = voices[0];
 		resultEmbed.addFields([
-			{ name: 'Usage', value: '`/tts text:こんにちは世界 --voice ja-JP-NanamiNeural`', inline: false },
-			{ name: 'Translation', value: 'Use `--translate` to auto-translate English text to Japanese', inline: false }
+			{
+				name: '🎯 Usage Example',
+				value: `\`/tts text:Your message voice:${exampleVoice.id}\``,
+				inline: false
+			},
+			{
+				name: '🔍 Filter Options',
+				value: 'Use `language:` and `gender:` parameters to narrow down results',
+				inline: false
+			}
 		]);
 
 		return await ctx.editMessage({ embeds: [resultEmbed] });
 	}
 
-	private async searchVoices(ctx: Context, embed: any, query: string): Promise<any> {
+
+
+	private async searchVoices(ctx: Context, embed: any, query: string, filters: { language?: string; gender?: string } = {}): Promise<any> {
 		if (!query) {
 			const helpEmbed = embed
 				.setColor(this.client.color.yellow)
-				.setDescription('❓ Please provide a search query\n\n**Examples:**\n`/voices search aria`\n`!voices search neural`');
+				.setTitle('🔍 Voice Search Help')
+				.setDescription('Please provide a search query to find voices')
+				.addFields([
+					{ name: 'Search Examples', value: '• `aria` - Find voices with "aria" in name\n• `neural` - Find Neural voices\n• `british` - Find British English voices\n• `female` - Find female voices', inline: false },
+					{ name: 'Advanced Search', value: 'Use `language:` and `gender:` filters for precise results', inline: false }
+				]);
 			return await ctx.editMessage({ embeds: [helpEmbed] });
 		}
 
-		const allVoices = await FloweryTTS.getVoices();
-		const searchResults = allVoices.voices.filter(voice => 
-			voice.name.toLowerCase().includes(query.toLowerCase()) ||
-			voice.id.toLowerCase().includes(query.toLowerCase()) ||
-			voice.language.name.toLowerCase().includes(query.toLowerCase())
-		).slice(0, 20); // Limit results
+		// Build search filter
+		const searchFilter: any = { search: query, sortBy: 'language', limit: 30 };
+		if (filters.language) searchFilter.languages = [filters.language];
+		if (filters.gender) searchFilter.genders = [filters.gender];
+
+		const searchResults = await FloweryTTS.getFilteredVoices(searchFilter);
 
 		if (searchResults.length === 0) {
 			const noResultsEmbed = embed
 				.setColor(this.client.color.yellow)
-				.setDescription(`🔍 No voices found matching "${query}"`);
+				.setTitle(`🔍 No Results for "${query}"`)
+				.setDescription('No voices found matching your search criteria')
+				.addFields([
+					{ name: 'Suggestions', value: '• Try a shorter search term\n• Check spelling\n• Remove filters\n• Try `/voices category:popular` for recommended voices', inline: false }
+				]);
 			return await ctx.editMessage({ embeds: [noResultsEmbed] });
 		}
 
 		const resultEmbed = embed
 			.setColor(this.client.color.main)
-			.setTitle(`🔍 Search Results for "${query}"`)
+			.setTitle(`🔍 Search Results: "${query}"`)
 			.setDescription(`Found ${searchResults.length} matching voices`);
 
-		// Group results by language
+		// Group results by language for better organization
 		const languageGroups: Record<string, typeof searchResults> = {};
 		searchResults.forEach(voice => {
-			const lang = voice.language.name;
-			if (!languageGroups[lang]) languageGroups[lang] = [];
-			languageGroups[lang].push(voice);
+			const langKey = `${voice.language.name} (${voice.language.code})`;
+			if (!languageGroups[langKey]) languageGroups[langKey] = [];
+			languageGroups[langKey].push(voice);
 		});
 
+		// Show top matching groups
 		let fieldCount = 0;
-		for (const [language, voices] of Object.entries(languageGroups)) {
+		const sortedGroups = Object.entries(languageGroups).sort(([,a], [,b]) => b.length - a.length);
+
+		for (const [langName, voices] of sortedGroups) {
 			if (fieldCount >= 6) break;
-			
-			const voiceList = voices.slice(0, 5).map(v => `\`${v.id}\` ${v.name} (${v.gender})`).join('\n');
-			resultEmbed.addFields([{ name: `${language} (${voices.length})`, value: voiceList, inline: true }]);
+
+			const voiceList = voices.slice(0, 5).map(v => {
+				const qualityIndicator = this.getQualityIndicator(v);
+				return `${qualityIndicator} \`${v.id}\` ${v.name} (${v.gender})`;
+			}).join('\n');
+
+			const emoji = this.getLanguageEmoji(voices[0].language.code);
+			resultEmbed.addFields([{
+				name: `${emoji} ${langName} (${voices.length})`,
+				value: voiceList,
+				inline: true
+			}]);
 			fieldCount++;
 		}
 
+		// Add usage and tips
+		const bestMatch = searchResults[0];
 		resultEmbed.addFields([
-			{ name: 'Usage', value: '`/tts text:Your text --voice VOICE_ID`', inline: false }
+			{
+				name: '🎯 Quick Test',
+				value: `\`/voices preview:${bestMatch.id}\` - Test this voice`,
+				inline: false
+			},
+			{
+				name: '💡 Pro Tip',
+				value: 'Use `/tts` with the voice ID to generate speech with your text',
+				inline: false
+			}
 		]);
 
 		return await ctx.editMessage({ embeds: [resultEmbed] });
 	}
 
 	private async showVoiceStats(ctx: Context, embed: any): Promise<any> {
-		const allVoices = await FloweryTTS.getVoices();
-		const englishVoices = await FloweryTTS.getEnglishVoices();
-		const czechVoices = await FloweryTTS.getCzechVoices();
-		const japaneseVoices = await FloweryTTS.getJapaneseVoices();
-
-		// Count by language
-		const languageCounts: Record<string, number> = {};
-		allVoices.voices.forEach(voice => {
-			const lang = voice.language.name;
-			languageCounts[lang] = (languageCounts[lang] || 0) + 1;
-		});
-
-		const topLanguages = Object.entries(languageCounts)
-			.sort(([,a], [,b]) => b - a)
-			.slice(0, 10)
-			.map(([lang, count]) => `${lang}: ${count}`)
-			.join('\n');
+		const stats = await FloweryTTS.getVoiceStatistics();
 
 		const resultEmbed = embed
 			.setColor(this.client.color.main)
-			.setTitle('📊 FloweryTTS Voice Statistics')
-			.addFields([
-				{ name: 'Total Voices', value: allVoices.count.toString(), inline: true },
-				{ name: '🇺🇸 English Voices', value: englishVoices.length.toString(), inline: true },
-				{ name: '🇨🇿 Czech Voices', value: czechVoices.length.toString(), inline: true },
-				{ name: '🇯🇵 Japanese Voices', value: japaneseVoices.length.toString(), inline: true },
-				{ name: 'Top Languages', value: topLanguages, inline: false },
-				{ name: 'Features', value: '• 850+ voices\n• English, Czech & Japanese priority\n• Speed control (0.5x-10x)\n• Auto-translation\n• High quality audio', inline: false }
-			]);
+			.setTitle('📊 FloweryTTS Voice Analytics')
+			.setDescription('Comprehensive statistics about available TTS voices');
+
+		// Top languages with percentages
+		const topLanguagesText = stats.topLanguages
+			.slice(0, 8)
+			.map(({ language, count, percentage }) => `${language}: ${count} (${percentage}%)`)
+			.join('\n');
+
+		// Gender distribution
+		const genderStats = Object.entries(stats.byGender)
+			.map(([gender, count]) => `${gender}: ${count}`)
+			.join('\n');
+
+		// Source distribution (top 5)
+		const sourceStats = Object.entries(stats.bySource)
+			.sort(([,a], [,b]) => b - a)
+			.slice(0, 5)
+			.map(([source, count]) => `${source}: ${count}`)
+			.join('\n');
+
+		resultEmbed.addFields([
+			{ name: '🌍 Total Voices', value: stats.total.toString(), inline: true },
+			{ name: '🗣️ Languages', value: Object.keys(stats.byLanguage).length.toString(), inline: true },
+			{ name: '🎭 Voice Types', value: Object.keys(stats.byGender).length.toString(), inline: true },
+			{ name: '🏆 Top Languages', value: topLanguagesText, inline: true },
+			{ name: '👥 Gender Distribution', value: genderStats, inline: true },
+			{ name: '🔧 Voice Sources', value: sourceStats, inline: true },
+			{
+				name: '✨ Quality Features',
+				value: '• Neural AI voices for natural speech\n• Multi-language support\n• Speed control (0.5x-10x)\n• Auto-translation capability\n• High-quality audio formats',
+				inline: false
+			},
+			{
+				name: '🎯 Quick Start',
+				value: 'Use `/voices category:popular` to see recommended voices\nTry `/voices preview:en-US-AriaNeural` to test a voice',
+				inline: false
+			}
+		]);
 
 		return await ctx.editMessage({ embeds: [resultEmbed] });
+	}
+
+
+	// Helper methods for better organization and display
+
+	private groupVoices(voices: any[], categoryName: string): Record<string, any[]> {
+		const groups: Record<string, any[]> = {};
+
+		switch (categoryName.toLowerCase()) {
+			case 'english':
+				// Group by country/region
+				voices.forEach(voice => {
+					const country = voice.language.code.split('-')[1] || 'US';
+					const countryName = this.getCountryName(country);
+					if (!groups[countryName]) groups[countryName] = [];
+					groups[countryName].push(voice);
+				});
+				break;
+
+			case 'european':
+			case 'asian':
+				// Group by language
+				voices.forEach(voice => {
+					const lang = voice.language.name;
+					if (!groups[lang]) groups[lang] = [];
+					groups[lang].push(voice);
+				});
+				break;
+
+			case 'neural':
+				// Group by language, prioritize Neural
+				voices.forEach(voice => {
+					const lang = voice.language.name;
+					const isNeural = voice.name.toLowerCase().includes('neural');
+					const groupName = isNeural ? `${lang} (Neural)` : lang;
+					if (!groups[groupName]) groups[groupName] = [];
+					groups[groupName].push(voice);
+				});
+				break;
+
+			default:
+				// Group by gender for gender-based categories, or by language for others
+				if (categoryName.toLowerCase() === 'female' || categoryName.toLowerCase() === 'male') {
+					voices.forEach(voice => {
+						const lang = voice.language.name;
+						if (!groups[lang]) groups[lang] = [];
+						groups[lang].push(voice);
+					});
+				} else {
+					voices.forEach(voice => {
+						const lang = voice.language.name;
+						if (!groups[lang]) groups[lang] = [];
+						groups[lang].push(voice);
+					});
+				}
+		}
+
+		return groups;
+	}
+
+	private getLanguageEmoji(languageCode: string): string {
+		const code = languageCode.toLowerCase();
+		const emojiMap: Record<string, string> = {
+			'en-us': '🇺🇸', 'en-gb': '🇬🇧', 'en-au': '🇦🇺', 'en-ca': '🇨🇦', 'en': '🇺🇸',
+			'cs': '🇨🇿', 'cz': '🇨🇿',
+			'ja': '🇯🇵',
+			'de': '🇩🇪',
+			'fr': '🇫🇷',
+			'es': '🇪🇸',
+			'it': '🇮🇹',
+			'pt': '🇵🇹',
+			'nl': '🇳🇱',
+			'pl': '🇵🇱',
+			'ru': '🇷🇺',
+			'zh': '🇨🇳',
+			'ko': '🇰🇷',
+			'hi': '🇮🇳',
+			'th': '🇹🇭',
+			'vi': '🇻🇳'
+		};
+
+		return emojiMap[code] || emojiMap[code.split('-')[0]] || '🌍';
+	}
+
+	private getCountryName(countryCode: string): string {
+		const countryMap: Record<string, string> = {
+			'US': 'United States',
+			'GB': 'United Kingdom',
+			'AU': 'Australia',
+			'CA': 'Canada',
+			'IE': 'Ireland',
+			'ZA': 'South Africa',
+			'IN': 'India'
+		};
+
+		return countryMap[countryCode] || countryCode;
+	}
+
+	private getCategoryEmoji(categoryName: string): string {
+		const emojiMap: Record<string, string> = {
+			'popular': '⭐',
+			'english': '🇺🇸',
+			'czech': '🇨🇿',
+			'japanese': '🇯🇵',
+			'european': '🇪🇺',
+			'asian': '🌏',
+			'neural': '🧠',
+			'female': '👩',
+			'male': '👨'
+		};
+
+		return emojiMap[categoryName.toLowerCase()] || '🎵';
+	}
+
+	private getCategoryDescription(categoryName: string): string {
+		const descriptions: Record<string, string> = {
+			'popular': 'Carefully selected high-quality voices with excellent natural sound',
+			'english': 'All English language voices from various regions and countries',
+			'czech': 'Czech language voices for natural Czech speech synthesis',
+			'japanese': 'Japanese language voices with authentic pronunciation',
+			'european': 'Voices from European languages including German, French, Spanish, and more',
+			'asian': 'Voices from Asian languages including Chinese, Korean, Hindi, and others',
+			'neural': 'Advanced AI-powered Neural voices with superior quality and naturalness',
+			'female': 'Female voices across all supported languages',
+			'male': 'Male voices across all supported languages'
+		};
+
+		return descriptions[categoryName.toLowerCase()] || 'Available TTS voices for this category';
+	}
+
+	private getQualityIndicator(voice: any): string {
+		const name = voice.name.toLowerCase();
+		const source = voice.source.toLowerCase();
+
+		if (name.includes('neural')) return '🧠';
+		if (name.includes('wavenet')) return '🌊';
+		if (source.includes('azure')) return '🔷';
+		if (source.includes('google')) return '🔵';
+		if (name.includes('standard')) return '🎵';
+
+		return '🎤';
 	}
 }
 
