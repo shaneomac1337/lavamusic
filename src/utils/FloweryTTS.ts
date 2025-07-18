@@ -11,6 +11,24 @@ export interface FloweryVoice {
 	};
 }
 
+export interface VoiceFilter {
+	languages?: string[];
+	genders?: string[];
+	sources?: string[];
+	search?: string;
+	limit?: number;
+	sortBy?: 'name' | 'language' | 'gender' | 'source';
+	sortOrder?: 'asc' | 'desc';
+}
+
+export interface VoiceCategory {
+	name: string;
+	emoji: string;
+	description: string;
+	filter: VoiceFilter;
+	priority: number;
+}
+
 export interface FloweryVoicesResponse {
 	count: number;
 	default: FloweryVoice;
@@ -221,69 +239,364 @@ export class FloweryTTS {
 	}
 
 	/**
-	 * Get popular/recommended voices (English + Czech + Japanese)
+	 * Get voice categories for better organization
+	 */
+	public static getVoiceCategories(): VoiceCategory[] {
+		return [
+			{
+				name: 'Popular',
+				emoji: '⭐',
+				description: 'Most commonly used high-quality voices',
+				filter: { languages: ['en', 'cs', 'ja'], limit: 20 },
+				priority: 1
+			},
+			{
+				name: 'English',
+				emoji: '🇺🇸',
+				description: 'All English voices (US, UK, AU, etc.)',
+				filter: { languages: ['en'], sortBy: 'name' },
+				priority: 2
+			},
+			{
+				name: 'Czech',
+				emoji: '🇨🇿',
+				description: 'Czech language voices',
+				filter: { languages: ['cs', 'cz'], sortBy: 'gender' },
+				priority: 3
+			},
+			{
+				name: 'Japanese',
+				emoji: '🇯🇵',
+				description: 'Japanese language voices',
+				filter: { languages: ['ja'], sortBy: 'gender' },
+				priority: 4
+			},
+			{
+				name: 'European',
+				emoji: '🇪🇺',
+				description: 'European languages (German, French, Spanish, etc.)',
+				filter: { languages: ['de', 'fr', 'es', 'it', 'pt', 'nl', 'pl', 'ru'], sortBy: 'language' },
+				priority: 5
+			},
+			{
+				name: 'Asian',
+				emoji: '🌏',
+				description: 'Asian languages (Chinese, Korean, Hindi, etc.)',
+				filter: { languages: ['zh', 'ko', 'hi', 'th', 'vi'], sortBy: 'language' },
+				priority: 6
+			},
+			{
+				name: 'Neural',
+				emoji: '🧠',
+				description: 'High-quality Neural voices',
+				filter: { search: 'neural', sortBy: 'language' },
+				priority: 7
+			},
+			{
+				name: 'Female',
+				emoji: '👩',
+				description: 'Female voices across all languages',
+				filter: { genders: ['female'], sortBy: 'language' },
+				priority: 8
+			},
+			{
+				name: 'Male',
+				emoji: '👨',
+				description: 'Male voices across all languages',
+				filter: { genders: ['male'], sortBy: 'language' },
+				priority: 9
+			}
+		];
+	}
+
+	/**
+	 * Get voices with advanced filtering
+	 */
+	public static async getFilteredVoices(filter: VoiceFilter): Promise<FloweryVoice[]> {
+		const voicesData = await this.getVoices();
+		let filteredVoices = [...voicesData.voices];
+
+		// Filter by languages
+		if (filter.languages && filter.languages.length > 0) {
+			filteredVoices = filteredVoices.filter(voice => {
+				const langCode = voice.language.code.toLowerCase();
+				const langName = voice.language.name.toLowerCase();
+				return filter.languages!.some(lang =>
+					langCode.startsWith(lang.toLowerCase()) ||
+					langName.includes(lang.toLowerCase())
+				);
+			});
+		}
+
+		// Filter by genders
+		if (filter.genders && filter.genders.length > 0) {
+			filteredVoices = filteredVoices.filter(voice =>
+				filter.genders!.some(gender =>
+					voice.gender.toLowerCase() === gender.toLowerCase()
+				)
+			);
+		}
+
+		// Filter by sources
+		if (filter.sources && filter.sources.length > 0) {
+			filteredVoices = filteredVoices.filter(voice =>
+				filter.sources!.some(source =>
+					voice.source.toLowerCase().includes(source.toLowerCase())
+				)
+			);
+		}
+
+		// Filter by search term
+		if (filter.search) {
+			const searchTerm = filter.search.toLowerCase();
+			filteredVoices = filteredVoices.filter(voice =>
+				voice.name.toLowerCase().includes(searchTerm) ||
+				voice.id.toLowerCase().includes(searchTerm) ||
+				voice.language.name.toLowerCase().includes(searchTerm) ||
+				voice.source.toLowerCase().includes(searchTerm)
+			);
+		}
+
+		// Sort voices
+		if (filter.sortBy) {
+			filteredVoices.sort((a, b) => {
+				let aValue: string, bValue: string;
+
+				switch (filter.sortBy) {
+					case 'name':
+						aValue = a.name;
+						bValue = b.name;
+						break;
+					case 'language':
+						aValue = a.language.name;
+						bValue = b.language.name;
+						break;
+					case 'gender':
+						aValue = a.gender;
+						bValue = b.gender;
+						break;
+					case 'source':
+						aValue = a.source;
+						bValue = b.source;
+						break;
+					default:
+						aValue = a.name;
+						bValue = b.name;
+				}
+
+				const comparison = aValue.localeCompare(bValue);
+				return filter.sortOrder === 'desc' ? -comparison : comparison;
+			});
+		}
+
+		// Apply limit
+		if (filter.limit && filter.limit > 0) {
+			filteredVoices = filteredVoices.slice(0, filter.limit);
+		}
+
+		return filteredVoices;
+	}
+
+	/**
+	 * Get popular/recommended voices with better selection
 	 */
 	public static async getPopularVoices(): Promise<FloweryVoice[]> {
 		const voicesData = await this.getVoices();
 
-		// Get all English, Czech, and Japanese voices
-		const englishVoices = voicesData.voices.filter(voice =>
-			voice.language.code.toLowerCase().startsWith('en')
-		);
+		// Define high-quality voice patterns
+		const qualityPatterns = ['neural', 'wavenet', 'standard'];
+		const popularLanguages = ['en-US', 'en-GB', 'cs-CZ', 'ja-JP', 'de-DE', 'fr-FR', 'es-ES'];
 
-		const czechVoices = voicesData.voices.filter(voice =>
-			voice.language.code.toLowerCase().startsWith('cs') ||
-			voice.language.code.toLowerCase().startsWith('cz') ||
-			voice.language.name.toLowerCase().includes('czech')
-		);
+		// Get voices from popular languages with quality indicators
+		const popularVoices = voicesData.voices.filter(voice => {
+			const langCode = voice.language.code.toLowerCase();
+			const voiceName = voice.name.toLowerCase();
+			const voiceId = voice.id.toLowerCase();
 
-		const japaneseVoices = voicesData.voices.filter(voice =>
-			voice.language.code.toLowerCase().startsWith('ja') ||
-			voice.language.name.toLowerCase().includes('japanese')
-		);
+			// Check if it's a popular language
+			const isPopularLang = popularLanguages.some(lang =>
+				langCode.startsWith(lang.toLowerCase().split('-')[0])
+			);
 
-		// Combine English, Czech, and Japanese voices
-		const combinedVoices = [...englishVoices, ...czechVoices, ...japaneseVoices];
+			// Check if it's a quality voice
+			const isQualityVoice = qualityPatterns.some(pattern =>
+				voiceName.includes(pattern) || voiceId.includes(pattern)
+			);
 
-		// Sort by language priority (English first, then Czech, then Japanese) and then by name
-		return combinedVoices.sort((a, b) => {
-			const aIsEnglish = a.language.code.toLowerCase().startsWith('en');
-			const bIsEnglish = b.language.code.toLowerCase().startsWith('en');
-			const aIsCzech = a.language.code.toLowerCase().startsWith('cs') || a.language.name.toLowerCase().includes('czech');
-			const bIsCzech = b.language.code.toLowerCase().startsWith('cs') || b.language.name.toLowerCase().includes('czech');
-			const aIsJapanese = a.language.code.toLowerCase().startsWith('ja') || a.language.name.toLowerCase().includes('japanese');
-			const bIsJapanese = b.language.code.toLowerCase().startsWith('ja') || b.language.name.toLowerCase().includes('japanese');
-
-			// Priority order: English > Czech > Japanese > Others
-			if (aIsEnglish && !bIsEnglish) return -1;
-			if (!aIsEnglish && bIsEnglish) return 1;
-			if (aIsCzech && !bIsCzech && !bIsEnglish) return -1;
-			if (!aIsCzech && bIsCzech && !aIsEnglish) return 1;
-			if (aIsJapanese && !bIsJapanese && !bIsEnglish && !bIsCzech) return -1;
-			if (!aIsJapanese && bIsJapanese && !aIsEnglish && !aIsCzech) return 1;
-
-			// Within same language group, sort by name
-			return a.name.localeCompare(b.name);
+			return isPopularLang && (isQualityVoice || voice.source.toLowerCase().includes('azure'));
 		});
+
+		// Sort by language priority and quality
+		return popularVoices.sort((a, b) => {
+			const aLang = a.language.code.toLowerCase();
+			const bLang = b.language.code.toLowerCase();
+
+			// Language priority: English > Czech > Japanese > German > French > Spanish
+			const langPriority = ['en', 'cs', 'ja', 'de', 'fr', 'es'];
+			const aPriority = langPriority.findIndex(lang => aLang.startsWith(lang));
+			const bPriority = langPriority.findIndex(lang => bLang.startsWith(lang));
+
+			if (aPriority !== bPriority) {
+				return (aPriority === -1 ? 999 : aPriority) - (bPriority === -1 ? 999 : bPriority);
+			}
+
+			// Within same language, prefer Neural voices
+			const aIsNeural = a.name.toLowerCase().includes('neural');
+			const bIsNeural = b.name.toLowerCase().includes('neural');
+			if (aIsNeural !== bIsNeural) {
+				return bIsNeural ? 1 : -1;
+			}
+
+			return a.name.localeCompare(b.name);
+		}).slice(0, 30); // Limit to top 30
 	}
 
 	/**
-	 * Find voice by name or ID
+	 * Advanced voice search with fuzzy matching
 	 */
 	public static async findVoice(query: string): Promise<FloweryVoice | null> {
 		const voicesData = await this.getVoices();
-		
+		const searchTerm = query.toLowerCase().trim();
+
 		// Try exact ID match first
 		let voice = voicesData.voices.find(v => v.id === query);
 		if (voice) return voice;
-		
+
 		// Try exact name match
-		voice = voicesData.voices.find(v => v.name.toLowerCase() === query.toLowerCase());
+		voice = voicesData.voices.find(v => v.name.toLowerCase() === searchTerm);
 		if (voice) return voice;
-		
+
 		// Try partial name match
-		voice = voicesData.voices.find(v => v.name.toLowerCase().includes(query.toLowerCase()));
+		voice = voicesData.voices.find(v => v.name.toLowerCase().includes(searchTerm));
+		if (voice) return voice;
+
+		// Try language match
+		voice = voicesData.voices.find(v => v.language.name.toLowerCase().includes(searchTerm));
+		if (voice) return voice;
+
+		// Try source match
+		voice = voicesData.voices.find(v => v.source.toLowerCase().includes(searchTerm));
 		return voice || null;
+	}
+
+	/**
+	 * Get voice recommendations based on text content
+	 */
+	public static async getRecommendedVoice(text: string, preferredLanguage?: string): Promise<FloweryVoice | null> {
+		const voicesData = await this.getVoices();
+
+		// Detect language from text (basic detection)
+		const detectedLang = this.detectLanguage(text);
+		const targetLang = preferredLanguage || detectedLang;
+
+		// Get voices for the target language
+		const languageVoices = voicesData.voices.filter(voice =>
+			voice.language.code.toLowerCase().startsWith(targetLang.toLowerCase())
+		);
+
+		if (languageVoices.length === 0) {
+			// Fallback to English
+			const englishVoices = voicesData.voices.filter(voice =>
+				voice.language.code.toLowerCase().startsWith('en')
+			);
+			return englishVoices.find(v => v.name.toLowerCase().includes('neural')) || englishVoices[0] || null;
+		}
+
+		// Prefer Neural voices
+		const neuralVoices = languageVoices.filter(v => v.name.toLowerCase().includes('neural'));
+		if (neuralVoices.length > 0) {
+			return neuralVoices[0];
+		}
+
+		return languageVoices[0];
+	}
+
+	/**
+	 * Basic language detection from text
+	 */
+	private static detectLanguage(text: string): string {
+		const cleanText = text.toLowerCase().trim();
+
+		// Czech detection
+		if (/[áčďéěíňóřšťúůýž]/.test(cleanText) ||
+			/\b(je|to|na|se|za|do|od|po|při|před|mezi|nad|pod|pro|bez|podle|během|kolem|okolo|díky|kvůli|místo|namísto|kromě|včetně|ohledně|vzhledem|týkající|týkající)\b/.test(cleanText)) {
+			return 'cs';
+		}
+
+		// Japanese detection (hiragana, katakana, kanji)
+		if (/[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/.test(cleanText)) {
+			return 'ja';
+		}
+
+		// German detection
+		if (/[äöüß]/.test(cleanText) ||
+			/\b(der|die|das|und|ist|ein|eine|mit|für|auf|von|zu|im|am|oder|aber|auch|wenn|dann|noch|nur|schon|wie|was|wo|wer|wann|warum)\b/.test(cleanText)) {
+			return 'de';
+		}
+
+		// French detection
+		if (/[àâäéèêëïîôöùûüÿç]/.test(cleanText) ||
+			/\b(le|la|les|un|une|des|et|est|de|du|dans|pour|avec|sur|par|ce|cette|ces|qui|que|dont|où|quand|comment|pourquoi)\b/.test(cleanText)) {
+			return 'fr';
+		}
+
+		// Spanish detection
+		if (/[áéíóúñü¿¡]/.test(cleanText) ||
+			/\b(el|la|los|las|un|una|y|es|de|en|para|con|por|que|se|no|te|lo|le|da|su|por|son|como|pero|más|todo|bien|sí|muy|aquí|ahora)\b/.test(cleanText)) {
+			return 'es';
+		}
+
+		// Default to English
+		return 'en';
+	}
+
+	/**
+	 * Get voice statistics and analytics
+	 */
+	public static async getVoiceStatistics(): Promise<{
+		total: number;
+		byLanguage: Record<string, number>;
+		byGender: Record<string, number>;
+		bySource: Record<string, number>;
+		topLanguages: Array<{ language: string; count: number; percentage: number }>;
+	}> {
+		const voicesData = await this.getVoices();
+
+		const byLanguage: Record<string, number> = {};
+		const byGender: Record<string, number> = {};
+		const bySource: Record<string, number> = {};
+
+		voicesData.voices.forEach(voice => {
+			// Count by language
+			const lang = voice.language.name;
+			byLanguage[lang] = (byLanguage[lang] || 0) + 1;
+
+			// Count by gender
+			const gender = voice.gender || 'Unknown';
+			byGender[gender] = (byGender[gender] || 0) + 1;
+
+			// Count by source
+			const source = voice.source || 'Unknown';
+			bySource[source] = (bySource[source] || 0) + 1;
+		});
+
+		// Get top languages with percentages
+		const topLanguages = Object.entries(byLanguage)
+			.sort(([,a], [,b]) => b - a)
+			.slice(0, 15)
+			.map(([language, count]) => ({
+				language,
+				count,
+				percentage: Math.round((count / voicesData.count) * 100)
+			}));
+
+		return {
+			total: voicesData.count,
+			byLanguage,
+			byGender,
+			bySource,
+			topLanguages
+		};
 	}
 
 	/**
