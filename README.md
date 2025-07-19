@@ -33,7 +33,7 @@
 - User-friendly and Easy to Use
 - Highly Configurable
 - Customizable Prefix
-- Multilingual support [Here](/Translation.md)
+- Multilingual support [Here](docs/Translation.md)
 - Hybrid Command Handling (Slash and Normal Commands)
 - Developed using TypeScript and Discord.js v14
 - Advanced Music System
@@ -222,6 +222,46 @@ docker run --detach \
 ```
 
 Do note that the bot will restart itself to update to the latest!
+
+## 📁 Project Structure
+
+The project is organized into the following folders for better maintainability:
+
+```
+lavamusic/
+├── 📚 docs/              # Documentation files
+│   ├── DASHBOARD.md       # Dashboard setup and features
+│   ├── FLOWERY_TTS_INTEGRATION.md
+│   ├── TTS_COMMANDS_GUIDE.md
+│   └── ... (all .md files)
+├── 🧪 tests/             # Test files and debug scripts
+│   ├── test-dashboard.js
+│   ├── test-flowery-tts.js
+│   └── ... (all test files)
+├── ⚙️ config/            # Configuration files
+│   ├── tsconfig.json
+│   ├── biome.json
+│   └── ... (build configs)
+├── 🐳 docker/            # Docker configuration
+│   ├── Dockerfile
+│   ├── docker-compose.yml
+│   └── ... (container configs)
+├── 📜 scripts/           # Build and utility scripts
+│   ├── deploy-commands.js
+│   ├── restart.js
+│   └── ... (automation scripts)
+├── 🎵 src/               # Source code
+├── 🌍 locales/           # Translation files
+├── 🗄️ prisma/            # Database schema
+├── 🔌 Lavalink/          # Lavalink server config
+└── 📦 dist/              # Compiled output
+```
+
+### Quick Navigation
+- **📖 Documentation**: [docs/README.md](docs/README.md)
+- **🧪 Testing**: [tests/README.md](tests/README.md)
+- **⚙️ Configuration**: [config/README.md](config/README.md)
+- **🐳 Docker**: [docker/README.md](docker/README.md)
 
 ## 🔗 Useful Links
 
