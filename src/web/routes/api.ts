@@ -2050,7 +2050,7 @@ export async function apiRoutes(fastify: FastifyInstance, options: ApiOptions) {
 			index,
 			title: track.info.title,
 			author: track.info.author,
-			duration: track.info.length,
+			duration: track.info.duration,
 			uri: track.info.uri,
 			thumbnail: track.info.artworkUrl || track.info.thumbnail,
 			encoded: track.encoded

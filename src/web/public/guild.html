@@ -296,6 +296,29 @@
         #radio-evropa2:hover {
             background-color: #d97706 !important;
         }
+
+        /* Footer styles */
+        footer {
+            background-color: white;
+            border-color: #e2e8f0;
+        }
+
+        .dark footer {
+            background-color: #2d3748;
+            border-color: #4a5568;
+        }
+
+        .dark footer .text-gray-700 {
+            color: #e2e8f0 !important;
+        }
+
+        .dark footer .text-gray-600 {
+            color: #a0aec0 !important;
+        }
+
+        .dark footer .text-gray-500 {
+            color: #718096 !important;
+        }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
@@ -2109,9 +2132,14 @@
 
         // Utility function to format duration
         function formatDuration(ms) {
-            if (!ms || ms === 0) return '0:00';
+            // Handle null, undefined, or invalid values
+            if (!ms || ms === 0 || isNaN(ms)) return '0:00';
 
-            const seconds = Math.floor(ms / 1000);
+            // Ensure we have a number
+            const duration = Number(ms);
+            if (isNaN(duration)) return '0:00';
+
+            const seconds = Math.floor(duration / 1000);
             const minutes = Math.floor(seconds / 60);
             const hours = Math.floor(minutes / 60);
 
@@ -2572,11 +2600,7 @@
             }
         }
 
-        function formatDuration(ms) {
-            const minutes = Math.floor(ms / 60000);
-            const seconds = Math.floor((ms % 60000) / 1000);
-            return `${minutes}:${seconds.toString().padStart(2, '0')}`;
-        }
+
 
         function getSourceIcon(source) {
             const sourceIcons = {
@@ -3972,5 +3996,27 @@
             initVoiceBrowser();
         });
     </script>
+
+    <!-- Footer with Copyright -->
+    <footer class="bg-white shadow-lg mt-8 border-t border-gray-200">
+        <div class="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <div class="flex items-center space-x-2 mb-3 md:mb-0">
+                    <i class="fas fa-music text-purple-600 text-lg"></i>
+                    <span class="text-gray-700 font-medium text-sm">LavaMusic Dashboard</span>
+                </div>
+                <div class="text-center md:text-right">
+                    <p class="text-xs text-gray-600 mb-1">
+                        <i class="fas fa-copyright mr-1"></i>
+                        Created by <span class="font-semibold text-purple-600">Martin Pěnkava</span>
+                    </p>
+                    <p class="text-xs text-gray-500">
+                        <i class="fas fa-gamepad mr-1"></i>
+                        Komplexáci Gaming
+                    </p>
+                </div>
+            </div>
+        </div>
+    </footer>
 </body>
 </html>
