@@ -113,6 +113,29 @@
         .status-online { color: #10b981; }
         .status-offline { color: #ef4444; }
         .status-idle { color: #f59e0b; }
+
+        /* Footer styles */
+        footer {
+            background-color: white;
+            border-color: #e2e8f0;
+        }
+
+        .dark footer {
+            background-color: #2d3748;
+            border-color: #4a5568;
+        }
+
+        .dark footer .text-gray-700 {
+            color: #e2e8f0 !important;
+        }
+
+        .dark footer .text-gray-600 {
+            color: #a0aec0 !important;
+        }
+
+        .dark footer .text-gray-500 {
+            color: #718096 !important;
+        }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
@@ -229,6 +252,28 @@
             </ul>
         </div>
     </div>
+
+    <!-- Footer with Copyright -->
+    <footer class="bg-white shadow-lg mt-12 border-t border-gray-200">
+        <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <div class="flex items-center space-x-2 mb-4 md:mb-0">
+                    <i class="fas fa-music text-purple-600 text-xl"></i>
+                    <span class="text-gray-700 font-medium">LavaMusic Dashboard</span>
+                </div>
+                <div class="text-center md:text-right">
+                    <p class="text-sm text-gray-600 mb-1">
+                        <i class="fas fa-copyright mr-1"></i>
+                        Created by <span class="font-semibold text-purple-600">Martin Pěnkava</span>
+                    </p>
+                    <p class="text-xs text-gray-500">
+                        <i class="fas fa-gamepad mr-1"></i>
+                        Komplexáci Gaming
+                    </p>
+                </div>
+            </div>
+        </div>
+    </footer>
 
     <script>
         let socket;
