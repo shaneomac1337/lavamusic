@@ -891,9 +891,9 @@
                         <label class="block text-sm font-medium text-gray-700 mb-1">Description (Optional)</label>
                         <textarea id="playlistDescription" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500" placeholder="Describe your playlist..."></textarea>
                     </div>
-                    <div class="flex items-center">
-                        <input type="checkbox" id="playlistPublic" class="mr-2">
-                        <label for="playlistPublic" class="text-sm text-gray-700">Make playlist public (others can discover and use it)</label>
+                    <div class="text-sm text-gray-600 bg-blue-50 p-3 rounded-md border border-blue-200">
+                        <i class="fas fa-info-circle mr-2 text-blue-500"></i>
+                        <span>All playlists are automatically public and can be discovered by other users.</span>
                     </div>
                     <div class="flex items-center">
                         <input type="checkbox" id="includeCurrentQueue" class="mr-2" checked>
@@ -935,9 +935,9 @@
                         <label class="block text-sm font-medium text-gray-700 mb-1">Description (Optional)</label>
                         <textarea id="importDescription" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Optional description..."></textarea>
                     </div>
-                    <div class="flex items-center">
-                        <input type="checkbox" id="importPublic" class="mr-2">
-                        <label for="importPublic" class="text-sm text-gray-700">Make playlist public</label>
+                    <div class="text-sm text-gray-600 bg-blue-50 p-3 rounded-md border border-blue-200">
+                        <i class="fas fa-info-circle mr-2 text-blue-500"></i>
+                        <span>Imported playlists are automatically public and shareable.</span>
                     </div>
                 </div>
                 <div class="flex justify-end space-x-3 mt-6">
@@ -2651,7 +2651,6 @@
 
             const name = document.getElementById('playlistName').value;
             const description = document.getElementById('playlistDescription').value;
-            const isPublic = document.getElementById('playlistPublic').checked;
             const includeQueue = document.getElementById('includeCurrentQueue').checked;
 
             let tracks = [];
@@ -2676,8 +2675,7 @@
                         name,
                         description,
                         tracks,
-                        guildId,
-                        isPublic
+                        guildId
                     })
                 });
 
@@ -2702,7 +2700,6 @@
             const url = document.getElementById('importUrl').value;
             const name = document.getElementById('importName').value;
             const description = document.getElementById('importDescription').value;
-            const isPublic = document.getElementById('importPublic').checked;
 
             try {
                 const response = await fetch('/api/playlists/import', {
@@ -2714,8 +2711,7 @@
                         url,
                         name: name || undefined,
                         description: description || undefined,
-                        guildId,
-                        isPublic
+                        guildId
                     })
                 });
 
