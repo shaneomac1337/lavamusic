@@ -134,7 +134,7 @@ export default class ServerData {
 
 
 	public async createPlaylist(userId: string, name: string): Promise<void> {
-		await this.prisma.playlist.create({ data: { userId, name } });
+		await this.prisma.playlist.create({ data: { userId, name, isPublic: true } });
 	}
 
 	// createPlaylist with tracks
@@ -144,6 +144,7 @@ export default class ServerData {
 				userId,
 				name,
 				tracks: JSON.stringify(tracks),
+				isPublic: true,
 			},
 		});
 	}
@@ -223,6 +224,7 @@ export default class ServerData {
 					userId,
 					name: playlistName,
 					tracks: tracksJson, // Store the serialized JSON string
+					isPublic: true,
 				},
 			});
 		}
@@ -295,7 +297,7 @@ export default class ServerData {
 				tracks,
 				guildId: options.guildId,
 				description: options.description,
-				isPublic: options.isPublic || false,
+				isPublic: true, // Always public
 				trackCount,
 			},
 		});
@@ -339,8 +341,8 @@ export default class ServerData {
 	}
 
 	public async getPublicPlaylists(limit: number = 20): Promise<Playlist[]> {
+		// Since all playlists are now public, return all playlists
 		return await this.prisma.playlist.findMany({
-			where: { isPublic: true },
 			orderBy: { playCount: 'desc' },
 			take: limit,
 		});
@@ -360,10 +362,8 @@ export default class ServerData {
 					{ name: { contains: query } },
 					{ description: { contains: query } },
 				],
-				AND: [
-					{ isPublic: true },
-					...(userId ? [{ userId: { not: userId } }] : []),
-				],
+				// Since all playlists are public, only exclude user's own playlists if specified
+				...(userId ? { AND: [{ userId: { not: userId } }] } : {}),
 			},
 			orderBy: { playCount: 'desc' },
 			take: 10,

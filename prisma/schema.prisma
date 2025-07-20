@@ -65,7 +65,7 @@ model Playlist {
   name        String
   description String?
   tracks      String?  // Store the array of encoded tracks as a JSON string
-  isPublic    Boolean  @default(false) // Allow sharing between servers
+  isPublic    Boolean  @default(true) // All playlists are public by default
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   playCount   Int      @default(0)

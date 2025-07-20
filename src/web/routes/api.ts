@@ -1665,12 +1665,11 @@ export async function apiRoutes(fastify: FastifyInstance, options: ApiOptions) {
 	// Create new playlist
 	fastify.post('/playlists', async (request) => {
 		const user = request.user as any;
-		const { name, description, tracks, guildId, isPublic } = request.body as {
+		const { name, description, tracks, guildId } = request.body as {
 			name: string;
 			description?: string;
 			tracks?: any[];
 			guildId?: string;
-			isPublic?: boolean;
 		};
 
 		if (!name) {
@@ -1684,7 +1683,7 @@ export async function apiRoutes(fastify: FastifyInstance, options: ApiOptions) {
 				user.userId,
 				name,
 				tracksJson,
-				{ guildId, description, isPublic }
+				{ guildId, description }
 			);
 
 			return { success: true, playlist };
@@ -1704,7 +1703,6 @@ export async function apiRoutes(fastify: FastifyInstance, options: ApiOptions) {
 			name?: string;
 			description?: string;
 			tracks?: any[];
-			isPublic?: boolean;
 		};
 
 		// Check if user owns the playlist
@@ -1971,12 +1969,11 @@ export async function apiRoutes(fastify: FastifyInstance, options: ApiOptions) {
 	// Import playlist from URL (YouTube, Spotify, etc.)
 	fastify.post('/playlists/import', async (request) => {
 		const user = request.user as any;
-		const { url, name, description, guildId, isPublic } = request.body as {
+		const { url, name, description, guildId } = request.body as {
 			url: string;
 			name?: string;
 			description?: string;
 			guildId?: string;
-			isPublic?: boolean;
 		};
 
 		if (!url) {
@@ -2021,8 +2018,7 @@ export async function apiRoutes(fastify: FastifyInstance, options: ApiOptions) {
 				JSON.stringify(tracks),
 				{
 					guildId,
-					description: description || `Imported from ${new URL(url).hostname}`,
-					isPublic
+					description: description || `Imported from ${new URL(url).hostname}`
 				}
 			);
 
