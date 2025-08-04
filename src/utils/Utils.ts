@@ -51,14 +51,37 @@ export class Utils {
 
 		if (totalPlayers > 0) {
 			if (totalPlayers === 1) {
-				// Single server playing - show current track
+				// Single server playing - show current track with guild name
 				const player = activePlayers[0];
 				const track = player.queue?.current;
 				if (track) {
-					// Truncate long titles to fit Discord's limit (128 characters)
-					const title = track.info.title.length > 50 ? track.info.title.substring(0, 47) + "..." : track.info.title;
-					const author = track.info.author.length > 30 ? track.info.author.substring(0, 27) + "..." : track.info.author;
-					activityName = `🎵 ${title} by ${author}`;
+					// Get guild name with fallback
+					const guild = client.guilds.cache.get(player.guildId);
+					const guildName = guild?.name || `Server ${player.guildId.slice(-4)}`;
+					
+					// Smart truncation to fit Discord's ~128 character limit
+					// Format: "🎵 {title} in {guildName}" (🎵 + spaces = ~7 chars, " in " = 4 chars)
+					const maxLength = 120; // Leave some buffer
+					const prefixLength = 7; // "🎵 " + " in "
+					const availableLength = maxLength - prefixLength;
+					
+					let title = track.info.title;
+					let displayGuildName = guildName;
+					
+					// If combined length exceeds limit, truncate intelligently
+					if (title.length + displayGuildName.length > availableLength) {
+						const guildMaxLength = Math.min(25, displayGuildName.length); // Limit guild name to 25 chars
+						displayGuildName = displayGuildName.length > guildMaxLength 
+							? displayGuildName.substring(0, guildMaxLength - 3) + "..." 
+							: displayGuildName;
+						
+						const titleMaxLength = availableLength - displayGuildName.length;
+						if (title.length > titleMaxLength) {
+							title = title.substring(0, titleMaxLength - 3) + "...";
+						}
+					}
+					
+					activityName = `🎵 ${title} in ${displayGuildName}`;
 					activityType = ActivityType.Listening;
 				} else {
 					activityName = client.env.BOT_ACTIVITY;
