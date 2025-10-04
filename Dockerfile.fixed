@@ -14,17 +14,18 @@ ARG REPO_URL=https://github.com/shaneomac1337/lavamusic.git
 ARG BRANCH=main
 RUN git clone --depth 1 --branch ${BRANCH} ${REPO_URL} .
 
-# Create entrypoint script (in case repo doesn't have it)
-RUN echo '#!/bin/sh' > /entrypoint.sh && \
-    echo 'set -e' >> /entrypoint.sh && \
-    echo 'echo "🎵 Starting LavaMusic..."' >> /entrypoint.sh && \
-    echo 'echo "📦 Running database migrations..."' >> /entrypoint.sh && \
-    echo 'npx prisma migrate deploy' >> /entrypoint.sh && \
-    echo 'echo "🔧 Generating Prisma client..."' >> /entrypoint.sh && \
-    echo 'npx prisma generate' >> /entrypoint.sh && \
-    echo 'echo "🚀 Starting bot..."' >> /entrypoint.sh && \
-    echo 'exec "$@"' >> /entrypoint.sh && \
-    chmod +x /entrypoint.sh
+# Create docker-entrypoint.sh if it doesn't exist
+RUN if [ ! -f docker-entrypoint.sh ]; then \
+    echo '#!/bin/sh' > docker-entrypoint.sh && \
+    echo 'set -e' >> docker-entrypoint.sh && \
+    echo 'echo "🎵 Starting LavaMusic..."' >> docker-entrypoint.sh && \
+    echo 'echo "📦 Running database migrations..."' >> docker-entrypoint.sh && \
+    echo 'npx prisma migrate deploy' >> docker-entrypoint.sh && \
+    echo 'echo "🔧 Generating Prisma client..."' >> docker-entrypoint.sh && \
+    echo 'npx prisma generate' >> docker-entrypoint.sh && \
+    echo 'echo "🚀 Starting bot..."' >> docker-entrypoint.sh && \
+    echo 'exec "$@"' >> docker-entrypoint.sh; \
+    fi
 
 # Copy local .env file if it exists (optional)
 COPY .env* ./ 
@@ -35,9 +36,8 @@ RUN npm install && npm run build && npx prisma generate
 # Clean up build dependencies but keep runtime ones
 RUN apk del git python3 make g++ && npm cache clean --force
 
-# Create necessary directories and set permissions
-RUN mkdir -p logs prisma && \
-    chown -R lavamusic:lavamusic /opt/lavamusic
+# Set permissions
+RUN chmod +x docker-entrypoint.sh && mkdir -p logs && chown -R lavamusic:lavamusic /opt/lavamusic
 
 USER lavamusic
 
@@ -48,6 +48,5 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
 
 ENV NODE_ENV=production NODE_OPTIONS="--enable-source-maps"
 
-# Use entrypoint script
-ENTRYPOINT ["/entrypoint.sh"]
-CMD ["node", "dist/index.js"]
+ENTRYPOINT ["dumb-init", "--"]
+CMD ["./docker-entrypoint.sh", "node", "dist/index.js"]
