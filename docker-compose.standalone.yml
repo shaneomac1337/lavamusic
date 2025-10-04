@@ -1,0 +1,39 @@
+version: '3.8'
+
+# LavaMusic Discord Bot - Standalone Deployment
+# Can be used from any location without the full repo
+services:
+  lavamusic:
+    image: lavamusic:latest
+    container_name: lavamusic
+    restart: unless-stopped
+    network_mode: host
+    ports:
+      - "3001:3001"  # Web dashboard port
+    environment:
+      - NODE_ENV=production
+      - WEB_DASHBOARD=true
+      - DASHBOARD_PORT=3001
+      # Add your environment variables below or use .env file
+      # - TOKEN=your_discord_token
+      # - CLIENT_ID=your_client_id
+      # - LAVALINK_URL=your_lavalink_url
+      # - LAVALINK_AUTH=your_lavalink_password
+    env_file:
+      - .env  # Make sure .env file is in the same directory as this compose file
+    volumes:
+      - /etc/localtime:/etc/localtime:ro  # Sync time with host
+      - lavamusic-logs:/opt/lavamusic/logs  # Persist logs
+      - lavamusic-db:/opt/lavamusic/prisma  # Persist database (IMPORTANT!)
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  lavamusic-logs:
+    driver: local
+  lavamusic-db:
+    driver: local
