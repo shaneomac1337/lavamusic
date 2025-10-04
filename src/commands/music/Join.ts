@@ -47,21 +47,25 @@ export default class Join extends Command {
 			});
 		}
 
-		const memberVoiceChannel = (ctx.member as any).voice.channel as VoiceChannel;
-		if (!memberVoiceChannel) {
-			return await ctx.sendMessage({
-				embeds: [embed.setColor(this.client.color.red).setDescription(ctx.locale('cmd.join.no_voice_channel'))],
-			});
-		}
-
-		player = client.manager.createPlayer({
-			guildId: ctx.guild!.id,
-			voiceChannelId: memberVoiceChannel.id,
-			textChannelId: ctx.channel.id,
-			selfMute: false,
-			selfDeaf: true,
-			vcRegion: memberVoiceChannel.rtcRegion!,
+	const memberVoiceChannel = (ctx.member as any).voice.channel as VoiceChannel;
+	if (!memberVoiceChannel) {
+		return await ctx.sendMessage({
+			embeds: [embed.setColor(this.client.color.red).setDescription(ctx.locale('cmd.join.no_voice_channel'))],
 		});
+	}
+
+	// Get the configured text channel for this guild (e.g., "bot-commands")
+	const configuredTextChannelId = await client.db.getTextChannel(ctx.guild!.id);
+	const textChannelId = configuredTextChannelId || ctx.channel.id; // Fallback to current channel
+
+	player = client.manager.createPlayer({
+		guildId: ctx.guild!.id,
+		voiceChannelId: memberVoiceChannel.id,
+		textChannelId: textChannelId,
+		selfMute: false,
+		selfDeaf: true,
+		vcRegion: memberVoiceChannel.rtcRegion!,
+	});
 		if (!player.connected) await player.connect();
 		return await ctx.sendMessage({
 			embeds: [

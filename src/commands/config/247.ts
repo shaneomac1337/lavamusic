@@ -48,17 +48,21 @@ export default class _247 extends Command {
 					embeds: [embed.setDescription(ctx.locale('cmd.247.messages.disabled')).setColor(client.color.red)],
 				});
 			}
-			await client.db.set_247(ctx.guild!.id, ctx.channel!.id, member.voice.channel.id);
-			if (!player) {
-				player = client.manager.createPlayer({
-					guildId: ctx.guild!.id,
-					voiceChannelId: member.voice.channel.id,
-					textChannelId: ctx.channel!.id,
-					selfMute: false,
-					selfDeaf: true,
-					vcRegion: member.voice.channel.rtcRegion!,
-				});
-			}
+		await client.db.set_247(ctx.guild!.id, ctx.channel!.id, member.voice.channel.id);
+		if (!player) {
+			// Get the configured text channel for this guild (e.g., "bot-commands")
+			const configuredTextChannelId = await client.db.getTextChannel(ctx.guild!.id);
+			const textChannelId = configuredTextChannelId || ctx.channel!.id; // Fallback to current channel
+
+			player = client.manager.createPlayer({
+				guildId: ctx.guild!.id,
+				voiceChannelId: member.voice.channel.id,
+				textChannelId: textChannelId,
+				selfMute: false,
+				selfDeaf: true,
+				vcRegion: member.voice.channel.rtcRegion!,
+			});
+		}
 			if (!player.connected) await player.connect();
 			return await ctx.sendMessage({
 				embeds: [embed.setDescription(ctx.locale('cmd.247.messages.enabled')).setColor(this.client.color.main)],

@@ -415,7 +415,8 @@
 		"create": {
 			"description": "Crée une playlist",
 			"options": {
-				"name": "Le nom de la playlist"
+				"name": "Le nom de la playlist",
+				"public": "Make this playlist public (default: private)"
 			},
 			"messages": {
 				"name_too_long": "Les noms de playlist ne peuvent pas dépasser 50 caractères.",

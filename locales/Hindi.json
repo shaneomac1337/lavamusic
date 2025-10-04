@@ -428,7 +428,8 @@
 		"create": {
 			"description": "Ek playlist banayein",
 			"options": {
-				"name": "Playlist ka naam"
+				"name": "Playlist ka naam",
+				"public": "Make this playlist public (default: private)"
 			},
 			"messages": {
 				"name_too_long": "Playlist ke naam sirf 50 aksharon tak ke ho sakte hain.",

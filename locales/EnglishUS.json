@@ -528,7 +528,8 @@
 		"create": {
 			"description": "Creates a playlist",
 			"options": {
-				"name": "The name of the playlist"
+				"name": "The name of the playlist",
+				"public": "Make this playlist public (default: yes)"
 			},
 			"messages": {
 				"name_too_long": "Playlist names can only be 50 characters long.",
