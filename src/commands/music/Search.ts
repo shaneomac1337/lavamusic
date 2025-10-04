@@ -41,19 +41,24 @@ export default class Search extends Command {
 
 	public async run(client: Lavamusic, ctx: Context, args: string[]): Promise<any> {
 		const embed = this.client.embed().setColor(this.client.color.main);
-		let player = client.manager.getPlayer(ctx.guild!.id);
-		const query = args.join(' ');
-		const memberVoiceChannel = (ctx.member as any).voice.channel as VoiceChannel;
+	let player = client.manager.getPlayer(ctx.guild!.id);
+	const query = args.join(' ');
+	const memberVoiceChannel = (ctx.member as any).voice.channel as VoiceChannel;
 
-		if (!player)
-			player = client.manager.createPlayer({
-				guildId: ctx.guild!.id,
-				voiceChannelId: memberVoiceChannel.id,
-				textChannelId: ctx.channel.id,
-				selfMute: false,
-				selfDeaf: true,
-				vcRegion: memberVoiceChannel.rtcRegion!,
-			});
+	if (!player) {
+		// Get the configured text channel for this guild (e.g., "bot-commands")
+		const configuredTextChannelId = await client.db.getTextChannel(ctx.guild!.id);
+		const textChannelId = configuredTextChannelId || ctx.channel.id; // Fallback to current channel
+
+		player = client.manager.createPlayer({
+			guildId: ctx.guild!.id,
+			voiceChannelId: memberVoiceChannel.id,
+			textChannelId: textChannelId,
+			selfMute: false,
+			selfDeaf: true,
+			vcRegion: memberVoiceChannel.rtcRegion!,
+		});
+	}
 		if (!player.connected) await player.connect();
 		const response = (await player.search({ query: query }, ctx.author)) as SearchResult;
 		if (!response || response.tracks?.length === 0) {

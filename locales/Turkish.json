@@ -441,7 +441,8 @@
 		"create": {
 			"description": "Bir çalma listesi oluşturur.",
 			"options": {
-				"name": "Çalma listesinin adı."
+				"name": "Çalma listesinin adı.",
+				"public": "Make this playlist public (default: private)"
 			},
 			"messages": {
 				"name_too_long": "Çalma listesi adları en fazla 50 karakter uzunluğunda olabilir.",

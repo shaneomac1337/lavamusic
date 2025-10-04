@@ -428,7 +428,8 @@
 		"create": {
 			"description": "Tworzy playlistę",
 			"options": {
-				"name": "Nazwa playlisty"
+				"name": "Nazwa playlisty",
+				"public": "Make this playlist public (default: private)"
 			},
 			"messages": {
 				"name_too_long": "Nazwy playlist mogą mieć maksymalnie 50 znaków.",

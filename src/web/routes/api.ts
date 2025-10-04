@@ -2,6 +2,7 @@ import type { FastifyInstance, FastifyPluginOptions } from 'fastify';
 import type { Lavamusic } from '../../structures/index';
 import { FloweryTTS } from '../../utils/FloweryTTS';
 import { AudioStreamManager } from '../../utils/AudioStreamManager';
+import { ensurePlayerTextChannel } from '../../utils/functions/ensurePlayerTextChannel';
 
 interface ApiOptions extends FastifyPluginOptions {
 	client: Lavamusic;
@@ -66,8 +67,11 @@ export async function apiRoutes(fastify: FastifyInstance, options: ApiOptions) {
 			throw fastify.httpErrors.notFound('Guild not found');
 		}
 
-		const guildData = await client.db.get(guildId);
-		const player = client.manager.getPlayer(guildId);
+	const guildData = await client.db.get(guildId);
+	const player = client.manager.getPlayer(guildId);
+	
+	// Ensure existing player uses configured text channel
+	await ensurePlayerTextChannel(client, player, guildId);
 
 		return {
 			id: guild.id,
@@ -257,13 +261,28 @@ export async function apiRoutes(fastify: FastifyInstance, options: ApiOptions) {
 		const { guildId } = request.params as { guildId: string };
 		const { enabled } = request.body as { enabled: boolean };
 
-		const player = client.manager.getPlayer(guildId);
-		if (!player) {
-			throw fastify.httpErrors.notFound('Player not found');
+		const guild = client.guilds.cache.get(guildId);
+		if (!guild) {
+			throw fastify.httpErrors.notFound('Guild not found');
 		}
 
-		// Toggle 24/7 mode
-		player.set('247', enabled);
+		// Toggle 24/7 mode in database
+		if (enabled) {
+			// Enable 24/7 - need to store current channel info
+			const player = client.manager.getPlayer(guildId);
+			if (!player) {
+				throw fastify.httpErrors.badRequest('Player must be active to enable 24/7 mode');
+			}
+			
+			// Save to database with current player channels
+			await client.db.set_247(guildId, player.textChannelId || '', player.voiceChannelId || '');
+		} else {
+			// Disable 24/7 - remove from database
+			const current247 = await client.db.get_247(guildId);
+			if (current247) {
+				await client.db.delete_247(guildId);
+			}
+		}
 
 		return { success: true, enabled };
 	});
@@ -287,16 +306,20 @@ export async function apiRoutes(fastify: FastifyInstance, options: ApiOptions) {
 		const { guildId } = request.params as { guildId: string };
 
 		const player = client.manager.getPlayer(guildId);
+		
+		// Check 24/7 mode from database (not player)
+		const is247 = await client.db.get_247(guildId);
+		
 		if (!player) {
 			return {
-				'247': false,
+				'247': !!is247,
 				autoplay: false,
 				volume: 50
 			};
 		}
 
 		return {
-			'247': player.get('247') || false,
+			'247': !!is247,
 			autoplay: player.get('autoplay') || false,
 			volume: player.volume || 50
 		};
@@ -1624,9 +1647,9 @@ export async function apiRoutes(fastify: FastifyInstance, options: ApiOptions) {
 	// Get user's playlists
 	fastify.get('/playlists', async (request) => {
 		const user = request.user as any;
-		const { guildId } = request.query as { guildId?: string };
 
-		const playlists = await client.db.getUserPlaylists(user.userId, guildId);
+		// Get all user playlists globally (not guild-specific)
+		const playlists = await client.db.getUserPlaylists(user.userId);
 		return { playlists };
 	});
 
@@ -1665,11 +1688,11 @@ export async function apiRoutes(fastify: FastifyInstance, options: ApiOptions) {
 	// Create new playlist
 	fastify.post('/playlists', async (request) => {
 		const user = request.user as any;
-		const { name, description, tracks, guildId } = request.body as {
+		const { name, description, tracks, isPublic } = request.body as {
 			name: string;
 			description?: string;
 			tracks?: any[];
-			guildId?: string;
+			isPublic?: boolean;
 		};
 
 		if (!name) {
@@ -1679,11 +1702,12 @@ export async function apiRoutes(fastify: FastifyInstance, options: ApiOptions) {
 		const tracksJson = tracks ? JSON.stringify(tracks) : JSON.stringify([]);
 
 		try {
+			// Create playlist globally (not guild-specific)
 			const playlist = await client.db.createPlaylistAdvanced(
 				user.userId,
 				name,
 				tracksJson,
-				{ guildId, description }
+				{ description, isPublic: isPublic ?? true }
 			);
 
 			return { success: true, playlist };
@@ -1969,11 +1993,11 @@ export async function apiRoutes(fastify: FastifyInstance, options: ApiOptions) {
 	// Import playlist from URL (YouTube, Spotify, etc.)
 	fastify.post('/playlists/import', async (request) => {
 		const user = request.user as any;
-		const { url, name, description, guildId } = request.body as {
+		const { url, name, description, isPublic } = request.body as {
 			url: string;
 			name?: string;
 			description?: string;
-			guildId?: string;
+			isPublic?: boolean;
 		};
 
 		if (!url) {
@@ -2011,14 +2035,14 @@ export async function apiRoutes(fastify: FastifyInstance, options: ApiOptions) {
 				userData: track.userData
 			}));
 
-			// Create playlist
+			// Create playlist globally (not guild-specific)
 			const playlist = await client.db.createPlaylistAdvanced(
 				user.userId,
 				playlistName,
 				JSON.stringify(tracks),
 				{
-					guildId,
-					description: description || `Imported from ${new URL(url).hostname}`
+					description: description || `Imported from ${new URL(url).hostname}`,
+					isPublic: isPublic ?? true
 				}
 			);
 

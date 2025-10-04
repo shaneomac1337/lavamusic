@@ -428,7 +428,8 @@
 		"create": {
 			"description": "创建播放列表",
 			"options": {
-				"name": "播放列表的名称"
+				"name": "播放列表的名称",
+				"public": "Make this playlist public (default: private)"
 			},
 			"messages": {
 				"name_too_long": "播放列表名称只能包含 50 个字符。",

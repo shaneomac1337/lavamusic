@@ -1,93 +1,38 @@
+version: '3.8'
+
+# LavaMusic Discord Bot
+# Discord music bot with web dashboard
 services:
-    ## services for lavalink
-    lavalink:
-        container_name: lavamusic-lavalink
-        image: ghcr.io/lavalink-devs/lavalink:4.1.1
-        restart: unless-stopped
-        environment:
-            - _JAVA_OPTIONS=-Xmx6G
-            - SERVER_PORT=2333
-        volumes:
-            # mount application.yml from the same directory or use environment variables
-            - ./Lavalink/application.yml:/opt/Lavalink/application.yml
-            # persist plugins between restarts, make sure to set the correct permissions (user: 322, group: 322)
-            - ./Lavalink/plugins/:/opt/Lavalink/plugins/
-        
-        networks:
-            - lavalink
-        #expose:
-        # lavalink exposes port 2333 to connect to for other containers (this is for documentation purposes only)
-        #- 2333
-        #ports:
-        ports:
-          - "2333:2333"
-        healthcheck:
-            test: 'curl -H "Authorization: youshallnotpass" -s http://localhost:2333/version'
-            interval: 10s
-            timeout: 10s
-            retries: 5
-            start_period: 10s
-    # services for postgresql database
-    # postgres:
-    #         container_name: lavamusic-postgres
-    #         image: postgres:16
-    #         restart: on-failure
-    #         environment:
-    #             POSTGRES_USER: lavamusic
-    #             POSTGRES_PASSWORD: lavamusic
-    #             POSTGRES_DB: lavamusic
-    #
-    #         volumes:
-    #             - ./Postgres/data:/var/lib/postgresql/data
-    #         healthcheck:
-    #             test: 'pg_isready -U lavamusic'
-    #             interval: 10s
-    #             timeout: 10s
-    #             retries: 5
-    #             start_period: 10s
+  lavamusic:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: lavamusic:latest
+    container_name: lavamusic
+    restart: unless-stopped
+    network_mode: host
+    ports:
+      - "3001:3001"  # Web dashboard port
+    environment:
+      - NODE_ENV=production
+      - WEB_DASHBOARD=true
+      - DASHBOARD_PORT=3001
+      # Additional environment variables are loaded from .env file
+    env_file:
+      - .env
+    volumes:
+      - /etc/localtime:/etc/localtime:ro  # Sync time with host
+      - lavamusic-logs:/opt/lavamusic/logs  # Persist logs with named volume
+      - lavamusic-db:/opt/lavamusic/prisma  # Persist database (playlists, settings)
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
-    # services for mongodb database
-    #mongodb:
-    #container_name: lavamusic-mongodb
-    #image: 'bitnami/mongodb:4.4'
-    #restart: on-failure
-    #environment:
-    #MONGODB_ADVERTISED_HOSTNAME: 127.0.0.1
-    #MONGODB_REPLICA_SET_MODE: primary
-    #MONGODB_ROOT_USER: mongoadmin
-    #MONGODB_ROOT_PASSWORD: mongopassword
-    #MONGODB_REPLICA_SET_KEY: replicasetkey123
-    #volumes: - ./MongoDB/data:/data/db
-
-    # services for lavamusic
-    lavamusic:
-        container_name: lavamusic
-        image: ghcr.io/appujet/lavamusic:main
-        environment:
-            # lavalink nodes
-            - NODES=[{"id":"LavaMusic","host":"lavalink","port":2333,"authorization":"youshallnotpass"}]
-            # database url
-        #    - DATABASE_URL= put your database url here (mongodb or postgres)
-        #   - DATABASE_URL=postgresql://lavamusic:lavamusic@postgres:5432/lavamusic (for postgres)
-        #   - DATABASE_URL=mongodb://mongoadmin:mongopassword@mongodb:27017/lavamusic?authSource=admin (for mongodb)
-            # web dashboard settings
-            - WEB_DASHBOARD=true
-            - DASHBOARD_PORT=3001
-            - DASHBOARD_SECRET=your-secret-key-here
-            - CLIENT_SECRET=your-discord-client-secret-here
-
-        volumes:
-            # mount .env from the same directory or use environment variables
-            - ${PWD}/.env:/opt/lavamusic/.env
-            - ./locales:/opt/lavamusic/locales
-        restart: on-failure
-        depends_on:
-            lavalink:
-                condition: service_healthy
-        networks:
-            - lavalink
-        ports:
-            - "3001:3001"  # Web dashboard port
-networks:
-    lavalink:
-        name: lavalink
+volumes:
+  lavamusic-logs:
+    driver: local
+  lavamusic-db:
+    driver: local

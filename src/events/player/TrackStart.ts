@@ -18,6 +18,7 @@ import { T } from '../../structures/I18n';
 import { Event, type Lavamusic } from '../../structures/index';
 import type { Requester } from '../../types';
 import { trackStart } from '../../utils/SetupSystem';
+import { ensurePlayerTextChannel } from '../../utils/functions/ensurePlayerTextChannel';
 
 export default class TrackStart extends Event {
 	constructor(client: Lavamusic, file: string) {
@@ -29,8 +30,12 @@ export default class TrackStart extends Event {
 	public async run(player: Player, track: Track | null, _payload: TrackStartEvent): Promise<void> {
 		const guild = this.client.guilds.cache.get(player.guildId);
 		if (!guild) return;
-		if (!player.textChannelId) return;
 		if (!track) return;
+
+		// Ensure player is using the configured text channel
+		await ensurePlayerTextChannel(this.client, player, player.guildId);
+		
+		if (!player.textChannelId) return;
 		const channel = guild.channels.cache.get(player.textChannelId) as TextChannel;
 		if (!channel) return;
 

@@ -428,7 +428,8 @@
 		"create": {
 			"description": "Tạo một danh sách phát",
 			"options": {
-				"name": "Tên của danh sách phát"
+				"name": "Tên của danh sách phát",
+				"public": "Make this playlist public (default: private)"
 			},
 			"messages": {
 				"name_too_long": "Tên danh sách phát chỉ có thể dài 50 ký tự.",

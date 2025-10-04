@@ -50,15 +50,20 @@ export default class PlayNext extends Command {
 		let player = client.manager.getPlayer(ctx.guild!.id);
 		const memberVoiceChannel = (ctx.member as any).voice.channel as VoiceChannel;
 
-		if (!player)
+		if (!player) {
+			// Get the configured text channel for this guild (e.g., "bot-commands")
+			const configuredTextChannelId = await client.db.getTextChannel(ctx.guild!.id);
+			const textChannelId = configuredTextChannelId || ctx.channel.id; // Fallback to current channel
+
 			player = client.manager.createPlayer({
 				guildId: ctx.guild!.id,
 				voiceChannelId: memberVoiceChannel.id,
-				textChannelId: ctx.channel.id,
+				textChannelId: textChannelId,
 				selfMute: false,
 				selfDeaf: true,
 				vcRegion: memberVoiceChannel.rtcRegion!,
 			});
+		}
 		if (!player.connected) await player.connect();
 
 		await ctx.sendDeferMessage(ctx.locale('cmd.playnext.loading'));

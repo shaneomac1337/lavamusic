@@ -428,7 +428,8 @@
 		"create": {
 			"description": "Oppretter en spilleliste",
 			"options": {
-				"name": "Navnet på spillelisten"
+				"name": "Navnet på spillelisten",
+				"public": "Make this playlist public (default: private)"
 			},
 			"messages": {
 				"name_too_long": "Spillelistenavn kan bare være 50 tegn lange.",

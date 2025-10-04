@@ -428,7 +428,8 @@
 		"create": {
 			"description": "Создает плейлист",
 			"options": {
-				"name": "Название плейлиста"
+				"name": "Название плейлиста",
+				"public": "Make this playlist public (default: private)"
 			},
 			"messages": {
 				"name_too_long": "Название плейлиста может содержать не более 50 символов.",

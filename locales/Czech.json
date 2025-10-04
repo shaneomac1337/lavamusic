@@ -510,7 +510,8 @@
 		"create": {
 			"description": "Vytvoří playlist",
 			"options": {
-				"name": "Název playlistu"
+				"name": "Název playlistu",
+				"public": "Make this playlist public (default: private)"
 			},
 			"messages": {
 				"name_too_long": "Názvy playlistů mohou mít pouze 50 znaků.",

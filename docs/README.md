@@ -18,13 +18,17 @@ This folder contains all documentation for the LavaMusic Discord bot project.
 - **[KOMPG_THEME_INTEGRATION.md](./KOMPG_THEME_INTEGRATION.md)** - Theme integration and customization guide
 
 ### ⚙️ Setup & Configuration
-- **[LAVALINK_SETUP.md](./LAVALINK_SETUP.md)** - Lavalink server setup and configuration
+- **[LAVALINK_SETUP.md](./LAVALINK_SETUP.md)** - Lavalink server setup and configuration (NEW)
 
 ### 🌍 Localization
 - **[Translation.md](./Translation.md)** - Translation and localization guide
 
 ### 🔒 Security
 - **[SECURITY.md](./SECURITY.md)** - Security guidelines and best practices
+
+### 🧪 Testing & Fixes
+- **[TESTING_TEXT_CHANNEL_FIX.md](./TESTING_TEXT_CHANNEL_FIX.md)** - Testing guide for text channel configuration (NEW)
+- **[FIXES_2025_01_04.md](./FIXES_2025_01_04.md)** - Complete changelog of fixes applied January 4, 2025 (NEW)
 
 ### 📋 Project Management
 - **[todolist.md](./todolist.md)** - Project todo list and feature roadmap
@@ -35,6 +39,7 @@ This folder contains all documentation for the LavaMusic Discord bot project.
 2. **Dashboard Setup**: Follow [DASHBOARD.md](./DASHBOARD.md)
 3. **TTS Configuration**: See [FLOWERY_TTS_INTEGRATION.md](./FLOWERY_TTS_INTEGRATION.md)
 4. **Commands Guide**: Check [TTS_COMMANDS_GUIDE.md](./TTS_COMMANDS_GUIDE.md)
+5. **Recent Fixes**: See [FIXES_2025_01_04.md](./FIXES_2025_01_04.md) for latest improvements
 
 ## 📁 Related Folders
 

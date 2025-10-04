@@ -60,17 +60,21 @@ export default class Say extends Command {
 			});
 		}
 
-		let player = client.manager.getPlayer(ctx.guild!.id);
-		if (!player) {
-			player = client.manager.createPlayer({
-				guildId: ctx.guild!.id,
-				voiceChannelId: memberVoiceChannel.id,
-				textChannelId: ctx.channel.id,
-				selfMute: false,
-				selfDeaf: true,
-				vcRegion: memberVoiceChannel.rtcRegion!,
-			});
-		}
+	let player = client.manager.getPlayer(ctx.guild!.id);
+	if (!player) {
+		// Get the configured text channel for this guild (e.g., "bot-commands")
+		const configuredTextChannelId = await client.db.getTextChannel(ctx.guild!.id);
+		const textChannelId = configuredTextChannelId || ctx.channel.id; // Fallback to current channel
+
+		player = client.manager.createPlayer({
+			guildId: ctx.guild!.id,
+			voiceChannelId: memberVoiceChannel.id,
+			textChannelId: textChannelId,
+			selfMute: false,
+			selfDeaf: true,
+			vcRegion: memberVoiceChannel.rtcRegion!,
+		});
+	}
 
 		if (!player.connected) await player.connect();
 

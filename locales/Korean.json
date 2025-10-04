@@ -455,7 +455,8 @@
 		"create": {
 			"description": "플레이리스트를 만들어요",
 			"options": {
-				"name": "플레이리스트의 이름"
+				"name": "플레이리스트의 이름",
+				"public": "Make this playlist public (default: private)"
 			},
 			"messages": {
 				"name_too_long": "플레이리스트 이름은 50자보다 길 수 없어요.",
