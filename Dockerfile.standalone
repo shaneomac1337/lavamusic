@@ -1,4 +1,4 @@
-# Dockerfile for LavaMusic Discord Bot
+# Standalone Dockerfile for LavaMusic Discord Bot
 FROM node:lts-alpine3.22
 
 WORKDIR /opt/lavamusic
@@ -14,7 +14,7 @@ ARG REPO_URL=https://github.com/shaneomac1337/lavamusic.git
 ARG BRANCH=main
 RUN git clone --depth 1 --branch ${BRANCH} ${REPO_URL} .
 
-# Create entrypoint script (in case repo doesn't have it)
+# Create entrypoint script
 RUN echo '#!/bin/sh' > /entrypoint.sh && \
     echo 'set -e' >> /entrypoint.sh && \
     echo 'echo "🎵 Starting LavaMusic..."' >> /entrypoint.sh && \
@@ -25,9 +25,6 @@ RUN echo '#!/bin/sh' > /entrypoint.sh && \
     echo 'echo "🚀 Starting bot..."' >> /entrypoint.sh && \
     echo 'exec "$@"' >> /entrypoint.sh && \
     chmod +x /entrypoint.sh
-
-# Copy local .env file if it exists (optional)
-COPY .env* ./ 
 
 # Install dependencies, build, and generate Prisma client
 RUN npm install && npm run build && npx prisma generate
