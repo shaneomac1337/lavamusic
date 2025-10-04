@@ -428,7 +428,8 @@
 		"create": {
 			"description": "プレイリストを作成します",
 			"options": {
-				"name": "プレイリストの名前"
+				"name": "プレイリストの名前",
+				"public": "Make this playlist public (default: private)"
 			},
 			"messages": {
 				"name_too_long": "プレイリストの名前は50文字以内にしてください。",

@@ -1,153 +1,149 @@
-# 🎵 Lavalink 4.1.1 Setup Guide
+# Lavalink Server Setup
 
-## 📥 Downloaded Files
-
-✅ **Lavalink-4.1.1.jar** (88.8 MB) - Latest stable release
-✅ **application.yml** - Configuration file with plugins
-✅ **start-lavalink.bat** - Windows startup script
+This directory contains the Lavalink audio server required by LavaMusic bot.
 
 ## 🚀 Quick Start
 
-### Option 1: Local Java Execution
-```bash
-# Make sure Java 17+ is installed
-java -version
+### Starting Lavalink
 
-# Start Lavalink
-java -jar Lavalink-4.1.1.jar
-
-# Or use the batch file on Windows
-start-lavalink.bat
+**Option 1: PowerShell Script (Recommended)**
+```powershell
+cd Lavalink
+.\start-lavalink.ps1
 ```
 
-### Option 2: Docker (Recommended)
-```bash
-# Updated docker-compose.yml to use Lavalink 4.1.1
-docker-compose up -d lavalink
+**Option 2: Manual Start**
+```powershell
+cd Lavalink
+java -Xmx2G -jar Lavalink.jar
 ```
 
-## 🔧 Configuration Details
-
-### **Server Settings**
+### Server Information
+- **Version**: Lavalink 4.1.1
 - **Port**: 2333
-- **Password**: youshallnotpass
-- **Host**: 0.0.0.0 (all interfaces)
+- **Address**: http://localhost:2333
+- **Password**: `youshallnotpass`
 
-### **Enabled Sources**
-- ✅ YouTube
-- ✅ Bandcamp  
-- ✅ SoundCloud
-- ✅ Twitch
-- ✅ Vimeo
-- ✅ HTTP streams
+## 📦 Installed Components
 
-### **Audio Filters**
-- Volume, Equalizer, Karaoke
-- Timescale, Tremolo, Vibrato
-- Distortion, Rotation, Channel Mix
-- Low Pass filtering
+### Main Files
+- `Lavalink.jar` (84.74 MB) - Main Lavalink server
+- `application.yml` - Server configuration
+- `plugins/` - Directory for Lavalink plugins
 
-### **Plugins Included**
-- **LavaSrc 4.2.0**: Extended source support
-- **LavaSearch 1.0.0**: Enhanced search capabilities
+### Configured Plugins
+These plugins will be auto-downloaded on first start:
 
-## 🔗 Connection Details
+1. **skybot-lavalink-plugin** (1.7.0)
+   - TTS support with Czech language (cs-CZ)
+   - TikTok, Reddit, Clyp.it, etc.
 
-### **For Your Bot (.env)**
-```env
-NODES=[{"id":"LavaMusic","host":"localhost","port":2333,"authorization":"youshallnotpass"}]
+2. **youtube-plugin** (1.13.5)
+   - YouTube playback with OAuth2
+   - Multiple client types for reliability
+
+3. **lavasrc-plugin** (4.8.1)
+   - Spotify support
+   - Apple Music, Deezer, Yandex Music
+   - FloweryTTS integration
+
+4. **lavasearch-plugin** (1.0.0)
+   - Advanced search capabilities
+
+5. **lavalyrics-plugin** (1.1.0)
+   - Lyrics fetching from multiple sources
+
+6. **sponsorblock-plugin** (3.0.1)
+   - Skip sponsored segments in videos
+
+## ⚙️ Configuration
+
+### Current Settings
+
+**TTS (Text-to-Speech)**
+- Language: Czech (cs-CZ)
+- Voice: cs-CZ-Tereza (FloweryTTS)
+- Speed: 1.0x
+
+**Spotify**
+- Client ID: Configured ✓
+- Client Secret: Configured ✓
+- Country: CZ (Czech Republic)
+
+**YouTube**
+- Email: mpenkava1337@gmail.com
+- OAuth2: Enabled
+- Multiple client types for redundancy
+
+**Sources Enabled**
+- ✓ YouTube (via plugin)
+- ✓ Spotify
+- ✓ SoundCloud
+- ✓ Bandcamp
+- ✓ Twitch
+- ✓ Vimeo
+- ✓ HTTP streams
+- ✓ TTS (DuncteBot & FloweryTTS)
+
+## 🔧 Updating Configuration
+
+To modify settings, edit `application.yml`:
+
+```powershell
+notepad application.yml
+# or
+code application.yml  # VS Code
 ```
 
-### **For Docker**
-```env
-NODES=[{"id":"LavaMusic","host":"lavalink","port":2333,"authorization":"youshallnotpass"}]
+After changes, restart Lavalink for them to take effect.
+
+## 📝 Common Issues
+
+### Port Already in Use
+If port 2333 is already in use:
+1. Edit `application.yml`
+2. Change `server.port` to another port (e.g., 2334)
+3. Update bot's `.env` file to match
+
+### Plugins Not Loading
+- Check `logs/` directory for errors
+- Ensure internet connection (plugins download on first start)
+- Verify `plugins/` directory permissions
+
+### YouTube Issues
+- OAuth2 login required on first start
+- Check console for device code link
+- Use a burner Google account (ban risk)
+
+## 📊 Monitoring
+
+### Logs Location
+```
+Lavalink/logs/
 ```
 
-## 📊 Version Information
-
-- **Lavalink**: 4.1.1 (Latest stable)
-- **Release Date**: June 5, 2025
-- **Key Fix**: Voice gateway connection improvements
-- **Java Requirement**: Java 17 or higher
-
-## 🔍 Health Check
-
-Test if Lavalink is running:
+### Check Server Status
 ```bash
-curl -H "Authorization: youshallnotpass" http://localhost:2333/version
+curl http://localhost:2333/version
+# Response: {"version":"4.1.1","buildTime":...}
 ```
 
-Expected response:
-```json
-{
-  "semver": "4.1.1",
-  "major": 4,
-  "minor": 1,
-  "patch": 1,
-  "preRelease": null,
-  "build": null
-}
-```
+## 🔄 Updating Lavalink
 
-## 🐛 Troubleshooting
+1. Download new version from GitHub
+2. Stop Lavalink server (Ctrl+C)
+3. Replace `Lavalink.jar`
+4. Start server again
 
-### **Common Issues**
+## 🆘 Need Help?
 
-1. **Port already in use**
-   ```
-   Error: Address already in use: bind
-   Solution: Change port in application.yml or stop other services
-   ```
+- [Lavalink Documentation](https://lavalink.dev/)
+- [Lavalink GitHub](https://github.com/lavalink-devs/Lavalink)
+- [LavaMusic Discord](https://discord.gg/YQsGbTwPBx)
 
-2. **Java version too old**
-   ```
-   Error: Unsupported class file major version
-   Solution: Install Java 17 or higher
-   ```
+## 🔐 Security Note
 
-3. **Connection refused**
-   ```
-   Check: Firewall settings, correct host/port, Lavalink is running
-   ```
-
-### **Logs Location**
-- Local: `./logs/` directory
-- Docker: Use `docker logs lavamusic-lavalink`
-
-## 🔄 Updating
-
-### **Local Installation**
-1. Download new JAR file
-2. Replace old JAR
-3. Restart Lavalink
-
-### **Docker**
-1. Update image tag in docker-compose.yml
-2. Run `docker-compose pull lavalink`
-3. Run `docker-compose up -d lavalink`
-
-## 📈 Performance Tips
-
-- **Memory**: Allocate at least 1GB RAM (`-Xmx1G`)
-- **CPU**: 2+ cores recommended for multiple guilds
-- **Network**: Low latency connection to Discord
-- **Storage**: SSD recommended for plugin caching
-
-## 🔐 Security Notes
-
-- Change default password in production
-- Use firewall to restrict access
-- Consider using reverse proxy with SSL
-- Monitor logs for suspicious activity
-
-## 📚 Additional Resources
-
-- **Official Docs**: https://lavalink.dev/
-- **GitHub**: https://github.com/lavalink-devs/Lavalink
-- **Discord**: https://discord.gg/ZW4s47Ppw4
-- **Plugins**: https://lavalink.dev/plugins
-
----
-
-**Status**: ✅ Ready to use with Lavamusic bot
-**Compatibility**: Fully compatible with your current setup
+⚠️ **Important**: Never expose your Lavalink server to the public internet!
+- Change the default password in `application.yml`
+- Use firewall rules to restrict access
+- Consider using a reverse proxy with rate limiting

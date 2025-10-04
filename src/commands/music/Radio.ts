@@ -188,12 +188,19 @@ export default class Radio extends Command {
 				const streamUrl = station.streamUrls[0];
 				
 				// Use the existing play command logic to play the radio station
-				const player = client.manager.getPlayer(guild.id) || client.manager.createPlayer({
-					guildId: guild.id,
-					voiceChannelId: member.voice.channelId!,
-					textChannelId: ctx.channel?.id,
-					selfDeafen: true,
-				});
+				let player = client.manager.getPlayer(guild.id);
+				if (!player) {
+					// Get the configured text channel for this guild (e.g., "bot-commands")
+					const configuredTextChannelId = await client.db.getTextChannel(guild.id);
+					const textChannelId = configuredTextChannelId || ctx.channel?.id; // Fallback to current channel
+
+					player = client.manager.createPlayer({
+						guildId: guild.id,
+						voiceChannelId: member.voice.channelId!,
+						textChannelId: textChannelId,
+						selfDeafen: true,
+					});
+				}
 
 				if (!player.connected) {
 					await player.connect();

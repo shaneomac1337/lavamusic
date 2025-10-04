@@ -2,6 +2,7 @@ import type { ApplicationCommandOptionChoiceData, AutocompleteInteraction, Voice
 import type { SearchResult } from 'lavalink-client';
 import { Command, type Context, type Lavamusic } from '../../structures/index';
 import {applyFairPlayToQueue} from "../../utils/functions/player";
+import { ensurePlayerTextChannel } from '../../utils/functions/ensurePlayerTextChannel';
 
 export default class Play extends Command {
 	constructor(client: Lavamusic) {
@@ -50,17 +51,25 @@ export default class Play extends Command {
 		const query = args.join(' ');
 		await ctx.sendDeferMessage(ctx.locale('cmd.play.loading'));
 		let player = client.manager.getPlayer(ctx.guild!.id);
+		
+		// Ensure existing player uses configured text channel
+		await ensurePlayerTextChannel(client, player, ctx.guild!.id);
 		const memberVoiceChannel = (ctx.member as any).voice.channel as VoiceChannel;
 
-		if (!player)
+		if (!player) {
+			// Get the configured text channel for this guild (e.g., "bot-commands")
+			const configuredTextChannelId = await client.db.getTextChannel(ctx.guild!.id);
+			const textChannelId = configuredTextChannelId || ctx.channel.id; // Fallback to current channel
+
 			player = client.manager.createPlayer({
 				guildId: ctx.guild!.id,
 				voiceChannelId: memberVoiceChannel.id,
-				textChannelId: ctx.channel.id,
+				textChannelId: textChannelId,
 				selfMute: false,
 				selfDeaf: true,
 				vcRegion: memberVoiceChannel.rtcRegion!,
 			});
+		}
 		if (!player.connected) await player.connect();
 
 		const response = (await player.search({ query: query }, ctx.author)) as SearchResult;

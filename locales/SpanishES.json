@@ -415,7 +415,8 @@
 		"create": {
 			"description": "Crea una lista de reproducción",
 			"options": {
-				"name": "El nombre de la lista de reproducción"
+				"name": "El nombre de la lista de reproducción",
+				"public": "Make this playlist public (default: private)"
 			},
 			"messages": {
 				"name_too_long": "Los nombres de las listas de reproducción solo pueden tener 50 caracteres.",

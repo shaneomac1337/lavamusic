@@ -428,7 +428,8 @@
 		"create": {
 			"description": "Membuat playlist",
 			"options": {
-				"name": "Nama Playlist"
+				"name": "Nama Playlist",
+				"public": "Make this playlist public (default: private)"
 			},
 			"messages": {
 				"name_too_long": "Nama playlist hanya boleh 50 karakter.",

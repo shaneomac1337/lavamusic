@@ -33,6 +33,12 @@ export default class CreatePlaylist extends Command {
 					type: 3,
 					required: true,
 				},
+				{
+					name: 'public',
+					description: 'cmd.create.options.public',
+					type: 5,
+					required: false,
+				},
 			],
 		});
 	}
@@ -40,6 +46,12 @@ export default class CreatePlaylist extends Command {
 	public async run(client: Lavamusic, ctx: Context, args: string[]): Promise<any> {
 		const name = args.join(' ').trim();
 		const embed = this.client.embed();
+		
+		// Get isPublic option from interaction or default to true (public)
+		let isPublic = true;
+		if (ctx.isInteraction && ctx.interaction) {
+			isPublic = ctx.interaction.options.getBoolean('public') ?? true;
+		}
 
 		if (name.length > 50) {
 			return await ctx.sendMessage({
@@ -56,14 +68,16 @@ export default class CreatePlaylist extends Command {
 			});
 		}
 
-		await client.db.createPlaylist(ctx.author?.id!, name);
+		await client.db.createPlaylist(ctx.author?.id!, name, isPublic);
+		
+		const privacyText = isPublic ? 'public' : 'private';
 		return await ctx.sendMessage({
 			embeds: [
 				embed
 					.setDescription(
 						ctx.locale('cmd.create.messages.playlist_created', {
 							name,
-						}),
+						}) + ` (${privacyText})`,
 					)
 					.setColor(this.client.color.green),
 			],
