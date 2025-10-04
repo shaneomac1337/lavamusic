@@ -5,9 +5,9 @@ set -e
 
 echo "🎵 Starting LavaMusic..."
 
-# Run database migrations
-echo "📦 Running database migrations..."
-npx prisma migrate deploy
+# Set up database schema
+echo "📦 Setting up database..."
+npx prisma db push --accept-data-loss --skip-generate
 
 # Generate Prisma client if needed
 echo "🔧 Generating Prisma client..."
