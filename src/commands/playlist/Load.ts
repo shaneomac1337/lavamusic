@@ -55,6 +55,16 @@ export default class LoadPlaylist extends Command {
 		}
 
 		const songs = await client.db.getTracksFromPlaylist(ctx.author?.id!, playlistName);
+		if (!songs) {
+			return await ctx.sendMessage({
+				embeds: [
+					{
+						description: ctx.locale('cmd.load.messages.playlist_not_exist'),
+						color: client.color.red,
+					},
+				],
+			});
+		}
 		if (songs.length === 0) {
 			return await ctx.sendMessage({
 				embeds: [

@@ -117,6 +117,16 @@ export default class StealPlaylist extends Command {
 			}
 
 			const targetSongs = await client.db.getTracksFromPlaylist(targetUserId, playlistName);
+			if (!targetSongs) {
+				return await ctx.sendMessage({
+					embeds: [
+						{
+							description: ctx.locale('cmd.steal.messages.playlist_not_exist'),
+							color: this.client.color.red,
+						},
+					],
+				});
+			}
 
 			const existingPlaylist = await client.db.getPlaylist(ctx.author?.id!, playlistName);
 			if (existingPlaylist) {
