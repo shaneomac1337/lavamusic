@@ -50,7 +50,10 @@ export default class Nowplaying extends Command {
 				ctx.locale('cmd.nowplaying.track_info', {
 					title: track.info.title,
 					uri: track.info.uri,
-					requester: (track.requester as any).id,
+					requester:
+						track.requester && typeof track.requester === 'object' && 'id' in track.requester
+							? (track.requester as any).id
+							: 'Unknown',
 					bar: bar,
 				}),
 			)
