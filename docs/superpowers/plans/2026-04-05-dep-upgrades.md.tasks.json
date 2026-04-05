@@ -1,0 +1,47 @@
+{
+  "planPath": "docs/superpowers/plans/2026-04-05-dep-upgrades.md",
+  "tasks": [
+    {
+      "id": 0,
+      "subject": "Task 0: Baseline install + capture lint state",
+      "status": "pending",
+      "description": "**Goal:** Regenerate lockfile, install deps, audit, baseline lint.\n\n```json:metadata\n{\"files\": [\"package-lock.json\"], \"verifyCommand\": \"npm run build\", \"acceptanceCriteria\": [\"npm install succeeds\", \"lockfile exists\", \"build exits 0\", \"lint baseline captured\"]}\n```"
+    },
+    {
+      "id": 1,
+      "subject": "Task 1: Apply within-semver minor/patch updates",
+      "status": "pending",
+      "blockedBy": [0],
+      "description": "**Goal:** npm update for within-semver bumps.\n\n```json:metadata\n{\"files\": [\"package.json\", \"package-lock.json\"], \"verifyCommand\": \"npm run build && npm outdated\", \"acceptanceCriteria\": [\"only out-of-scope majors remain\", \"build exits 0\", \"lint ≤ baseline\"]}\n```"
+    },
+    {
+      "id": 2,
+      "subject": "Task 2: Remove Biome, align CLAUDE.md",
+      "status": "pending",
+      "blockedBy": [1],
+      "description": "**Goal:** Delete biome.json, fix CLAUDE.md:97.\n\n```json:metadata\n{\"files\": [\"biome.json\", \"CLAUDE.md\"], \"verifyCommand\": \"npm run lint\", \"acceptanceCriteria\": [\"biome.json deleted\", \"CLAUDE.md updated\", \"lint still works\"]}\n```"
+    },
+    {
+      "id": 3,
+      "subject": "Task 3: Bump dotenv 16 → 17",
+      "status": "pending",
+      "blockedBy": [2],
+      "description": "**Goal:** dotenv to v17.\n\n```json:metadata\n{\"files\": [\"package.json\", \"package-lock.json\", \"src/env.ts\"], \"verifyCommand\": \"npm run build\", \"acceptanceCriteria\": [\"dotenv 17.x\", \"build exits 0\", \"env.ts still compiles\"]}\n```"
+    },
+    {
+      "id": 4,
+      "subject": "Task 4: Bump @fastify/jwt 9 → 10",
+      "status": "pending",
+      "blockedBy": [3],
+      "description": "**Goal:** @fastify/jwt to v10.\n\n```json:metadata\n{\"files\": [\"package.json\", \"package-lock.json\", \"src/web/server.ts\"], \"verifyCommand\": \"npm run build\", \"acceptanceCriteria\": [\"@fastify/jwt 10.x\", \"build exits 0\", \"jwt register call compiles\"]}\n```"
+    },
+    {
+      "id": 5,
+      "subject": "Task 5: Bump node-system-stats 1 → 2",
+      "status": "pending",
+      "blockedBy": [4],
+      "description": "**Goal:** node-system-stats to v2.\n\n```json:metadata\n{\"files\": [\"package.json\", \"package-lock.json\", \"src/commands/info/Botinfo.ts\"], \"verifyCommand\": \"npm run build\", \"acceptanceCriteria\": [\"node-system-stats 2.x\", \"build exits 0\", \"Botinfo compiles\"]}\n```"
+    }
+  ],
+  "lastUpdated": "2026-04-05T13:44:00Z"
+}
