@@ -569,6 +569,9 @@
                                     <select id="tts-voice-select" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-sm">
                                         <option value="">Loading voices...</option>
                                     </select>
+                                    <button type="button" id="open-voice-browser" class="mt-1 text-xs text-blue-600 hover:text-blue-800 hover:underline">
+                                        Browse all voices →
+                                    </button>
                                 </div>
 
                                 <!-- Speed Control -->
@@ -998,6 +1001,44 @@
                     <i class="fas fa-play mr-2"></i>
                     Load to Queue
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Voice Browser Modal -->
+    <div id="vb-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50" aria-hidden="true">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+                <!-- Header -->
+                <div class="flex items-center justify-between p-4 border-b">
+                    <h3 class="text-lg font-semibold">Browse Voices</h3>
+                    <button type="button" id="vb-close" class="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
+                </div>
+                <!-- Filters -->
+                <div class="p-4 border-b space-y-3">
+                    <input type="text" id="vb-search" placeholder="Search by voice or language..."
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                    <div class="flex gap-3">
+                        <select id="vb-language" class="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm">
+                            <option value="">All languages</option>
+                        </select>
+                        <div class="flex items-center gap-3 text-sm">
+                            <label class="flex items-center gap-1"><input type="radio" name="vb-gender" value="" checked> All</label>
+                            <label class="flex items-center gap-1"><input type="radio" name="vb-gender" value="Male"> Male</label>
+                            <label class="flex items-center gap-1"><input type="radio" name="vb-gender" value="Female"> Female</label>
+                        </div>
+                    </div>
+                </div>
+                <!-- Results -->
+                <div class="flex-1 overflow-y-auto">
+                    <div id="vb-loading" class="text-center py-8 text-gray-500">Loading voices...</div>
+                    <div id="vb-list" class="divide-y divide-gray-100"></div>
+                    <div id="vb-empty" class="text-center py-8 text-gray-500 hidden">No voices match your filters.</div>
+                </div>
+                <!-- Footer -->
+                <div class="p-3 border-t bg-gray-50 text-xs text-gray-600 text-center">
+                    <span id="vb-count">0</span> voices · Click a voice to add it to your ⭐ Custom list
+                </div>
             </div>
         </div>
     </div>
@@ -3069,6 +3110,9 @@
         let currentTTSProvider = 'flowery'; // Default to FloweryTTS
         let floweryVoices = [];
 
+        // User's hand-picked custom voices from the browser modal
+        let customVoices = JSON.parse(localStorage.getItem('tts-custom-voices') || '[]');
+
         // Initialize TTS system
         async function initTTS() {
             // Load FloweryTTS voices
@@ -3147,18 +3191,16 @@
                 voiceSelect.innerHTML = '<option value="">Loading voices...</option>';
 
                 // Load all voices and filter on client side
-                console.log('Fetching voices from API...');
-                const response = await fetch('/api/tts/flowery/voices');
+                console.log('Fetching curated voices from API...');
+                const response = await fetch('/api/tts/flowery/voices/popular');
                 console.log('API response status:', response.status);
 
                 const data = await response.json();
                 console.log('API response data:', data);
 
                 if (data.success && data.voices) {
-                    console.log(`Received ${data.voices.length} voices from API`);
-                    // Filter to get a good selection
-                    const curatedVoices = getCuratedVoiceSelection(data.voices);
-                    floweryVoices = curatedVoices;
+                    console.log(`Received ${data.voices.length} curated voices from API`);
+                    floweryVoices = data.voices;
                     populateVoiceSelect();
                 } else {
                     throw new Error(`Failed to load voices: ${data.error || 'Unknown error'}`);
@@ -3177,149 +3219,231 @@
             }
         }
 
-        // Get curated voice selection for dropdown
-        function getCuratedVoiceSelection(voices) {
-            if (!voices || !Array.isArray(voices)) {
-                console.warn('Invalid voices array provided to getCuratedVoiceSelection');
-                return [];
-            }
-
-            const curated = [];
-
-            // Get Czech voices (all of them since there are fewer)
-            const czechVoices = voices.filter(v =>
-                v.language && v.language.code && (
-                    v.language.code.toLowerCase().startsWith('cs') ||
-                    v.language.name.toLowerCase().includes('czech')
-                )
-            );
-            console.log(`Found ${czechVoices.length} Czech voices`);
-            curated.push(...czechVoices);
-
-            // Get best English voices (Neural preferred)
-            const englishVoices = voices.filter(v =>
-                v.language && v.language.code &&
-                v.language.code.toLowerCase().startsWith('en')
-            );
-            const englishNeural = englishVoices.filter(v =>
-                v.name && v.name.toLowerCase().includes('neural')
-            );
-            const englishOther = englishVoices.filter(v =>
-                v.name && !v.name.toLowerCase().includes('neural')
-            );
-
-            // Add top 8 English voices (prefer Neural)
-            curated.push(...englishNeural.slice(0, 6));
-            curated.push(...englishOther.slice(0, 2));
-            console.log(`Found ${englishVoices.length} English voices, selected ${Math.min(8, englishVoices.length)}`);
-
-            // Get best Japanese voices
-            const japaneseVoices = voices.filter(v =>
-                v.language && v.language.code && (
-                    v.language.code.toLowerCase().startsWith('ja') ||
-                    v.language.name.toLowerCase().includes('japanese')
-                )
-            );
-            const japaneseNeural = japaneseVoices.filter(v =>
-                v.name && v.name.toLowerCase().includes('neural')
-            );
-            const japaneseOther = japaneseVoices.filter(v =>
-                v.name && !v.name.toLowerCase().includes('neural')
-            );
-
-            // Add top 6 Japanese voices (prefer Neural)
-            curated.push(...japaneseNeural.slice(0, 4));
-            curated.push(...japaneseOther.slice(0, 2));
-            console.log(`Found ${japaneseVoices.length} Japanese voices, selected ${Math.min(6, japaneseVoices.length)}`);
-
-            console.log(`Total curated voices: ${curated.length}`);
-            return curated;
+        // Flag emoji lookup helper
+        function getLanguageFlag(langCode) {
+            const code = (langCode || '').toLowerCase();
+            if (code.startsWith('cs') || code.startsWith('cz')) return '🇨🇿';
+            if (code.startsWith('en-gb')) return '🇬🇧';
+            if (code.startsWith('en-au')) return '🇦🇺';
+            if (code.startsWith('en-ca')) return '🇨🇦';
+            if (code.startsWith('en')) return '🇺🇸';
+            if (code.startsWith('ja')) return '🇯🇵';
+            if (code.startsWith('ru')) return '🇷🇺';
+            if (code.startsWith('pl')) return '🇵🇱';
+            if (code.startsWith('de')) return '🇩🇪';
+            if (code.startsWith('fr')) return '🇫🇷';
+            if (code.startsWith('es')) return '🇪🇸';
+            if (code.startsWith('it')) return '🇮🇹';
+            if (code.startsWith('pt')) return '🇵🇹';
+            if (code.startsWith('ko')) return '🇰🇷';
+            if (code.startsWith('zh')) return '🇨🇳';
+            return '🌍';
         }
 
-        // Populate voice selection dropdown with curated selection
+        function saveCustomVoices() {
+            localStorage.setItem('tts-custom-voices', JSON.stringify(customVoices));
+        }
+
+        function addCustomVoice(voice) {
+            // Deduplicate by id
+            if (customVoices.find(v => v.id === voice.id)) return;
+            customVoices.unshift(voice); // newest first
+            // Cap at 20 to prevent unbounded growth
+            if (customVoices.length > 20) customVoices = customVoices.slice(0, 20);
+            saveCustomVoices();
+        }
+
+        function renderCustomPicksOptgroup(voiceSelect) {
+            if (customVoices.length === 0) return;
+            const group = document.createElement('optgroup');
+            group.label = `⭐ Custom (${customVoices.length})`;
+            customVoices.forEach(voice => {
+                const option = document.createElement('option');
+                option.value = voice.id;
+                const flag = getLanguageFlag(voice.language.code);
+                option.textContent = `${flag} ${voice.name} (${voice.gender})`;
+                group.appendChild(option);
+            });
+            voiceSelect.appendChild(group);
+        }
+
+        // Populate voice selection dropdown — language-agnostic, groups by voice.language.name
         function populateVoiceSelect() {
             const voiceSelect = document.getElementById('tts-voice-select');
-            if (!voiceSelect) {
-                console.error('Voice select element not found');
-                return;
-            }
+            if (!voiceSelect) return;
 
             voiceSelect.innerHTML = '<option value="">🎯 Auto-Select Best Voice</option>';
 
+            // Render user's custom picks first (if any)
+            renderCustomPicksOptgroup(voiceSelect);
+
             if (!floweryVoices || floweryVoices.length === 0) {
-                console.warn('No flowery voices available for population');
                 voiceSelect.innerHTML += '<option value="" disabled>No voices available</option>';
                 return;
             }
 
-            console.log(`Populating voice select with ${floweryVoices.length} voices`);
+            // Group by language.name (insertion order preserved by Map)
+            const byLanguage = new Map();
+            for (const voice of floweryVoices) {
+                const key = voice.language.name;
+                if (!byLanguage.has(key)) byLanguage.set(key, []);
+                byLanguage.get(key).push(voice);
+            }
 
-            // Group the curated voices by language
-            const englishVoices = [];
-            const czechVoices = [];
-            const japaneseVoices = [];
+            // For each language, add an optgroup with a flag emoji lookup
+            for (const [languageName, voices] of byLanguage) {
+                const group = document.createElement('optgroup');
+                const flag = getLanguageFlag(voices[0].language.code);
+                group.label = `${flag} ${languageName} (${voices.length} voices)`;
 
-            // Categorize the curated voices
-            floweryVoices.forEach(voice => {
-                const langCode = voice.language.code.toLowerCase();
-                const langName = voice.language.name;
+                voices.sort((a, b) => a.name.localeCompare(b.name)).forEach(voice => {
+                    const option = document.createElement('option');
+                    option.value = voice.id;
+                    const qualityIcon = voice.name.toLowerCase().includes('neural') ? '🧠 ' : '';
+                    option.textContent = `${qualityIcon}${voice.name} (${voice.gender})`;
+                    group.appendChild(option);
+                });
 
-                if (langCode.startsWith('en')) {
-                    englishVoices.push(voice);
-                } else if (langCode.startsWith('cs') || langCode.startsWith('cz') || langName.toLowerCase().includes('czech')) {
-                    czechVoices.push(voice);
-                } else if (langCode.startsWith('ja') || langName.toLowerCase().includes('japanese')) {
-                    japaneseVoices.push(voice);
+                voiceSelect.appendChild(group);
+            }
+        }
+
+        // ============== Voice Browser Modal ==============
+        let vbAllVoices = null; // cached on first open
+        let vbFiltered = [];
+
+        async function openVoiceBrowser() {
+            const modal = document.getElementById('vb-modal');
+            modal.classList.remove('hidden');
+            modal.setAttribute('aria-hidden', 'false');
+
+            if (!vbAllVoices) {
+                document.getElementById('vb-loading').classList.remove('hidden');
+                document.getElementById('vb-list').innerHTML = '';
+                try {
+                    const res = await fetch('/api/tts/flowery/voices');
+                    const data = await res.json();
+                    vbAllVoices = (data && data.success && Array.isArray(data.voices)) ? data.voices : [];
+                    populateLanguageFilter();
+                } catch (err) {
+                    console.error('Voice browser fetch failed:', err);
+                    vbAllVoices = [];
+                } finally {
+                    document.getElementById('vb-loading').classList.add('hidden');
                 }
+            }
+            applyVoiceBrowserFilters();
+        }
+
+        function closeVoiceBrowser() {
+            const modal = document.getElementById('vb-modal');
+            modal.classList.add('hidden');
+            modal.setAttribute('aria-hidden', 'true');
+        }
+
+        function populateLanguageFilter() {
+            const sel = document.getElementById('vb-language');
+            // Count voices per language
+            const counts = new Map();
+            for (const v of vbAllVoices) {
+                const n = v.language.name;
+                counts.set(n, (counts.get(n) || 0) + 1);
+            }
+            // Sort by count desc
+            const sorted = [...counts.entries()].sort((a, b) => b[1] - a[1]);
+            sel.innerHTML = '<option value="">All languages</option>' +
+                sorted.map(([name, c]) => `<option value="${name.replace(/"/g, '&quot;')}">${name} (${c})</option>`).join('');
+        }
+
+        function applyVoiceBrowserFilters() {
+            const q = document.getElementById('vb-search').value.trim().toLowerCase();
+            const lang = document.getElementById('vb-language').value;
+            const gender = document.querySelector('input[name="vb-gender"]:checked')?.value || '';
+
+            vbFiltered = vbAllVoices.filter(v => {
+                if (lang && v.language.name !== lang) return false;
+                if (gender && v.gender !== gender) return false;
+                if (q) {
+                    const haystack = (v.name + ' ' + v.language.name).toLowerCase();
+                    if (!haystack.includes(q)) return false;
+                }
+                return true;
             });
 
-            // Add Czech voices first (priority)
-            if (czechVoices.length > 0) {
-                const czechGroup = document.createElement('optgroup');
-                czechGroup.label = `🇨🇿 Czech (${czechVoices.length} voices)`;
+            renderVoiceBrowserList();
+        }
 
-                czechVoices.sort((a, b) => a.name.localeCompare(b.name)).forEach(voice => {
-                    const option = document.createElement('option');
-                    option.value = voice.id;
-                    const qualityIcon = voice.name.toLowerCase().includes('neural') ? '🧠 ' : '';
-                    option.textContent = `${qualityIcon}${voice.name} (${voice.gender})`;
-                    czechGroup.appendChild(option);
-                });
+        function renderVoiceBrowserList() {
+            const list = document.getElementById('vb-list');
+            const empty = document.getElementById('vb-empty');
+            const countEl = document.getElementById('vb-count');
 
-                voiceSelect.appendChild(czechGroup);
+            countEl.textContent = vbFiltered.length;
+
+            if (vbFiltered.length === 0) {
+                list.innerHTML = '';
+                empty.classList.remove('hidden');
+                return;
+            }
+            empty.classList.add('hidden');
+
+            // Cap rendering at 200 to keep DOM fast; show a note if more exist
+            const shown = vbFiltered.slice(0, 200);
+            list.innerHTML = shown.map(v => {
+                const flag = getLanguageFlag(v.language.code);
+                // escape voice name for safe HTML
+                const safeName = v.name.replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+                return `
+                    <button type="button" class="w-full text-left px-4 py-2 hover:bg-blue-50 flex items-center gap-3" data-voice-id="${v.id}">
+                        <span class="text-lg">${flag}</span>
+                        <div class="flex-1 min-w-0">
+                            <div class="text-sm font-medium text-gray-900 truncate">${safeName}</div>
+                            <div class="text-xs text-gray-500">${v.language.name} · ${v.gender}</div>
+                        </div>
+                        <span class="text-xs text-blue-600">Add</span>
+                    </button>`;
+            }).join('');
+
+            if (vbFiltered.length > 200) {
+                list.insertAdjacentHTML('beforeend', `<div class="text-center py-3 text-xs text-gray-500">Showing first 200 of ${vbFiltered.length}. Refine filters to see more.</div>`);
             }
 
-            // Add English voices (selected best ones)
-            if (englishVoices.length > 0) {
-                const englishGroup = document.createElement('optgroup');
-                englishGroup.label = `🇺🇸 English (${englishVoices.length} selected voices)`;
-
-                englishVoices.sort((a, b) => a.name.localeCompare(b.name)).forEach(voice => {
-                    const option = document.createElement('option');
-                    option.value = voice.id;
-                    const qualityIcon = voice.name.toLowerCase().includes('neural') ? '🧠 ' : '';
-                    option.textContent = `${qualityIcon}${voice.name} (${voice.gender})`;
-                    englishGroup.appendChild(option);
+            // Wire up clicks (event delegation)
+            list.querySelectorAll('button[data-voice-id]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const id = btn.getAttribute('data-voice-id');
+                    const voice = vbAllVoices.find(v => v.id === id);
+                    if (!voice) return;
+                    addCustomVoice(voice);
+                    closeVoiceBrowser();
+                    // Re-render the main dropdown to include the new custom pick
+                    populateVoiceSelect();
+                    // Select the new voice
+                    const select = document.getElementById('tts-voice-select');
+                    if (select) select.value = id;
+                    showTemporaryMessage(`Added ${voice.name} to your Custom list`, 'success');
                 });
+            });
+        }
 
-                voiceSelect.appendChild(englishGroup);
-            }
+        function initVoiceBrowserControls() {
+            const openBtn = document.getElementById('open-voice-browser');
+            const closeBtn = document.getElementById('vb-close');
+            const modal = document.getElementById('vb-modal');
+            if (!openBtn || !closeBtn || !modal) return;
 
-            // Add Japanese voices (selected best ones)
-            if (japaneseVoices.length > 0) {
-                const japaneseGroup = document.createElement('optgroup');
-                japaneseGroup.label = `🇯🇵 Japanese (${japaneseVoices.length} selected voices)`;
+            openBtn.addEventListener('click', openVoiceBrowser);
+            closeBtn.addEventListener('click', closeVoiceBrowser);
+            modal.addEventListener('click', (e) => { if (e.target === modal) closeVoiceBrowser(); });
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && !modal.classList.contains('hidden')) closeVoiceBrowser();
+            });
 
-                japaneseVoices.sort((a, b) => a.name.localeCompare(b.name)).forEach(voice => {
-                    const option = document.createElement('option');
-                    option.value = voice.id;
-                    const qualityIcon = voice.name.toLowerCase().includes('neural') ? '🧠 ' : '';
-                    option.textContent = `${qualityIcon}${voice.name} (${voice.gender})`;
-                    japaneseGroup.appendChild(option);
-                });
-
-                voiceSelect.appendChild(japaneseGroup);
-            }
+            document.getElementById('vb-search').addEventListener('input', applyVoiceBrowserFilters);
+            document.getElementById('vb-language').addEventListener('change', applyVoiceBrowserFilters);
+            document.querySelectorAll('input[name="vb-gender"]').forEach(r =>
+                r.addEventListener('change', applyVoiceBrowserFilters)
+            );
         }
 
         // Update quality information display
@@ -3592,6 +3716,7 @@
 
             // Initialize TTS system
             await initTTS();
+            initVoiceBrowserControls();
 
             // Setup search autocomplete for both search inputs
             setupSearchAutocomplete('search-input', 'search-suggestions');
