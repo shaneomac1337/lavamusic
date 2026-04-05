@@ -277,57 +277,48 @@ export class FloweryTTS {
 	}
 
 	/**
-	 * Get popular/recommended voices with better selection
+	 * Get popular/recommended voices for the dashboard dropdown.
+	 *
+	 * Per-language curation strategy:
+	 *   - 'all':     include every voice (for small-catalog languages)
+	 *   - 'quality': keep only neural/wavenet/standard-named or azure-sourced voices
+	 *
+	 * To add a language: append a new entry to CURATED_LANGUAGES. No other code changes needed.
 	 */
 	public static async getPopularVoices(): Promise<FloweryVoice[]> {
 		const voicesData = await this.getVoices();
 
-		// Define high-quality voice patterns
+		// Order matters — this is the dropdown group order.
+		const CURATED_LANGUAGES: Array<{ code: string; altName?: string; strategy: 'all' | 'quality' }> = [
+			{ code: 'cs', altName: 'czech',    strategy: 'all' },
+			{ code: 'en',                      strategy: 'quality' },
+			{ code: 'ja', altName: 'japanese', strategy: 'all' },
+			{ code: 'ru', altName: 'russian',  strategy: 'all' },
+			{ code: 'pl', altName: 'polish',   strategy: 'all' },
+			{ code: 'de', altName: 'german',   strategy: 'quality' },
+		];
+
 		const qualityPatterns = ['neural', 'wavenet', 'standard'];
-		const popularLanguages = ['en-US', 'en-GB', 'cs-CZ', 'ja-JP', 'de-DE', 'fr-FR', 'es-ES'];
+		const isQualityVoice = (voice: FloweryVoice): boolean => {
+			const name = voice.name.toLowerCase();
+			const id = voice.id.toLowerCase();
+			const source = voice.source.toLowerCase();
+			return qualityPatterns.some(p => name.includes(p) || id.includes(p)) || source.includes('azure');
+		};
 
-		// Get voices from popular languages with quality indicators
-		const popularVoices = voicesData.voices.filter(voice => {
-			const langCode = voice.language.code.toLowerCase();
-			const voiceName = voice.name.toLowerCase();
-			const voiceId = voice.id.toLowerCase();
+		const sortByName = (a: FloweryVoice, b: FloweryVoice) => a.name.localeCompare(b.name);
 
-			// Check if it's a popular language
-			const isPopularLang = popularLanguages.some(lang =>
-				langCode.startsWith(lang.toLowerCase().split('-')[0])
-			);
-
-			// Check if it's a quality voice
-			const isQualityVoice = qualityPatterns.some(pattern =>
-				voiceName.includes(pattern) || voiceId.includes(pattern)
-			);
-
-			return isPopularLang && (isQualityVoice || voice.source.toLowerCase().includes('azure'));
-		});
-
-		// Sort by language priority and quality
-		return popularVoices.sort((a, b) => {
-			const aLang = a.language.code.toLowerCase();
-			const bLang = b.language.code.toLowerCase();
-
-			// Language priority: English > Czech > Japanese > German > French > Spanish
-			const langPriority = ['en', 'cs', 'ja', 'de', 'fr', 'es'];
-			const aPriority = langPriority.findIndex(lang => aLang.startsWith(lang));
-			const bPriority = langPriority.findIndex(lang => bLang.startsWith(lang));
-
-			if (aPriority !== bPriority) {
-				return (aPriority === -1 ? 999 : aPriority) - (bPriority === -1 ? 999 : bPriority);
-			}
-
-			// Within same language, prefer Neural voices
-			const aIsNeural = a.name.toLowerCase().includes('neural');
-			const bIsNeural = b.name.toLowerCase().includes('neural');
-			if (aIsNeural !== bIsNeural) {
-				return bIsNeural ? 1 : -1;
-			}
-
-			return a.name.localeCompare(b.name);
-		}).slice(0, 30); // Limit to top 30
+		const result: FloweryVoice[] = [];
+		for (const lang of CURATED_LANGUAGES) {
+			const matches = voicesData.voices.filter(v => {
+				const lc = v.language.code.toLowerCase();
+				const ln = v.language.name.toLowerCase();
+				return lc.startsWith(lang.code) || (lang.altName ? ln.includes(lang.altName) : false);
+			});
+			const filtered = lang.strategy === 'quality' ? matches.filter(isQualityVoice) : matches;
+			result.push(...filtered.sort(sortByName));
+		}
+		return result;
 	}
 
 	/**
