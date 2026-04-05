@@ -21,13 +21,6 @@ export interface VoiceFilter {
 	sortOrder?: 'asc' | 'desc';
 }
 
-export interface VoiceCategory {
-	name: string;
-	emoji: string;
-	description: string;
-	filter: VoiceFilter;
-	priority: number;
-}
 
 export interface FloweryVoicesResponse {
 	count: number;
@@ -193,120 +186,6 @@ export class FloweryTTS {
 				error: `TTS generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`
 			};
 		}
-	}
-
-	/**
-	 * Get voices filtered by language
-	 */
-	public static async getVoicesByLanguage(languageCode: string): Promise<FloweryVoice[]> {
-		const voicesData = await this.getVoices();
-		return voicesData.voices.filter(voice =>
-			voice.language.code.toLowerCase() === languageCode.toLowerCase()
-		);
-	}
-
-	/**
-	 * Get all Czech voices
-	 */
-	public static async getCzechVoices(): Promise<FloweryVoice[]> {
-		const voicesData = await this.getVoices();
-		return voicesData.voices.filter(voice =>
-			voice.language.code.toLowerCase().startsWith('cs') ||
-			voice.language.code.toLowerCase().startsWith('cz') ||
-			voice.language.name.toLowerCase().includes('czech')
-		).sort((a, b) => a.name.localeCompare(b.name));
-	}
-
-	/**
-	 * Get all English voices
-	 */
-	public static async getEnglishVoices(): Promise<FloweryVoice[]> {
-		const voicesData = await this.getVoices();
-		return voicesData.voices.filter(voice =>
-			voice.language.code.toLowerCase().startsWith('en')
-		).sort((a, b) => a.name.localeCompare(b.name));
-	}
-
-	/**
-	 * Get all Japanese voices
-	 */
-	public static async getJapaneseVoices(): Promise<FloweryVoice[]> {
-		const voicesData = await this.getVoices();
-		return voicesData.voices.filter(voice =>
-			voice.language.code.toLowerCase().startsWith('ja') ||
-			voice.language.name.toLowerCase().includes('japanese')
-		).sort((a, b) => a.name.localeCompare(b.name));
-	}
-
-	/**
-	 * Get voice categories for better organization
-	 */
-	public static getVoiceCategories(): VoiceCategory[] {
-		return [
-			{
-				name: 'Popular',
-				emoji: '⭐',
-				description: 'Most commonly used high-quality voices',
-				filter: { languages: ['en', 'cs', 'ja'], limit: 20 },
-				priority: 1
-			},
-			{
-				name: 'English',
-				emoji: '🇺🇸',
-				description: 'All English voices (US, UK, AU, etc.)',
-				filter: { languages: ['en'], sortBy: 'name' },
-				priority: 2
-			},
-			{
-				name: 'Czech',
-				emoji: '🇨🇿',
-				description: 'Czech language voices',
-				filter: { languages: ['cs', 'cz'], sortBy: 'gender' },
-				priority: 3
-			},
-			{
-				name: 'Japanese',
-				emoji: '🇯🇵',
-				description: 'Japanese language voices',
-				filter: { languages: ['ja'], sortBy: 'gender' },
-				priority: 4
-			},
-			{
-				name: 'European',
-				emoji: '🇪🇺',
-				description: 'European languages (German, French, Spanish, etc.)',
-				filter: { languages: ['de', 'fr', 'es', 'it', 'pt', 'nl', 'pl', 'ru'], sortBy: 'language' },
-				priority: 5
-			},
-			{
-				name: 'Asian',
-				emoji: '🌏',
-				description: 'Asian languages (Chinese, Korean, Hindi, etc.)',
-				filter: { languages: ['zh', 'ko', 'hi', 'th', 'vi'], sortBy: 'language' },
-				priority: 6
-			},
-			{
-				name: 'Neural',
-				emoji: '🧠',
-				description: 'High-quality Neural voices',
-				filter: { search: 'neural', sortBy: 'language' },
-				priority: 7
-			},
-			{
-				name: 'Female',
-				emoji: '👩',
-				description: 'Female voices across all languages',
-				filter: { genders: ['female'], sortBy: 'language' },
-				priority: 8
-			},
-			{
-				name: 'Male',
-				emoji: '👨',
-				description: 'Male voices across all languages',
-				filter: { genders: ['male'], sortBy: 'language' },
-				priority: 9
-			}
-		];
 	}
 
 	/**
