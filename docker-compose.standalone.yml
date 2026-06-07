@@ -17,8 +17,7 @@ services:
       # Add your environment variables below or use .env file
       # - TOKEN=your_discord_token
       # - CLIENT_ID=your_client_id
-      # - LAVALINK_URL=your_lavalink_url
-      # - LAVALINK_AUTH=your_lavalink_password
+      # - NODES=[{"id":"Local Node","host":"localhost","port":2333,"authorization":"youshallnotpass","secure":"false"}]
     env_file:
       - .env  # Make sure .env file is in the same directory as this compose file
     volumes:
