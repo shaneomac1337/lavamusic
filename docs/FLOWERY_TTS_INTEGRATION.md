@@ -7,14 +7,14 @@ This integration adds **FloweryTTS** as a premium text-to-speech option alongsid
 ## ✨ Features
 
 ### FloweryTTS Advantages
-- **850+ voices** with **English, Czech & Japanese prioritized**
+- **850+ voices** with a **curated set prioritized** (Czech, English, Japanese, Russian, Polish, German)
 - **2048 character limit** (vs 200 for DuncteBot)
 - **Speed control** (service supports 0.5x–10x; the dashboard slider and `/tts` command cap at 0.5x–3x)
 - **Translation support** (auto-translate text to voice language)
 - **Multiple audio formats** (MP3, OGG, WAV, FLAC, AAC)
 - **Higher quality** natural-sounding speech
 - **Free service** with generous rate limits
-- **Organized voice selection** (🇺🇸 English first, 🇨🇿 Czech second, 🇯🇵 Japanese third)
+- **Organized voice selection** — curated languages in dropdown order: 🇨🇿 Czech, 🇺🇸 English, 🇯🇵 Japanese, 🇷🇺 Russian, 🇵🇱 Polish, 🇩🇪 German
 - **Advanced voice browser** with search, filtering, and preview
 - **Audio quality selection** (AAC, OGG Opus, FLAC)
 
@@ -117,13 +117,19 @@ npm start
 GET /api/tts/flowery/voices
 ```
 
-#### Get Popular Voices (English + Czech)
+#### Get Popular Voices (curated set)
 ```http
 GET /api/tts/flowery/voices/popular
 ```
 
 > Language/category filtering is performed client-side (and by the Discord `/voices`
 > command); there are no per-language voice endpoints.
+
+> **Note:** This endpoint returns the curated voice set (Czech, English, Japanese,
+> Russian, Polish, German). Its response is `{ success, voices, count }` only — there
+> is **no `default` field**, and `count` is the number of curated voices (a small
+> number, not 850). The response shape shown below applies to the **all-voices**
+> endpoint (`GET /api/tts/flowery/voices`).
 
 **Response:**
 ```json

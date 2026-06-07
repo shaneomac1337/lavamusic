@@ -4,13 +4,13 @@ This document describes the Text-to-Speech (TTS) feature integration into the La
 
 ## 📋 Overview
 
-The TTS feature allows users to convert text to speech directly from the web dashboard, using the same DuncteBot TTS engine as the Discord `!say` command. The generated speech is added to the music queue and plays through the bot's voice connection.
+The TTS feature allows users to convert text to speech directly from the web dashboard. The dashboard is dual-provider: a provider selector lets you choose between **FloweryTTS** (the default) and **DuncteBot** (a secondary/fallback option). The generated speech is added to the music queue and plays through the bot's voice connection.
 
 ## ✨ Features
 
 ### 🎯 Core Functionality
-- **Text Input**: Multi-line textarea with 200 character limit
-- **Real-time Character Counter**: Visual feedback with color coding
+- **Text Input**: Multi-line textarea with a dynamic character limit (2048 for FloweryTTS, 200 for DuncteBot). The textarea has no fixed `maxlength` attribute; the displayed limit updates with the selected provider.
+- **Real-time Character Counter**: Visual feedback with percentage-based color coding
 - **One-Click Speech**: Generate TTS with a single button click
 - **Keyboard Shortcuts**: Enter to speak, Shift+Enter for new lines
 - **Auto-join**: Automatically joins user's voice channel if needed
@@ -19,10 +19,10 @@ The TTS feature allows users to convert text to speech directly from the web das
 - **Responsive Design**: Works on desktop, tablet, and mobile
 - **Dark/Light Mode**: Consistent with dashboard theme
 - **Visual Feedback**: Loading states, success/error messages
-- **Character Limit Indicator**: Color changes as limit approaches
-  - Gray: 0-150 characters
-  - Yellow: 151-180 characters  
-  - Red: 181-200 characters
+- **Character Limit Indicator**: Color changes as a percentage of the current (dynamic) limit
+  - Gray: up to 75% of the limit
+  - Yellow: above 75% of the limit
+  - Red: above 90% of the limit
 
 ### 🔧 Technical Features
 - **Queue Integration**: TTS tracks appear in music queue
@@ -72,11 +72,11 @@ lives in `src/web/public/js/guild.js` (extracted from the page's former inline s
         Text-to-Speech
     </h3>
     <div class="space-y-3">
-        <!-- Text input with character counter -->
+        <!-- Text input with character counter (no maxlength; limit shown is dynamic) -->
         <div class="relative">
-            <textarea id="tts-text" maxlength="200" rows="3"></textarea>
+            <textarea id="tts-text" rows="3"></textarea>
             <div class="absolute bottom-2 right-2">
-                <span id="tts-char-count">0</span>/200
+                <span id="tts-char-count">0</span>/<span id="tts-char-limit">2048</span>
             </div>
         </div>
         
@@ -92,9 +92,9 @@ lives in `src/web/public/js/guild.js` (extracted from the page's former inline s
         </div>
         
         <!-- Info text -->
-        <div class="text-xs text-gray-500 bg-gray-50 p-2 rounded">
+        <div id="tts-info" class="text-xs text-gray-500 bg-gray-50 p-2 rounded">
             <i class="fas fa-info-circle mr-1"></i>
-            TTS uses DuncteBot engine with Czech language support.
+            <span id="tts-info-text">FloweryTTS • 850+ voices • Multiple languages • Auto-joins voice channel</span>
         </div>
     </div>
 </div>
@@ -141,7 +141,7 @@ lives in `src/web/public/js/guild.js` (extracted from the page's former inline s
 ### For Users
 1. Navigate to the guild dashboard
 2. Scroll to the "Text-to-Speech" section
-3. Enter your text (max 200 characters)
+3. Enter your text (max 2048 characters with FloweryTTS, 200 with DuncteBot)
 4. Click "Speak" or press Enter
 5. The TTS will be added to the queue and play
 

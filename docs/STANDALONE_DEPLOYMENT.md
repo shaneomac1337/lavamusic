@@ -18,11 +18,13 @@ cd /opt/lavamusic
 ```
 
 ### Step 2: Copy Files
-Copy these 3 files to your server:
+Copy these 3 files to your server. The repo ships `Dockerfile.standalone` and
+`docker-compose.standalone.yml`; you can either keep those names or rename them
+to `Dockerfile` / `docker-compose.yml` as shown:
 ```
 /opt/lavamusic/
-├── Dockerfile              ← Copy from Dockerfile.standalone
-├── docker-compose.yml      ← Copy from docker-compose.standalone.yml
+├── Dockerfile              ← Renamed copy of Dockerfile.standalone
+├── docker-compose.yml      ← Renamed copy of docker-compose.standalone.yml
 └── .env                    ← Your bot configuration
 ```
 
@@ -56,11 +58,11 @@ DASHBOARD_BASE_URL=http://your-server-ip:3001   # OAuth callback is <base>/auth/
 
 ### Step 4: Build the Image
 ```bash
-# Build from Dockerfile
-docker build -f Dockerfile -t lavamusic:latest .
-
-# Or if you named it Dockerfile.standalone
+# Build from the shipped Dockerfile.standalone
 docker build -f Dockerfile.standalone -t lavamusic:latest .
+
+# Or, if you renamed it to Dockerfile
+docker build -f Dockerfile -t lavamusic:latest .
 ```
 
 ### Step 5: Start the Bot
@@ -113,7 +115,7 @@ Uses pre-built image: `lavamusic:latest`
 ### Option B: Build from Source
 ```
 /opt/lavamusic/
-├── Dockerfile
+├── Dockerfile          ← renamed copy of Dockerfile.standalone
 ├── docker-compose.yml
 └── .env
 ```
@@ -153,6 +155,8 @@ volumes:
 ```
 
 ### If Building from Dockerfile:
+(Set `dockerfile:` to whatever you named the file — `Dockerfile.standalone` as
+shipped, or `Dockerfile` if you renamed it.)
 ```yaml
 version: '3.8'
 
@@ -160,7 +164,7 @@ services:
   lavamusic:
     build:
       context: .
-      dockerfile: Dockerfile  # ← Build from Dockerfile
+      dockerfile: Dockerfile  # ← or Dockerfile.standalone
     image: lavamusic:latest
     container_name: lavamusic
     restart: unless-stopped

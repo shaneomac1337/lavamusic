@@ -17,18 +17,20 @@ The `lavamusic.db` file contains:
 - ✅ **24/7 Mode** - Voice channel persistence settings
 - ✅ **Setup Channels** - Setup message configurations
 
-### Current Docker Issue ⚠️
-**Your current `docker-compose.yml` does NOT persist the database!**
+### Database Persistence ✅
+**The shipped compose files already persist the database.**
 
-When you restart or recreate the container, you lose:
-- ❌ All playlists
-- ❌ User preferences
-- ❌ Guild settings
+Both `docker/docker-compose.yml` and `docker-compose.standalone.yml` mount the
+named `lavamusic-db` volume at `/opt/lavamusic/prisma`, so the following survive
+container restarts and recreation:
+- ✅ All playlists
+- ✅ User preferences
+- ✅ Guild settings
 
-## Solution: Persist the Database with Docker Volumes
+## How the Database Is Persisted with Docker Volumes
 
-### Option 1: Named Volume (Recommended)
-Update your `docker-compose.yml`:
+### Option 1: Named Volume (used by default)
+The shipped `docker-compose.yml` already contains this configuration:
 
 ```yaml
 version: '3.8'
@@ -53,7 +55,7 @@ services:
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - lavamusic-logs:/opt/lavamusic/logs
-      - lavamusic-db:/opt/lavamusic/prisma  # ← ADD THIS LINE
+      - lavamusic-db:/opt/lavamusic/prisma  # ← Persists the database
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
       interval: 30s
@@ -64,7 +66,7 @@ services:
 volumes:
   lavamusic-logs:
     driver: local
-  lavamusic-db:  # ← ADD THIS VOLUME
+  lavamusic-db:  # ← The named database volume
     driver: local
 ```
 
@@ -91,11 +93,10 @@ lavamusic/
 │   ├── lavamusic.db          ← Main database file (THIS IS WHAT YOU NEED TO PERSIST!)
 │   ├── lavamusic.db-shm      ← SQLite shared memory (temporary)
 │   ├── lavamusic.db-wal      ← Write-ahead log (temporary)
-│   ├── schema.prisma         ← Schema definition
-│   └── migrations/           ← Migration history
+│   └── schema.prisma         ← Schema definition
 ```
 
-**Important:** The entire `prisma/` directory should be persisted to keep the database and migration history.
+**Important:** The entire `prisma/` directory should be persisted to keep the database files.
 
 ## Docker Commands for Database Management
 
@@ -145,7 +146,7 @@ cat lavamusic-dump.sql | docker exec -i lavamusic sqlite3 /opt/lavamusic/prisma/
 # 1. Build and start
 docker-compose up -d
 
-# 2. Database is automatically created with migrations
+# 2. The database schema is automatically created with `prisma db push`
 # Playlists will be saved and persist across restarts
 ```
 
@@ -266,7 +267,15 @@ find "$BACKUP_DIR" -name "lavamusic-*.db" -mtime +7 -delete
 0 3 * * * /path/to/backup-database.sh
 ```
 
-## Migration Handling
+## Schema Updates
+
+This project syncs the schema with `prisma db push` (schema sync) rather than
+migration files. There is no `prisma/migrations/` directory. On startup, the
+Docker entrypoint (`docker/docker-entrypoint.sh`) runs:
+
+```sh
+npx prisma db push --accept-data-loss --skip-generate
+```
 
 ### When Schema Changes (New Features)
 ```bash
@@ -276,26 +285,26 @@ git pull
 # 2. Rebuild container
 docker-compose build
 
-# 3. Run migrations (happens automatically on startup)
+# 3. Start (the entrypoint runs `prisma db push` automatically)
 docker-compose up -d
 
-# Prisma will automatically apply new migrations to existing database
+# Prisma syncs the schema to the existing database on startup.
 # ✅ All existing data (playlists) are preserved!
 ```
 
-### Manual Migration
-If you need to run migrations manually:
+### Manual Schema Sync
+If you need to sync the schema manually:
 
 ```bash
 # Enter container
 docker exec -it lavamusic sh
 
-# Run migrations
-npx prisma migrate deploy
-
-# Or in development
-npx prisma migrate dev
+# Sync the schema
+npx prisma db push
 ```
+
+> Note: `npm run db:migrate` (which runs `prisma migrate dev`) exists in
+> `package.json`, but it is **not** used by the Docker deployment.
 
 ## Troubleshooting
 

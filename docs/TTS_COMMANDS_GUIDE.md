@@ -89,7 +89,7 @@ Your LavaMusic bot now has **powerful TTS commands** that work directly from Dis
 | Feature | `/tts` | `/voices` | `/say` |
 |---------|--------|-----------|--------|
 | **FloweryTTS Support** | ✅ Full | ✅ Browse | ✅ Basic |
-| **DuncteBot Support** | ✅ Fallback | ❌ No | ✅ Default |
+| **DuncteBot Support** | ✅ Via `--provider duncte` | ❌ No | ✅ Default + auto-fallback |
 | **Voice Selection** | ✅ 850+ voices | ✅ Browse all | ❌ Default only |
 | **Speed Control** | ✅ 0.5x-3x | ❌ No | ❌ No |
 | **Audio Quality** | ✅ 3 formats | ❌ No | ❌ No |
@@ -98,6 +98,8 @@ Your LavaMusic bot now has **powerful TTS commands** that work directly from Dis
 
 ## 🌍 **Language Support**
 
+> **Note:** The voice IDs below are illustrative examples. Voices are not hardcoded in the bot — the live list is fetched from the FloweryTTS API, so available IDs may differ. Use `/voices` to browse the current set.
+
 ### **English Voices** 🇺🇸🇬🇧
 - **US English**: en-US-AriaNeural, en-US-JennyNeural, en-US-GuyNeural
 - **UK English**: en-GB-SoniaNeural, en-GB-RyanNeural, en-GB-LibbyNeural
@@ -105,8 +107,8 @@ Your LavaMusic bot now has **powerful TTS commands** that work directly from Dis
 - **And many more!**
 
 ### **Czech Voices** 🇨🇿
-- **Female**: cs-CZ-VlastaNeural, cs-CZ-AntoninNeural
-- **Male**: cs-CZ-JakubNeural
+- **Female**: cs-CZ-VlastaNeural
+- **Male**: cs-CZ-AntoninNeural, cs-CZ-JakubNeural
 - **And more Czech voices!**
 
 ### **Japanese Voices** 🇯🇵
@@ -201,8 +203,9 @@ FloweryTTS supports 3 optimized audio formats for different use cases:
 
 ## 🔧 **Smart Features**
 
-### **Automatic Fallback**
-- If FloweryTTS fails and text ≤ 200 chars → automatically uses DuncteBot
+### **Automatic Fallback** (`/say` only)
+- `/say`: if FloweryTTS fails and text ≤ 200 chars → automatically falls back to DuncteBot
+- `/tts`: does **not** auto-fall back. On a FloweryTTS failure it shows an error embed suggesting you retry with `--provider duncte`
 - Seamless experience with error handling
 
 ### **Auto-Join Voice Channel**
@@ -232,9 +235,8 @@ FloweryTTS supports 3 optimized audio formats for different use cases:
 ## 🚨 **Error Handling**
 
 - **Character limits enforced** (2048 for FloweryTTS, 200 for DuncteBot)
-- **Automatic fallback** if FloweryTTS fails
+- **Automatic fallback** to DuncteBot on FloweryTTS failure — `/say` only (for `/tts`, the error embed suggests retrying with `--provider duncte`)
 - **Clear error messages** with suggestions
-- **Provider switching** if one fails
 
 ---
 

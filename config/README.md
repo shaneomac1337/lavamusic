@@ -12,7 +12,7 @@ This folder contains deployment and environment configuration files for the Lava
 - **[biome.json](../biome.json)** - Code formatting and linting configuration (in root for build tools)
 
 ### 🎵 Audio & Lavalink Configuration
-- **[application.yml](./application.yml)** - Basic Lavalink configuration (legacy)
+- **[application.yml](./application.yml)** - Lavalink configuration (plugins, sources, filters, logging)
 
 ### 🚀 Deployment Configuration
 - **[process.json](./process.json)** - PM2 process manager configuration
@@ -24,7 +24,7 @@ This folder contains deployment and environment configuration files for the Lava
 ```json
 {
   "compilerOptions": {
-    "target": "ES2022",
+    "target": "ESNext",
     "module": "CommonJS",
     "strict": true,
     // ... other TypeScript options
@@ -37,9 +37,9 @@ This folder contains deployment and environment configuration files for the Lava
 ### Build Configuration (tsup.config.ts)
 ```typescript
 export default {
-  entry: ['src/index.ts'],
-  format: ['cjs'],
-  target: 'node18',
+  entryPoints: ["src/**/*.ts"],
+  clean: true,
+  format: "cjs",
   // ... other build options
 }
 ```
@@ -67,7 +67,8 @@ export default {
   "apps": [{
     "name": "lavamusic",
     "script": "dist/index.js",
-    "instances": 1
+    "node_args": ["--enable-source-maps"],
+    "restart_delay": 10000
   }]
 }
 ```
@@ -121,7 +122,7 @@ npm run build -- --dry-run
 
 #### Code Quality
 ```bash
-npx biome check --apply
+npx biome check --write
 ```
 
 ## 📁 Configuration Hierarchy
@@ -132,7 +133,7 @@ npx biome check --apply
 3. **biome.json** - Code quality standards
 
 ### Environment-Specific
-- **Development**: Uses tsconfig.json with source maps
+- **Development**: Uses tsconfig.json (source maps are not emitted; PM2 runs Node with `--enable-source-maps`)
 - **Production**: Uses tsup.config.ts for optimized builds
 - **Deployment**: Uses process.json for PM2 management
 

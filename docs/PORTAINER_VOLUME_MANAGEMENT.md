@@ -69,7 +69,6 @@ lavamusic.db       ← Your playlists database!
 lavamusic.db-shm   ← SQLite temp file
 lavamusic.db-wal   ← Write-ahead log
 schema.prisma      ← Schema definition
-migrations/        ← Migration history
 ```
 
 ## Backing Up Volumes in Portainer

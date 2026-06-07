@@ -11,9 +11,8 @@ The Lavamusic Web Dashboard provides a modern, responsive web interface to contr
 - **Search Integration**: Add tracks by search query or direct URL
 
 ### 🔧 **Server Management**
-- **Guild Settings**: Configure bot prefix, language, and DJ roles
+- **Guild Settings**: Configure the bot language and the bot-messages text channel (the command prefix is fixed to `!` and is not editable from the dashboard)
 - **24/7 Mode**: Enable/disable persistent voice channel connection
-- **Setup Management**: Configure music channels and permissions
 
 ### 📊 **Statistics & Monitoring**
 - **Real-time Stats**: Bot uptime, guild count, active players
@@ -22,8 +21,8 @@ The Lavamusic Web Dashboard provides a modern, responsive web interface to contr
 
 ### 🔐 **Security**
 - **Discord OAuth2**: Secure authentication with Discord
-- **JWT Tokens**: Session management with automatic refresh
-- **Permission Checks**: Admin-only access to guild controls
+- **JWT Tokens**: Session tokens that expire after 7 days (no client-side auto-refresh; re-login when a token expires)
+- **Access Control**: Any authenticated Discord user who shares a guild with the bot can access that guild's controls
 - **CORS Protection**: Secure cross-origin requests
 
 ## 🚀 Quick Setup
@@ -119,8 +118,8 @@ WEB_DASHBOARD=true npm start
 │  │ ⏮️ ⏸️ ⏭️ ⏹️         │  │  └─ Track 3 │
 │  │ 🔊 ████████░░ 80%   │  │             │
 │  └─────────────────────┘  │  ⚙️ Settings │
-│  🔍 Add Track...          │  Prefix: !   │
-│                           │  Lang: EN    │
+│  🔍 Add Track...          │  Lang: EN    │
+│                           │  Channel: #..│
 └─────────────────────────────────────────┘
 ```
 
@@ -174,13 +173,11 @@ socket.on('queueEnd', data);            // Queue finished
 
 ### **Authentication**
 - **Discord OAuth2** with secure token exchange
-- **JWT tokens** with configurable expiration
-- **Automatic token refresh** for seamless experience
+- **JWT tokens** that expire after 7 days (no automatic client-side refresh — users re-login when a token expires)
 
 ### **Authorization**
-- **Bot owner** access to all guilds
-- **Administrator permission** required for guild access
-- **Guild-specific** access control
+- **Any authenticated Discord user** can log in; there is no owner-only or Administrator-permission requirement
+- **Guild-specific** access: users only see guilds they share with the bot
 
 ### **Security Headers**
 - **Helmet.js** for security headers

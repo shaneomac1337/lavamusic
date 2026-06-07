@@ -161,7 +161,7 @@ npm run db:migrate
 
 9. Run the bot:
 
-Note: You can also run `run.bat` to easily run the bot on Windows.
+Note: You can also run `scripts/run.bat` to easily run the bot on Windows.
 
 ```bash
 npm start
@@ -208,7 +208,7 @@ To update, you only have to type the following:
 
 ```bash
 docker compose up --force-recreate --build -d
-image prune -f
+docker image prune -f
 ```
 
 You can automate this by using [Watchtower](https://github.com/containrrr/watchtower). The following should be sufficient:

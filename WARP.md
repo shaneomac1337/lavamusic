@@ -140,7 +140,7 @@ export default class PlayCommand extends Command {
 Events are in `src/events/` split by source:
 - `client/` - Discord.js events (messageCreate, interactionCreate, ready, etc.)
 - `player/` - Lavalink player events (trackStart, trackEnd, queueEnd, etc.)
-- `node/` - Lavalink node events (connect, disconnect, error)
+- `node/` - Lavalink node events (connect, destroy)
 
 **Custom Events:**
 - `setupSystem` - Music channel system messages
@@ -452,8 +452,8 @@ BOT_ACTIVITY_TYPE="0"     # Activity type (0-5)
 - CRLF line endings
 
 **Linting:**
-- Biome with "all rules" enabled
-- Many rules disabled via config (see `biome.json`)
+- Biome with the recommended ruleset disabled (`recommended: false`)
+- Specific rules configured selectively in `biome.json`
 - Key disabled: `noExplicitAny`, `noDefaultExport`
 
 **File Organization:**
@@ -530,7 +530,7 @@ const guild = await client.db.get(guildId);
 
 // Update settings
 await client.db.setPrefix(guildId, newPrefix);
-await client.db.setLanguage(guildId, language);
+await client.db.updateLanguage(guildId, language);
 
 // Playlist operations
 const playlist = await client.db.getPlaylist(userId, playlistName);
