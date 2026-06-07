@@ -16,10 +16,10 @@
     },
     {
       "id": 2,
-      "subject": "Task 2: Remove Biome, align CLAUDE.md",
-      "status": "pending",
+      "subject": "Task 2: VOID - keep Biome (incorrect premise)",
+      "status": "skipped",
       "blockedBy": [1],
-      "description": "**Goal:** Delete biome.json, fix CLAUDE.md:97.\n\n```json:metadata\n{\"files\": [\"biome.json\", \"CLAUDE.md\"], \"verifyCommand\": \"npm run lint\", \"acceptanceCriteria\": [\"biome.json deleted\", \"CLAUDE.md updated\", \"lint still works\"]}\n```"
+      "description": "Dropped. Based on an incorrect premise: the project uses Biome (@biomejs/biome, biome.json, lint/format scripts), NOT ESLint+Prettier. biome.json must not be deleted; the lint/format tooling is unchanged and correct."
     },
     {
       "id": 3,

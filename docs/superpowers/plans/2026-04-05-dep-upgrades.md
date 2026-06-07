@@ -13,7 +13,7 @@
 
 **Architecture:** Sequential npm upgrade steps, each gated on `npm run build` + `npm run lint`. Majors bumped individually after a changelog review and grep for affected call sites.
 
-**Tech Stack:** npm, TypeScript (tsup), ESLint, Prettier. Node LTS. Discord.js 14, Fastify 5, Prisma 6, Zod 3.
+**Tech Stack:** npm, TypeScript (tsup), Biome (lint + format). Node LTS. Discord.js 14, Fastify 5, Prisma 6, Zod 3.
 
 **Spec:** `docs/superpowers/specs/2026-04-05-dep-upgrades-design.md`
 
@@ -113,50 +113,13 @@ git commit -m "chore(deps): update minors/patches + regenerate lockfile"
 
 ---
 
-### Task 2: Remove Biome, align CLAUDE.md with actual tooling
+### Task 2: ~~Remove Biome, align CLAUDE.md with actual tooling~~ — VOID
 
-**Goal:** Delete `biome.json` and fix the contradicting line in `CLAUDE.md`. Project already uses ESLint + Prettier per `package.json` scripts — this just makes docs match.
-
-**Files:**
-- Delete: `biome.json`
-- Modify: `CLAUDE.md:97` (the line "- Biome.js for linting and formatting")
-
-**Acceptance Criteria:**
-- [ ] `biome.json` no longer exists
-- [ ] `CLAUDE.md` no longer references Biome
-- [ ] `npm run lint` still works unchanged
-
-**Verify:** `ls biome.json` → "No such file"; `grep -i biome CLAUDE.md` → no matches
-
-**Steps:**
-
-- [ ] **Step 1: Delete biome.json**
-```bash
-rm biome.json
-```
-
-- [ ] **Step 2: Update CLAUDE.md line 97**
-
-Replace the exact line:
-```
-- Biome.js for linting and formatting
-```
-with:
-```
-- ESLint + Prettier for linting and formatting
-```
-
-- [ ] **Step 3: Verify lint still works**
-```bash
-npm run lint 2>&1 | tail -5
-```
-Expected: error count ≤ baseline (unchanged).
-
-- [ ] **Step 4: Commit**
-```bash
-git add -u biome.json CLAUDE.md
-git commit -m "chore: remove biome config, align tooling docs with eslint+prettier"
-```
+> ❌ **Not done — based on an incorrect premise.** The project uses **Biome**
+> (`@biomejs/biome` in `package.json`; `biome.json` config; the `lint`/`lint:fix`/`format`
+> scripts run Biome). There is no ESLint/Prettier setup, so there is nothing to
+> "consolidate" and `biome.json` must **not** be deleted. This task was skipped and the
+> lint/format tooling is unchanged and correct.
 
 ---
 

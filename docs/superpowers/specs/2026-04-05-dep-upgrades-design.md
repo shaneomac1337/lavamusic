@@ -16,7 +16,7 @@ Bring `lavamusic` dependencies up to date and resolve the Biome vs ESLint+Pretti
 ## Context
 
 - Project is on npm (no lockfile currently in repo — will be regenerated).
-- `package.json` declares ESLint + Prettier in devDeps and `lint` / `format` scripts that use them, but `biome.json` also exists and `CLAUDE.md` claims "Biome.js for linting and formatting". The two tooling stacks are in conflict.
+- `package.json` uses **Biome** (`@biomejs/biome`) for the `lint`/`lint:fix`/`format` scripts, with `biome.json` as config and `CLAUDE.md` correctly describing Biome. (An earlier draft of this design wrongly assumed ESLint + Prettier — there is **no** tooling conflict.)
 - No automated runtime tests exist. The `tests/` directory holds manual debug scripts that require a Discord bot token. Therefore verification per step is limited to `npm run build` + `npm run lint` (+ human smoke test after all steps).
 - `package-lock.json` and `node_modules/` are absent; `npm install` needs to run before anything else.
 
@@ -29,7 +29,7 @@ Bring `lavamusic` dependencies up to date and resolve the Biome vs ESLint+Pretti
   - `dotenv` 16 → 17
   - `@fastify/jwt` 9 → 10
   - `node-system-stats` 1 → 2
-- Remove Biome: delete `biome.json`, update `CLAUDE.md`.
+- ~~Remove Biome: delete `biome.json`, update `CLAUDE.md`.~~ — dropped (incorrect premise; project uses Biome).
 
 ### Out of scope
 
@@ -46,7 +46,7 @@ One logical commit per step. Each step either succeeds cleanly or is reverted in
 |---|---|---|
 | 1 | `npm install` — regenerate lockfile, run `npm audit`, capture any CVEs | no commit yet (bundled into step 2) |
 | 2 | `npm update` — all within-semver bumps. Run `npm run build` + `npm run lint`. | `chore(deps): update minors/patches + regenerate lockfile` |
-| 3 | Delete `biome.json`; update `CLAUDE.md` line that says "Biome.js for linting and formatting" to reflect ESLint + Prettier reality. | `chore: remove biome config, align tooling docs with eslint+prettier` |
+| 3 | ~~Delete `biome.json` / change tooling docs~~ — **VOID** (incorrect premise; project uses Biome, config kept). | — |
 | 4 | Bump `dotenv` 16 → 17. Review v17 changelog (quoted-value handling changed). Grep for `dotenv` / `process.env` consumers. Build + lint. | `chore(deps): bump dotenv 16 → 17` |
 | 5 | Bump `@fastify/jwt` 9 → 10. Review changelog. Check JWT usage in `src/web/` (web dashboard auth). Build + lint. | `chore(deps): bump @fastify/jwt 9 → 10` |
 | 6 | Bump `node-system-stats` 1 → 2. Review changelog. Check usage sites. Build + lint. | `chore(deps): bump node-system-stats 1 → 2` |
