@@ -56,11 +56,27 @@ export class WebServer {
 		// Cookie support
 		await this.app.register(cookie);
 
-		// JWT - Auto-generate secret if not provided
-		const jwtSecret = env.DASHBOARD_SECRET || require('crypto').randomBytes(64).toString('hex');
-		if (!env.DASHBOARD_SECRET) {
-			console.log('⚠️  Auto-generated DASHBOARD_SECRET. For production, set a permanent secret in .env');
-			console.log(`DASHBOARD_SECRET="${jwtSecret}"`);
+		// JWT secret: env wins; otherwise reuse a persisted secret so dashboard
+		// logins survive restarts (regenerating it would invalidate every cookie).
+		let jwtSecret: string = env.DASHBOARD_SECRET ?? '';
+		if (!jwtSecret) {
+			const fs = require('fs');
+			const path = require('path');
+			const secretFile = path.join(process.cwd(), 'prisma', '.dashboard-secret');
+			try {
+				jwtSecret = fs.readFileSync(secretFile, 'utf8').trim();
+			} catch {
+				jwtSecret = '';
+			}
+			if (!jwtSecret) {
+				jwtSecret = require('crypto').randomBytes(64).toString('hex');
+				try {
+					fs.writeFileSync(secretFile, jwtSecret, { mode: 0o600 });
+					console.log(`🔐 Generated and persisted a dashboard secret at ${secretFile}. Set DASHBOARD_SECRET in .env to override.`);
+				} catch (err) {
+					console.warn(`⚠️  Could not persist dashboard secret (${err}). Dashboard logins will reset on restart — set DASHBOARD_SECRET in .env.`);
+				}
+			}
 		}
 
 		await this.app.register(jwt, {
