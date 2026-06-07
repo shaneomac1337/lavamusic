@@ -1,0 +1,64 @@
+# LavaMusic stack — Discord music bot + Lavalink audio server
+#
+# Before first run:
+#   1. cp .env.example .env                                  (fill in your tokens)
+#   2. cp docker/lavalink/application.example.yml docker/lavalink/application.yml
+#      (fill in Lavalink password / source credentials)
+#   3. docker compose up -d --build
+
+services:
+  # Audio streaming server (official image; plugins auto-download per application.yml)
+  lavalink:
+    container_name: lavalink
+    image: ghcr.io/lavalink-devs/lavalink:4.2.2
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      - _JAVA_OPTIONS=-Xmx2G
+      - SERVER_PORT=2333
+      - SERVER_ADDRESS=0.0.0.0
+    volumes:
+      - ./docker/lavalink/application.yml:/opt/Lavalink/application.yml:ro
+      - lavalink-logs:/opt/Lavalink/logs
+      - lavalink-plugins:/opt/Lavalink/plugins
+    healthcheck:
+      test: 'curl -H "Authorization: youshallnotpass" -s http://localhost:2333/version'
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  # Discord bot + web dashboard (built from this repo)
+  lavamusic:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: lavamusic:latest
+    container_name: lavamusic
+    restart: unless-stopped
+    network_mode: host
+    depends_on:
+      lavalink:
+        condition: service_healthy
+    environment:
+      - NODE_ENV=production
+      - WEB_DASHBOARD=true
+      - DASHBOARD_PORT=3001
+    env_file:
+      - .env
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - lavamusic-logs:/opt/lavamusic/logs
+      - lavamusic-db:/opt/lavamusic/prisma
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+volumes:
+  lavalink-logs:
+  lavalink-plugins:
+  lavamusic-logs:
+  lavamusic-db:
