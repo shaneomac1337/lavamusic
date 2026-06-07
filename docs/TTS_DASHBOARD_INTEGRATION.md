@@ -61,6 +61,9 @@ The TTS feature allows users to convert text to speech directly from the web das
 
 ### Frontend Components
 
+The TTS panel **markup** lives in `src/web/public/guild.html`; its **JavaScript**
+lives in `src/web/public/js/guild.js` (extracted from the page's former inline script).
+
 **HTML Structure**:
 ```html
 <div class="border-t pt-4 mt-4">
@@ -97,7 +100,7 @@ The TTS feature allows users to convert text to speech directly from the web das
 </div>
 ```
 
-**JavaScript Functions**:
+**JavaScript Functions** (defined in `src/web/public/js/guild.js`):
 - `speakText()`: Main TTS function
 - `clearTTSText()`: Clear text input
 - `updateTTSCharCount()`: Update character counter

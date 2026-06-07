@@ -6,13 +6,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Build & Development:**
 - `npm run dev` - Development mode with hot reload (uses tsup watch + node)
-- `npm run build` - Build TypeScript to JavaScript in dist/
+- `npm run build:css` - Build the dashboard Tailwind CSS (`src/web/styles/app.css` → `src/web/public/css/app.css`, minified)
+- `npm run watch:css` - Watch-rebuild the dashboard Tailwind CSS during development
+- `npm run build` - Build the bot: runs `build:css` then `tsup` to compile TypeScript to dist/
 - `npm start` - Start the compiled bot from dist/
 
 **Code Quality:**
-- `npm run lint` - Run ESLint
-- `npm run lint:fix` - Auto-fix ESLint issues
-- `npm run format` - Format code with Prettier
+- `npm run lint` - Run the Biome linter
+- `npm run lint:fix` - Auto-fix Biome lint issues
+- `npm run format` - Format code with Biome
 
 **Database:**
 - `npm run db:push` - Push Prisma schema to database
@@ -90,7 +92,7 @@ Optional web interface built with:
 
 **TypeScript Configuration:**
 - Strict mode enabled with comprehensive type checking
-- ES modules with CommonJS compilation
+- CommonJS modules (compiled by tsup, ESNext language target)
 - Decorators enabled for dependency injection (tsyringe)
 
 **Code Formatting:**

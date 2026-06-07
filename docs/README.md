@@ -44,10 +44,11 @@ This folder contains all documentation for the LavaMusic Discord bot project.
 ## 📁 Related Folders
 
 - **`../tests/`** - Test files and debugging scripts
-- **`../config/`** - Configuration files (tsconfig.json, biome.json, etc.)
+- **`../config/`** - Runtime config (application.yml, process.json, replit.nix); `tsconfig.json` and `biome.json` live at the repo root
 - **`../docker/`** - Docker configuration files
-- **`../scripts/`** - Build and deployment scripts
+- **`../scripts/`** - Command-deploy and utility scripts (deploy-commands.js, restart.js)
 - **`../src/`** - Source code
+- **`../src/web/styles/`** - Tailwind source CSS, built via `npm run build:css` to `src/web/public/css/app.css`
 - **`../locales/`** - Translation files
 
 ## 🤝 Contributing

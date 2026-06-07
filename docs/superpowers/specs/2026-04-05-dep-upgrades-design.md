@@ -1,7 +1,13 @@
 # Dependency Upgrades & Lint Tooling Consolidation — Design
 
 **Date:** 2026-04-05
-**Status:** Approved
+**Status:** Superseded (incorrect premise — see correction)
+
+> ⚠️ **Correction:** The "Context" below misreads the repo. `package.json` declares
+> **Biome** (`@biomejs/biome`), not ESLint + Prettier, and its `lint`/`format` scripts run
+> Biome with `biome.json` as the active config. There is no ESLint/Prettier tooling conflict
+> to resolve, and `biome.json` must **not** be deleted. The lint-consolidation portion of
+> this design was not implemented; only the dependency bumps proceeded.
 
 ## Goal
 

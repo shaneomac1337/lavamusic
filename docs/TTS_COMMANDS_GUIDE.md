@@ -45,19 +45,19 @@ Your LavaMusic bot now has **powerful TTS commands** that work directly from Dis
 /voices
 
 # Show all English voices
-/voices action:english
+/voices category:english
 
 # Show all Czech voices
-/voices action:czech
+/voices category:czech
 
 # Show all Japanese voices
-/voices action:japanese
+/voices category:japanese
 
 # Search for specific voices
-/voices action:search query:aria
+/voices category:search query:aria
 
 # Show voice statistics
-/voices action:stats
+/voices category:stats
 
 # Prefix command examples
 !voices
@@ -190,13 +190,13 @@ FloweryTTS supports 3 optimized audio formats for different use cases:
 ### **Voice Discovery**
 ```bash
 # Find neural voices
-/voices action:search query:neural
+/voices category:search query:neural
 
 # Find female voices
-/voices action:search query:female
+/voices category:search query:female
 
 # Find specific language
-/voices action:search query:czech
+/voices category:search query:czech
 ```
 
 ## 🔧 **Smart Features**

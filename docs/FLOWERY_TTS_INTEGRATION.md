@@ -9,7 +9,7 @@ This integration adds **FloweryTTS** as a premium text-to-speech option alongsid
 ### FloweryTTS Advantages
 - **850+ voices** with **English, Czech & Japanese prioritized**
 - **2048 character limit** (vs 200 for DuncteBot)
-- **Speed control** (0.5x to 10x playback speed)
+- **Speed control** (service supports 0.5x–10x; the dashboard slider and `/tts` command cap at 0.5x–3x)
 - **Translation support** (auto-translate text to voice language)
 - **Multiple audio formats** (MP3, OGG, WAV, FLAC, AAC)
 - **Higher quality** natural-sounding speech
@@ -42,12 +42,11 @@ This integration adds **FloweryTTS** as a premium text-to-speech option alongsid
 3. **API Endpoints** (`src/web/routes/api.ts`)
    - `/api/tts/flowery/voices` - Get all available voices
    - `/api/tts/flowery/voices/popular` - Get popular voices
-   - `/api/tts/flowery/voices/language/:code` - Get voices by language
    - `/api/guilds/:guildId/tts/flowery` - Generate TTS
 
 ### Frontend Components
 
-1. **Enhanced TTS Interface** (`src/web/public/guild.html`)
+1. **Enhanced TTS Interface** (markup in `src/web/public/guild.html`, logic in `src/web/public/js/guild.js`)
    - Provider selection buttons
    - Voice dropdown with language grouping
    - Speed control slider
@@ -123,20 +122,8 @@ GET /api/tts/flowery/voices
 GET /api/tts/flowery/voices/popular
 ```
 
-#### Get Czech Voices Only
-```http
-GET /api/tts/flowery/voices/czech
-```
-
-#### Get English Voices Only
-```http
-GET /api/tts/flowery/voices/english
-```
-
-#### Get Japanese Voices Only
-```http
-GET /api/tts/flowery/voices/japanese
-```
+> Language/category filtering is performed client-side (and by the Discord `/voices`
+> command); there are no per-language voice endpoints.
 
 **Response:**
 ```json
@@ -184,7 +171,7 @@ Content-Type: application/json
   "autoJoined": true,
   "track": {
     "title": "TTS: Text to speak",
-    "author": "FloweryTTS (voice-name)",
+    "author": "FloweryTTS (voice-id)",
     "duration": 5000
   }
 }
@@ -195,7 +182,7 @@ Content-Type: application/json
 ### Automated Tests
 ```bash
 # Run the test script
-node test-flowery-tts.js
+node tests/test-flowery-tts.js
 ```
 
 ### Manual Testing Checklist
@@ -259,7 +246,7 @@ Check console logs for:
 
 ### Adding New Features
 1. Update `FloweryTTS.ts` for new API features
-2. Modify frontend interface in `guild.html`
+2. Modify frontend markup in `guild.html` and logic in `src/web/public/js/guild.js`
 3. Add corresponding API endpoints
 4. Update tests and documentation
 

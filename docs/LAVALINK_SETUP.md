@@ -19,7 +19,7 @@ java -Xmx2G -jar Lavalink.jar
 ```
 
 ### Server Information
-- **Version**: Lavalink 4.1.1
+- **Version**: Lavalink 4.2.2
 - **Port**: 2333
 - **Address**: http://localhost:2333
 - **Password**: `youshallnotpass`
@@ -27,7 +27,7 @@ java -Xmx2G -jar Lavalink.jar
 ## 📦 Installed Components
 
 ### Main Files
-- `Lavalink.jar` (84.74 MB) - Main Lavalink server
+- `Lavalink.jar` (95.95 MB) - Main Lavalink server
 - `application.yml` - Server configuration
 - `plugins/` - Directory for Lavalink plugins
 
@@ -38,11 +38,11 @@ These plugins will be auto-downloaded on first start:
    - TTS support with Czech language (cs-CZ)
    - TikTok, Reddit, Clyp.it, etc.
 
-2. **youtube-plugin** (1.13.5)
+2. **youtube-plugin** (1.18.1)
    - YouTube playback with OAuth2
    - Multiple client types for reliability
 
-3. **lavasrc-plugin** (4.8.1)
+3. **lavasrc-plugin** (4.8.3)
    - Spotify support
    - Apple Music, Deezer, Yandex Music
    - FloweryTTS integration
@@ -125,7 +125,7 @@ Lavalink/logs/
 ### Check Server Status
 ```bash
 curl http://localhost:2333/version
-# Response: {"version":"4.1.1","buildTime":...}
+# Response: {"version":"4.2.2","buildTime":...}
 ```
 
 ## 🔄 Updating Lavalink

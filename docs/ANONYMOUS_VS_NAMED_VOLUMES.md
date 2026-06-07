@@ -1,15 +1,10 @@
 # Anonymous Volumes vs Named Volumes - LavaMusic Setup
 
-## What You Asked For: Volumes Without Mounting
+## Current Setup: Named Volumes ⭐
 
-I've configured the bot to use **Dockerfile VOLUME directive** instead of explicit docker-compose mounts. This creates volumes automatically.
-
-## Current Setup (After Changes)
-
-### Dockerfile
-```dockerfile
-VOLUME ["/opt/lavamusic/prisma", "/opt/lavamusic/logs"]
-```
+LavaMusic ships with **named volumes** declared in `docker/docker-compose.yml`. There is
+**no `VOLUME` directive** in `docker/Dockerfile` or `Dockerfile.standalone` — persistence
+is configured explicitly in compose, which is the recommended approach.
 
 ### docker-compose.yml
 ```yaml
@@ -18,32 +13,27 @@ services:
     # ... other config ...
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      # NO explicit volume mounts for database/logs
+      - lavamusic-logs:/opt/lavamusic/logs
+      - lavamusic-db:/opt/lavamusic/prisma
+
+volumes:
+  lavamusic-logs:
+  lavamusic-db:
 ```
 
-## How This Works
-
-### What Happens When You Deploy:
-1. Docker reads `VOLUME` directive in Dockerfile
-2. **Automatically creates anonymous volumes** for those paths
-3. Volumes appear in Portainer with **random hash names** like:
-   - `a3b2c1d4e5f6...` (for `/opt/lavamusic/prisma`)
-   - `f6e5d4c3b2a1...` (for `/opt/lavamusic/logs`)
-
-### In Portainer You'll See:
+### In Portainer You'll See (clear, named):
 ```
 Volumes:
-├── a3b2c1d4e5f6789... (anonymous)  ← Your database!
+├── docker_lavamusic-db   ← Your database (playlists, guild settings)
 │   Mount: /opt/lavamusic/prisma
-│   
-└── f6e5d4c3b2a1987... (anonymous)  ← Your logs
+└── docker_lavamusic-logs ← Your logs
     Mount: /opt/lavamusic/logs
 ```
+(The `docker_` / `lavamusic_` prefix depends on the Compose project name.)
 
 ## Comparison
 
-### Option A: Named Volumes (RECOMMENDED) ⭐
-**Original setup with named volumes in docker-compose:**
+### Option A: Named Volumes (used by LavaMusic) ⭐
 ```yaml
 volumes:
   - lavamusic-logs:/opt/lavamusic/logs
@@ -53,162 +43,64 @@ volumes:
   lavamusic-logs:
   lavamusic-db:
 ```
-
-**Portainer Shows:**
-- ✅ `docker_lavamusic-logs` (clear name)
-- ✅ `docker_lavamusic-db` (clear name)
-
 **Pros:**
 - ✅ Easy to identify in Portainer
-- ✅ Easy to backup specific volume
+- ✅ Easy to back up a specific volume
 - ✅ Can reference by name
-- ✅ Clear which volume is what
+- ✅ Survives rebuilds with a stable name
 
 **Cons:**
-- Requires explicit mount in docker-compose
+- Requires explicit mounts in docker-compose
 
-### Option B: Anonymous Volumes (CURRENT)
-**Current setup with Dockerfile VOLUME:**
+### Option B: Anonymous Volumes (NOT used here)
+An alternative is a `VOLUME` directive in the Dockerfile:
 ```dockerfile
 VOLUME ["/opt/lavamusic/prisma", "/opt/lavamusic/logs"]
 ```
-
-**Portainer Shows:**
-- ⚠️ `a3b2c1d4e5f6...` (random hash)
-- ⚠️ `f6e5d4c3b2a1...` (random hash)
-
 **Pros:**
-- ✅ No mount configuration in docker-compose
-- ✅ Automatically created
-- ✅ Still visible in Portainer
+- ✅ No mount configuration needed in docker-compose
+- ✅ Created automatically
 
 **Cons:**
-- ❌ Hard to identify which is which
-- ❌ New random hash every rebuild
-- ❌ Harder to backup/reference
-- ❌ Confusing in Portainer
+- ❌ Random hash names — hard to tell which is which
+- ❌ A new anonymous volume can appear on rebuilds
+- ❌ Harder to back up/reference
+
+> LavaMusic intentionally does **not** use this approach. The Dockerfiles contain no
+> `VOLUME` directive.
 
 ## Finding Your Volumes in Portainer
 
-### With Anonymous Volumes (Current Setup):
-
 1. Go to **Portainer → Volumes**
-2. Look for volumes with random hash names
-3. Click on each one to see "Mount point"
-4. The one with `/opt/lavamusic/prisma` is your database
+2. Look for `…_lavamusic-db` and `…_lavamusic-logs`
+3. The one mounted at `/opt/lavamusic/prisma` holds the database (`lavamusic.db`)
 
 Or use Container Inspect:
 1. **Containers** → `lavamusic` → **Inspect**
-2. Scroll to "Mounts" section
-3. Find the volume names there
+2. Scroll to the "Mounts" section
+3. Confirm the named volumes and their mount points
 
-## Which Setup Should You Use?
+## Backup
 
-### Use Anonymous Volumes If:
-- You don't want to specify mounts in docker-compose
-- You're okay with random volume names in Portainer
-- You want Docker to handle everything automatically
-
-### Use Named Volumes If: ⭐ RECOMMENDED
-- You want clear, identifiable volume names
-- You need to easily backup specific volumes
-- You want better organization in Portainer
-- You want to reference volumes in other containers
-
-## Reverting to Named Volumes
-
-If you want to go back to named volumes (recommended), I can revert the changes:
-
-### docker-compose.yml
-```yaml
-volumes:
-  - lavamusic-logs:/opt/lavamusic/logs
-  - lavamusic-db:/opt/lavamusic/prisma
-
-volumes:
-  lavamusic-logs:
-    driver: local
-  lavamusic-db:
-    driver: local
-```
-
-### Dockerfile
-```dockerfile
-# Remove VOLUME directive
-```
-
-## Practical Difference in Portainer
-
-### With Named Volumes:
-```
-📦 Volumes
-├── docker_lavamusic-db ⭐
-│   └── "Ah yes, this is my playlists!"
-└── docker_lavamusic-logs 📝
-    └── "And this is my logs!"
-```
-
-### With Anonymous Volumes:
-```
-📦 Volumes
-├── a3b2c1d4e5f6789abc... 🤔
-│   └── "Wait, which one is this?"
-├── f6e5d4c3b2a1987xyz... 🤔
-│   └── "Is this my database or logs?"
-└── ... (many other random volumes)
-```
-
-## Migration Path
-
-### If You Already Have Named Volumes:
+### Back up the database file directly:
 ```bash
-# 1. Backup old volumes
-docker cp lavamusic:/opt/lavamusic/prisma/lavamusic.db ./backup.db
-
-# 2. Deploy new version (creates anonymous volumes)
-docker-compose up -d
-
-# 3. Restore data to new volume
-docker cp ./backup.db lavamusic:/opt/lavamusic/prisma/lavamusic.db
-
-# 4. Remove old named volumes (optional)
-docker volume rm docker_lavamusic-db docker_lavamusic-logs
-```
-
-### If Starting Fresh:
-Just deploy - anonymous volumes are created automatically!
-
-## Backup with Anonymous Volumes
-
-### Finding Your Database Volume:
-```bash
-# List all volumes used by container
-docker inspect lavamusic | grep -A 10 Mounts
-
-# Or in Portainer: Containers → lavamusic → Inspect → Mounts
-```
-
-### Backup Database:
-```bash
-# Still works the same way!
 docker cp lavamusic:/opt/lavamusic/prisma/lavamusic.db ./backup.db
 ```
 
-### Backup Entire Volume:
+### Back up the whole named volume:
 ```bash
-# Find volume name first (from inspect), then:
-docker run --rm -v <volume-hash>:/source -v $(pwd):/backup alpine \
+docker run --rm -v docker_lavamusic-db:/source -v "$(pwd)":/backup alpine \
   tar czf /backup/database-backup.tar.gz -C /source .
 ```
+(Use the actual prefixed volume name from `docker volume ls`.)
 
-## My Recommendation
+## Why Named Volumes
 
-**I recommend reverting to named volumes** because:
 1. ✅ Much easier to manage in Portainer
 2. ✅ Clear which volume contains what
-3. ✅ Easier to backup specific volumes
+3. ✅ Easier to back up specific volumes
 4. ✅ Better for long-term maintenance
 
-The "extra" configuration of specifying mounts is actually a GOOD thing - it makes your setup explicit and clear.
-
-Would you like me to revert to named volumes?
+The "extra" configuration of specifying mounts is a **good** thing — it makes persistence
+explicit and stable. See `docs/DOCKER_DATABASE_PERSISTENCE.md` and
+`docs/PORTAINER_VOLUME_MANAGEMENT.md` for the full setup.

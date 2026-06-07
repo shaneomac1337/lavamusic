@@ -19,15 +19,17 @@ LavaMusic is a Discord music bot built with TypeScript, Discord.js v14, and Lava
 ### Build & Run
 ```bash
 npm run dev           # Development with hot reload (tsup watch + auto-restart)
-npm run build         # Compile TypeScript to dist/
+npm run build:css     # Build dashboard Tailwind CSS (src/web/styles/app.css -> src/web/public/css/app.css)
+npm run watch:css     # Watch-rebuild the dashboard Tailwind CSS
+npm run build         # Build bot: runs build:css then tsup to compile TypeScript to dist/
 npm start             # Run compiled bot from dist/
 ```
 
 ### Code Quality
 ```bash
-npm run lint          # Run ESLint (uses @appujet/eslint-config)
-npm run lint:fix      # Auto-fix linting issues
-npm run format        # Format with Prettier
+npm run lint          # Run the Biome linter
+npm run lint:fix      # Auto-fix Biome lint issues
+npm run format        # Format with Biome
 ```
 
 ### Database
@@ -222,7 +224,7 @@ await player.play();
 ```
 
 **Search Sources:**
-- Default: `YouTubeMusic` (configured in .env SEARCH_ENGINE)
+- Default: `youtube` (schema default in `src/env.ts`; `.env.example` ships `YouTubeMusic`). Set via `SEARCH_ENGINE`.
 - User preferences stored in database (`User.preferredSource`)
 - Source mapping in autocomplete: `ytmsearch`, `spsearch`, `ytsearch`, `scsearch`
 
@@ -365,12 +367,12 @@ Czech, Chinese (CN/TW), Dutch, English, French, German, Hindi, Indonesian, Itali
 
 ### Plugin System
 
-**Location:** `src/plugin/`
+**Location:** `src/plugin/plugins/` (loader at `src/plugin/index.ts`)
 
 **Available Plugins:**
-- `antiCrash.ts` - Uncaught error handler
-- `keepAlive.ts` - HTTP keep-alive for Replit
-- `updateStatus.ts` - Auto-update bot status
+- `plugins/antiCrash.ts` - Uncaught error handler
+- `plugins/keepAlive.ts` - HTTP keep-alive for Replit
+- `plugins/updateStatus.ts` - Auto-update bot status
 
 **Loading:** Plugins auto-loaded in `src/plugin/index.ts` during startup.
 
@@ -378,25 +380,33 @@ Czech, Chinese (CN/TW), Dutch, English, French, German, Hindi, Indonesian, Itali
 
 ### Environment Setup
 
-**Required Variables:**
+**Required Variables:** (no schema default — bot will not start without them)
 ```bash
 TOKEN=""              # Discord bot token
-PREFIX="!"            # Command prefix
+CLIENT_ID=""          # Discord application (client) ID
+NODES=[{...}]         # Lavalink node configuration (JSON array)
+```
+
+**Commonly Set (have defaults):**
+```bash
+PREFIX="!"            # Command prefix (default "!")
 OWNER_IDS=["id1"]     # Owner user IDs (array)
 DEFAULT_LANGUAGE="EnglishUS"
-NODES=[{...}]         # Lavalink node configuration
 ```
 
 **Optional:**
 ```bash
-CLIENT_ID=""          # For invite command
+CLIENT_SECRET=""      # Discord OAuth secret (dashboard login)
 GUILD_ID=""           # Single-server mode
 TOPGG=""              # Top.gg API key
 DATABASE_URL=""       # Database connection
-SEARCH_ENGINE="YouTubeMusic"
+SEARCH_ENGINE="youtube"   # Default search source (schema default: youtube)
 LOG_CHANNEL_ID=""     # Node status logs
 LOG_COMMANDS_ID=""    # Command usage logs
-AUTO_NODE="false"     # Use lavainfo-api
+KEEP_ALIVE="false"    # HTTP keep-alive for Replit
+BOT_STATUS="online"   # online | idle | dnd | invisible
+BOT_ACTIVITY="Lavamusic"  # Activity text
+BOT_ACTIVITY_TYPE="0"     # Activity type (0-5)
 ```
 
 ### Database Setup
@@ -431,7 +441,7 @@ AUTO_NODE="false"     # Use lavainfo-api
 
 **TypeScript:**
 - Strict mode with comprehensive type checking
-- ES modules with CommonJS compilation  
+- CommonJS modules (compiled by tsup)
 - Decorators enabled for tsyringe DI
 - Target: ESNext
 

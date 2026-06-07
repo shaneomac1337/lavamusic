@@ -2,7 +2,7 @@
 # This script starts the Lavalink server with optimized JVM settings
 
 Write-Host "==================================" -ForegroundColor Cyan
-Write-Host "  Starting Lavalink Server v4.1.1" -ForegroundColor Cyan
+Write-Host "  Starting Lavalink Server v4.2.2" -ForegroundColor Cyan
 Write-Host "==================================" -ForegroundColor Cyan
 Write-Host ""
 
@@ -21,7 +21,7 @@ if (!(Test-Path ".\Lavalink.jar")) {
     exit 1
 }
 
-Write-Host "✓ Lavalink.jar found (84.74 MB)" -ForegroundColor Green
+Write-Host "✓ Lavalink.jar found (95.95 MB)" -ForegroundColor Green
 
 # Check if application.yml exists
 if (!(Test-Path ".\application.yml")) {

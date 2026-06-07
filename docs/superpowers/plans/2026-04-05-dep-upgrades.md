@@ -1,5 +1,12 @@
 # Dependency Upgrades Implementation Plan
 
+> ⚠️ **SUPERSEDED — INCORRECT PREMISE (do not execute the lint-tooling step).**
+> This plan assumes the project uses ESLint + Prettier; it does **not**. `package.json`
+> declares **Biome** (`@biomejs/biome`), the `lint`/`lint:fix`/`format` scripts run Biome,
+> and `biome.json` is the active config. The "remove the Biome/ESLint conflict by aligning
+> to ESLint + Prettier" step was never carried out and must not be — it would break the
+> real tooling. Dependency bumps were applied separately (see git history). Kept as a record.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers-extended-cc:subagent-driven-development (recommended) or superpowers-extended-cc:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Bring dependencies current (minors + 3 low-risk majors) and remove the Biome/ESLint tooling conflict, with one bisectable commit per step.

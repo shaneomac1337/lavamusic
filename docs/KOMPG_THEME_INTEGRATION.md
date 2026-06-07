@@ -11,20 +11,22 @@ Successfully integrated the **komplexaci.cz** website styling into the **music.k
 - ✅ Added navigation link to music dashboard
 - ✅ Responsive design for mobile devices
 
-### 2. **Dashboard Theme Files**
-- ✅ `src/web/public/kompg-theme.css` - Complete KOMPG styling
-- ✅ `src/web/public/kompg-particles.js` - Animated background particles
-- ✅ Updated all HTML files with KOMPG fonts and theme
+### 2. **Dashboard Theme System**
+The KOMPG palette is now implemented through the Tailwind build — there is no standalone theme file:
+- ✅ Design tokens (purple `#6e4ff6`, cyan `#00d2ff`, etc.) defined in `tailwind.config.js` and `src/web/styles/app.css`
+- ✅ `src/web/public/css/polish.css` - Shared glassy/neon styling, loaded last on every page
+- ✅ All HTML pages link the built Tailwind bundle (`/public/css/app.css`)
+
+> Historical note: the earlier standalone `src/web/public/kompg-theme.css` (and a never-shipped `kompg-particles.js`) were removed. The current dashboard has **no** background-particle script.
 
 ### 3. **Visual Consistency**
-- ✅ **Color Scheme**: Exact match with komplexaci.cz
+- ✅ **Color Scheme**: Brand palette shared with komplexaci.cz
   - Primary: `#6e4ff6` (Purple)
   - Accent: `#00d2ff` (Cyan)
-  - Secondary: `#ff4757` (Red)
-  - Dark backgrounds: `#121212`, `#0a0a0a`
-- ✅ **Typography**: Exo 2 + Roboto fonts
-- ✅ **Animations**: Floating particles, gradient effects
-- ✅ **Buttons**: Gradient backgrounds with hover effects
+  - Danger / Live: `#ef4444` / `#dc2626` (Red)
+  - Dark backdrop: `#0e1525` with a brand-tinted radial gradient (`polish.css`)
+- ✅ **Glassy/neon surfaces**: frosted-glass cards, purple→cyan nav gradient
+- ✅ **Buttons**: Gradient backgrounds with hover lift + keyboard focus rings
 
 ## 🔧 Technical Implementation
 
@@ -34,47 +36,59 @@ kompg-website/
 ├── index.html              # Added music dashboard section
 └── css/style.css           # Added mobile responsive styles
 
-src/web/public/
-├── index.html              # Added KOMPG theme
-├── dashboard.html          # Added KOMPG theme  
-├── guild.html              # Added KOMPG theme
-├── kompg-theme.css         # NEW: Complete KOMPG styling
-└── kompg-particles.js      # NEW: Animated particles
+src/web/
+├── styles/app.css                 # Tailwind source (built to public/css/app.css)
+└── public/
+    ├── index.html                 # Links app.css + polish.css
+    ├── dashboard.html             # Links app.css + polish.css
+    ├── guild.html                 # Links app.css + guild.css + polish.css
+    ├── css/app.css                # Built Tailwind v3 bundle (npm run build:css)
+    ├── css/polish.css             # Shared glassy/neon styling
+    ├── css/guild.css              # Guild-page-specific styling (extracted from guild.html)
+    └── js/guild.js                # Guild-page script (extracted from guild.html)
 ```
 
 ### Key Features:
-1. **Animated Background Particles** - Floating music icons and colored particles
+1. **Glassy / Neon Surfaces** - Frosted-glass cards via the shared `polish.css`
 2. **Gradient Buttons** - Purple to cyan gradients with hover effects
-3. **Card Hover Effects** - Smooth animations matching KOMPG style
-4. **Custom Scrollbars** - Themed scrollbars with gradients
-5. **Input Styling** - Dark theme inputs with KOMPG colors
-6. **Progress Bars** - Gradient progress bars (red for radio stations)
+3. **Card Hover Effects** - Subtle lift animations matching KOMPG style
+4. **Themed Scrollbars** - Brand-colored scrollbars (`app.css`)
+5. **Input & Focus Styling** - Dark-theme inputs with keyboard focus rings
+6. **Progress Bars** - Gradient progress bar (red "LIVE" indicator for radio stations)
 
 ## 🎨 Design Elements
 
-### Color Variables:
+### Design Tokens:
+The palette lives as Tailwind theme colors in `tailwind.config.js` and as CSS custom
+properties in `src/web/styles/app.css` (built into `public/css/app.css`):
+```js
+// tailwind.config.js (theme.extend.colors)
+primary: '#6e4ff6',      // Purple
+'primary-dark': '#5a3fd6',
+accent: '#00d2ff',       // Cyan
+discord: '#5865f2',
+'dark-bg': '#1f2937',
+'darker-bg': '#111827',
+'card-bg': '#374151',
+```
 ```css
-:root {
-    --primary-color: #6e4ff6;    /* Purple */
-    --secondary-color: #ff4757;   /* Red */
-    --accent-color: #00d2ff;      /* Cyan */
-    --dark-bg: #121212;           /* Dark background */
-    --darker-bg: #0a0a0a;         /* Darker background */
-    --light-text: #f1f1f1;       /* Light text */
-    --medium-text: #bababa;       /* Medium text */
-}
+/* src/web/styles/app.css :root */
+--primary: #6e4ff6;
+--accent: #00d2ff;
+--discord: #5865f2;
+--ring: rgba(110, 79, 246, 0.45);   /* keyboard focus ring */
 ```
 
 ### Typography:
-- **Headers**: Exo 2 (700 weight)
-- **Body**: Roboto (300, 400, 500 weights)
-- **Buttons**: Exo 2 (600 weight, uppercase)
+- Headings use the Tailwind `font-display` token (Exo 2) where applied; the dashboard
+  otherwise renders with the system/Tailwind default sans-serif stack (no web font is
+  loaded over the network).
 
 ### Animations:
-- **Particle Float**: 30-50s infinite animations
-- **Button Pulse**: 3s ease-in-out infinite
-- **Hover Effects**: 0.3s ease transitions
-- **Card Animations**: Smooth translateY and scale effects
+- **Hover Effects**: ~0.2–0.3s ease transitions (cards lift, buttons raise)
+- **Radio "LIVE" indicator**: animated gradient pulse
+- **Reduced motion**: a `prefers-reduced-motion` block in `app.css` neutralizes
+  decorative transforms/animations
 
 ## 🚀 User Experience
 
@@ -87,9 +101,8 @@ src/web/public/
 
 ### Visual Consistency:
 - ✅ Same color scheme across both sites
-- ✅ Same typography and button styles  
-- ✅ Same hover effects and animations
-- ✅ Same background particles and gradients
+- ✅ Same button styles
+- ✅ Same hover effects and gradients
 - ✅ Same responsive design patterns
 
 ## 📱 Mobile Responsiveness
@@ -99,7 +112,6 @@ src/web/public/
 - ✅ **Icon Size**: Scales down appropriately
 - ✅ **Feature Tags**: Center-aligned on mobile
 - ✅ **Button Sizing**: Optimized for touch
-- ✅ **Particles**: Reduced count on mobile for performance
 
 ### Breakpoints:
 - **Desktop**: Full grid layout with side-by-side elements

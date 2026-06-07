@@ -187,10 +187,12 @@ socket.on('queueEnd', data);            // Queue finished
 ## 🎨 Customization
 
 ### **Styling**
-The dashboard uses **Tailwind CSS** for responsive design:
-- Modify `src/web/public/*.html` for layout changes
-- Update CSS classes for custom styling
-- Add custom JavaScript for enhanced functionality
+The dashboard uses **Tailwind CSS v3**, built ahead of time (not via CDN):
+- Tailwind source is `src/web/styles/app.css`; design tokens (colors, gradients) live in `tailwind.config.js`
+- Run `npm run build:css` (or `npm run watch:css`) to regenerate `src/web/public/css/app.css`. `npm run build` runs it automatically.
+- Shared glassy/neon styling is in `src/web/public/css/polish.css` (loaded last on every page)
+- Guild-page-specific styling and script live in `src/web/public/css/guild.css` and `src/web/public/js/guild.js`
+- Modify `src/web/public/*.html` for layout/markup changes
 
 ### **API Extensions**
 Add custom endpoints in `src/web/routes/`:

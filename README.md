@@ -238,10 +238,8 @@ lavamusic/
 │   ├── test-dashboard.js
 │   ├── test-flowery-tts.js
 │   └── ... (all test files)
-├── ⚙️ config/            # Configuration files
-│   ├── tsconfig.json
-│   ├── biome.json
-│   └── ... (build configs)
+├── ⚙️ config/            # Runtime config (application.yml, process.json, replit.nix)
+│   └── ... (tsconfig.json and biome.json live at the repo root)
 ├── 🐳 docker/            # Docker configuration
 │   ├── Dockerfile
 │   ├── docker-compose.yml
@@ -261,7 +259,6 @@ lavamusic/
 - **📖 Documentation**: [docs/README.md](docs/README.md)
 - **🧪 Testing**: [tests/README.md](tests/README.md)
 - **⚙️ Configuration**: [config/README.md](config/README.md)
-- **🐳 Docker**: [docker/README.md](docker/README.md)
 
 ## 🔗 Useful Links
 

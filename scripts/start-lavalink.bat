@@ -1,5 +1,5 @@
 @echo off
-echo Starting Lavalink Server v4.1.1...
+echo Starting Lavalink Server v4.2.2...
 echo.
 echo Configuration:
 echo - Port: 2333
@@ -9,6 +9,7 @@ echo.
 echo Press Ctrl+C to stop the server
 echo.
 
-java -jar Lavalink-4.1.1.jar
+cd /d "%~dp0..\Lavalink"
+java -jar Lavalink.jar
 
 pause

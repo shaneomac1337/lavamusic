@@ -13,9 +13,9 @@
 - [x] Chinese (CN) - `ChineseCN.json` [by @appujet](https://github.com/Appujet) (Ai Translation - Not Accurate)
 - [x] Chinese (TW) - `ChineseTW.json` [by @apple050620312](https://github.com/apple050620312)
 - [ ] Croatian - `Croatian.json` (Not Started)
-- [ ] Czech - `Czech.json` (Not Started)
+- [x] Czech - `Czech.json`
 - [ ] Danish - `Danish.json` (Not Started)
-- [ ] Dutch - `Dutch.json` (Not Started)
+- [x] Dutch - `Dutch.json`
 - [ ] English (GB) - `EnglishGB.json` (Not Started)
 - [ ] Finnish - `Finnish.json` (Not Started)
 - [x] French - `French.json` [by @LucasB25](https://github.com/LucasB25)

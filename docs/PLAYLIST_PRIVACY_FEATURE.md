@@ -33,7 +33,7 @@ Added playlist privacy controls to allow users to make playlists either **public
 - Users only see other users' public playlists
 - Search only returns public playlists
 
-### 4. Dashboard UI (`src/web/public/guild.html`)
+### 4. Dashboard UI (markup in `src/web/public/guild.html`, logic in `src/web/public/js/guild.js`)
 **Create Playlist Modal:**
 - Added "Make this playlist private" checkbox (unchecked by default)
 - Info message explains public is the default behavior
@@ -108,14 +108,10 @@ Added playlist privacy controls to allow users to make playlists either **public
 
 ## Database Migration
 
-After deployment, run:
+This project syncs the Prisma schema with `db:push` (no migration history is kept).
+The `isPublic` field already has a default, so existing rows are unaffected:
 ```bash
-npx prisma migrate dev --name playlist_privacy_public_default
-```
-
-Or for production:
-```bash
-npx prisma migrate deploy
+npm run db:push
 ```
 
 ## API Changes

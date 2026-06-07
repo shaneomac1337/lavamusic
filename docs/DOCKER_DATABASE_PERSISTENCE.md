@@ -202,8 +202,8 @@ version: '3.8'
 services:
   lavamusic:
     build:
-      context: ..
-      dockerfile: docker/Dockerfile
+      context: .
+      dockerfile: Dockerfile
     image: lavamusic:latest
     container_name: lavamusic
     restart: unless-stopped
@@ -215,7 +215,7 @@ services:
       - WEB_DASHBOARD=true
       - DASHBOARD_PORT=3001
     env_file:
-      - ../.env
+      - .env
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - lavamusic-logs:/opt/lavamusic/logs

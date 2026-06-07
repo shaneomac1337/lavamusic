@@ -38,11 +38,8 @@ TOKEN=your_discord_bot_token
 CLIENT_ID=your_client_id
 GUILD_ID=your_guild_id
 
-# Lavalink
-LAVALINK_URL=ws://localhost:2333
-LAVALINK_AUTH=youshallnotpass
-LAVALINK_NAME=Lavalink
-LAVALINK_SECURE=false
+# Lavalink (single JSON array; id/host/port/authorization are required)
+NODES=[{"id":"Local Node","host":"localhost","port":2333,"authorization":"youshallnotpass","secure":"false"}]
 
 # Database (SQLite - no configuration needed)
 DATABASE_URL=file:./lavamusic.db
@@ -50,11 +47,11 @@ DATABASE_URL=file:./lavamusic.db
 # Web Dashboard
 WEB_DASHBOARD=true
 DASHBOARD_PORT=3001
-SESSION_SECRET=your_random_session_secret_here
+DASHBOARD_SECRET=your_random_jwt_secret_here   # auto-generated if left empty
 
 # Discord OAuth (for dashboard login)
 CLIENT_SECRET=your_discord_client_secret
-CALLBACK_URL=http://your-server-ip:3001/callback
+DASHBOARD_BASE_URL=http://your-server-ip:3001   # OAuth callback is <base>/auth/discord/callback
 ```
 
 ### Step 4: Build the Image
@@ -287,8 +284,7 @@ Required in `.env`:
 ```env
 TOKEN=              # Discord bot token
 CLIENT_ID=          # Discord application ID
-LAVALINK_URL=       # Lavalink server URL
-LAVALINK_AUTH=      # Lavalink password
+NODES=              # Lavalink nodes as a JSON array (id/host/port/authorization required)
 ```
 
 Optional:
@@ -297,8 +293,8 @@ GUILD_ID=           # Your server ID (for slash commands)
 WEB_DASHBOARD=true  # Enable web dashboard
 DASHBOARD_PORT=3001 # Dashboard port
 CLIENT_SECRET=      # For OAuth login
-CALLBACK_URL=       # OAuth callback
-SESSION_SECRET=     # Session encryption
+DASHBOARD_BASE_URL= # Public base URL; OAuth callback is <base>/auth/discord/callback
+DASHBOARD_SECRET=   # JWT secret (auto-generated if empty)
 ```
 
 ## Troubleshooting
