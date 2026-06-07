@@ -28,6 +28,17 @@ export async function authRoutes(fastify: FastifyInstance, options: AuthOptions)
 
 	// Discord OAuth2 login
 	fastify.get('/discord', async (request, reply) => {
+		// Already logged in? Skip OAuth and go straight to the dashboard.
+		const existing = request.cookies.token;
+		if (existing) {
+			try {
+				fastify.jwt.verify(existing);
+				return reply.redirect('/dashboard');
+			} catch {
+				// invalid/expired token -> fall through to the normal OAuth flow
+			}
+		}
+
 		const clientId = env.CLIENT_ID;
 
 		// Construct redirect URI - handle reverse proxy scenarios
