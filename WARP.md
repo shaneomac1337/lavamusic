@@ -534,7 +534,7 @@ await client.db.updateLanguage(guildId, language);
 
 // Playlist operations
 const playlist = await client.db.getPlaylist(userId, playlistName);
-await client.db.createPlaylist(userId, name, tracks);
+await client.db.createPlaylistWithTracks(userId, name, tracks);
 
 // Setup system
 const setup = await client.db.getSetup(guildId);

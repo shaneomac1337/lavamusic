@@ -49,8 +49,9 @@ CLIENT_SECRET="your-discord-secret"     # Discord OAuth2 client secret
 
 ### 3. Docker Compose (Recommended)
 
-The dashboard is enabled in `docker-compose.yml`; secrets like `CLIENT_SECRET`
-come from your `.env` file via `env_file`:
+The dashboard is enabled in the shipped `docker/docker-compose.yml` (there is no
+root `docker-compose.yml`); secrets like `CLIENT_SECRET` come from your `.env`
+file via `env_file`:
 
 ```yaml
 lavamusic:
@@ -85,7 +86,7 @@ WEB_DASHBOARD=true npm start
 
 ### **Authentication Flow**
 1. Visit dashboard URL
-2. Click "Login with Discord"
+2. Click "Proceed with Discord Login"
 3. Authorize the application
 4. Access your server controls
 

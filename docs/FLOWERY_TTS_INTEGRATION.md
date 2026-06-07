@@ -15,7 +15,7 @@ This integration adds **FloweryTTS** as a premium text-to-speech option alongsid
 - **Higher quality** natural-sounding speech
 - **Free service** with generous rate limits
 - **Organized voice selection** — curated languages in dropdown order: 🇨🇿 Czech, 🇺🇸 English, 🇯🇵 Japanese, 🇷🇺 Russian, 🇵🇱 Polish, 🇩🇪 German
-- **Advanced voice browser** with search, filtering, and preview
+- **Advanced voice browser** with search and filtering (by language and gender)
 - **Audio quality selection** (AAC, OGG Opus, FLAC)
 
 ### Dual TTS System

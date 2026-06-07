@@ -146,7 +146,7 @@ cat lavamusic-dump.sql | docker exec -i lavamusic sqlite3 /opt/lavamusic/prisma/
 # 1. Build and start
 docker-compose up -d
 
-# 2. The database schema is automatically created with `prisma db push`
+# 2. The image entrypoint runs `npx prisma migrate deploy` then `npx prisma generate` on startup
 # Playlists will be saved and persist across restarts
 ```
 
@@ -269,13 +269,20 @@ find "$BACKUP_DIR" -name "lavamusic-*.db" -mtime +7 -delete
 
 ## Schema Updates
 
-This project syncs the schema with `prisma db push` (schema sync) rather than
-migration files. There is no `prisma/migrations/` directory. On startup, the
-Docker entrypoint (`docker/docker-entrypoint.sh`) runs:
+The Docker images that the compose files build (`docker/Dockerfile` via
+`docker/docker-compose.yml`, and `Dockerfile.standalone` via
+`docker-compose.standalone.yml`) bake an **inline** entrypoint script into the
+image. On startup it runs:
 
 ```sh
-npx prisma db push --accept-data-loss --skip-generate
+npx prisma migrate deploy
+npx prisma generate
 ```
+
+Note: the repo has **no `prisma/migrations/` directory**, so `prisma migrate
+deploy` applies no migration files. (Separately, `docker/docker-entrypoint.sh` —
+which runs `npx prisma db push --accept-data-loss --skip-generate` — is only used
+by `Dockerfile.clean`, which is not referenced by either compose file.)
 
 ### When Schema Changes (New Features)
 ```bash
@@ -285,26 +292,26 @@ git pull
 # 2. Rebuild container
 docker-compose build
 
-# 3. Start (the entrypoint runs `prisma db push` automatically)
+# 3. Start (the image entrypoint runs `prisma migrate deploy` + `prisma generate`)
 docker-compose up -d
 
-# Prisma syncs the schema to the existing database on startup.
-# ✅ All existing data (playlists) are preserved!
+# ✅ The named database volume preserves all existing data (playlists) across rebuilds.
 ```
 
 ### Manual Schema Sync
-If you need to sync the schema manually:
+If you need to sync the schema to the database manually inside the container:
 
 ```bash
 # Enter container
 docker exec -it lavamusic sh
 
-# Sync the schema
+# Sync the schema (schema-push, matches the local `npm run db:push`)
 npx prisma db push
 ```
 
-> Note: `npm run db:migrate` (which runs `prisma migrate dev`) exists in
-> `package.json`, but it is **not** used by the Docker deployment.
+> Note: `npm run db:push` runs `prisma db push` and `npm run db:migrate` runs
+> `prisma migrate dev --name init`; these are the local workflows. The Docker
+> images use `prisma migrate deploy` as shown above.
 
 ## Troubleshooting
 

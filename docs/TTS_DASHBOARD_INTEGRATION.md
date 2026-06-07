@@ -9,7 +9,7 @@ The TTS feature allows users to convert text to speech directly from the web das
 ## ✨ Features
 
 ### 🎯 Core Functionality
-- **Text Input**: Multi-line textarea with a dynamic character limit (2048 for FloweryTTS, 200 for DuncteBot). The textarea has no fixed `maxlength` attribute; the displayed limit updates with the selected provider.
+- **Text Input**: Multi-line textarea with a dynamic character limit. When you switch providers, the JS sets the textarea's `maxLength` accordingly (2048 for FloweryTTS, 200 for DuncteBot) and updates the displayed limit. The limit is not hardcoded in the HTML; it is applied dynamically per provider.
 - **Real-time Character Counter**: Visual feedback with percentage-based color coding
 - **One-Click Speech**: Generate TTS with a single button click
 - **Keyboard Shortcuts**: Enter to speak, Shift+Enter for new lines
@@ -20,8 +20,8 @@ The TTS feature allows users to convert text to speech directly from the web das
 - **Dark/Light Mode**: Consistent with dashboard theme
 - **Visual Feedback**: Loading states, success/error messages
 - **Character Limit Indicator**: Color changes as a percentage of the current (dynamic) limit
-  - Gray: up to 75% of the limit
-  - Yellow: above 75% of the limit
+  - Gray: 75% of the limit or less
+  - Yellow: above 75% and up to 90% of the limit
   - Red: above 90% of the limit
 
 ### 🔧 Technical Features
@@ -72,7 +72,7 @@ lives in `src/web/public/js/guild.js` (extracted from the page's former inline s
         Text-to-Speech
     </h3>
     <div class="space-y-3">
-        <!-- Text input with character counter (no maxlength; limit shown is dynamic) -->
+        <!-- Text input with character counter (maxLength set dynamically by JS per provider) -->
         <div class="relative">
             <textarea id="tts-text" rows="3"></textarea>
             <div class="absolute bottom-2 right-2">
@@ -113,7 +113,7 @@ lives in `src/web/public/js/guild.js` (extracted from the page's former inline s
 - Voice channel permission checks
 
 ### Input Validation
-- Text length: 1-200 characters
+- Text length: from 1 character up to the provider's limit (200 for the DuncteBot `/tts/speak` endpoint, 2048 for the FloweryTTS `/tts/flowery` endpoint)
 - HTML/script injection prevention
 - Rate limiting (inherited from API middleware)
 
@@ -189,7 +189,7 @@ plugins:
 
 ### Error Messages
 - "Text is required for TTS" - Empty input
-- "Text must be 200 characters or less" - Exceeds limit
+- "Text must be 200 characters or less" (DuncteBot `/tts/speak`) / "Text must be 2048 characters or less" (FloweryTTS `/tts/flowery`) - Exceeds limit
 - "You must be in a voice channel to use TTS" - No voice connection
 - "TTS generation failed" - Lavalink/plugin issue
 
