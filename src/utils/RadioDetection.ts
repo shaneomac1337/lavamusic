@@ -118,7 +118,7 @@ export class RadioDetectionService {
 			name: 'Evropa 2',
 			apiUrl: 'https://rds.actve.net/v1/metadata/channel/evropa2',
 			streamUrls: [
-				'https://29103.live.streamtheworld.com/EVROPA2.mp3',
+				'https://ice.actve.net/fm-evropa2-128',
 				'EVROPA2.mp3',
 				'evropa2.mp3',
 				'evropa2',
