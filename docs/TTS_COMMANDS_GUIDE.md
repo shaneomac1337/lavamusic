@@ -41,7 +41,7 @@ Your LavaMusic bot now has **powerful TTS commands** that work directly from Dis
 **Explore available TTS voices**
 
 ```bash
-# Show popular English & Czech voices
+# Show the curated popular voices (Czech, English, Japanese, Russian, Polish, German)
 /voices
 
 # Show all English voices
