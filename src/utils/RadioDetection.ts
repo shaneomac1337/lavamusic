@@ -49,8 +49,8 @@ export class RadioDetectionService {
 			name: 'Hitradio FM Plus',
 			apiUrl: 'https://radia.cz/api/v1/radio/hitradio-fm-plus/songs/now.json',
 			streamUrls: [
-				'https://ice.radia.cz/fmplus128.aac',
-				'fmplus128.aac',
+				'https://ice.abradio.cz/fmplus128.mp3',
+				'fmplus128.mp3',
 				'fmplus',
 				'hitradio fm plus'
 			],
