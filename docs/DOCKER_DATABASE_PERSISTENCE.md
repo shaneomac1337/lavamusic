@@ -269,10 +269,14 @@ find "$BACKUP_DIR" -name "lavamusic-*.db" -mtime +7 -delete
 
 ## Schema Updates
 
-The Docker images that the compose files build (`docker/Dockerfile` via
-`docker/docker-compose.yml`, and `Dockerfile.standalone` via
-`docker-compose.standalone.yml`) bake an **inline** entrypoint script into the
-image. On startup it runs:
+The Docker images bake an **inline** entrypoint script into the image.
+`docker/docker-compose.yml` builds `docker/Dockerfile` (its `context: .` +
+`dockerfile: Dockerfile` resolves to `docker/Dockerfile`, since there is no root
+`Dockerfile`). `docker-compose.standalone.yml` does **not** build — it runs the
+pre-built `image: lavamusic:latest`, which you build manually from
+`Dockerfile.standalone` (see STANDALONE_DEPLOYMENT.md). Both `docker/Dockerfile`
+and `Dockerfile.standalone` bake the same inline entrypoint, which on startup
+runs:
 
 ```sh
 npx prisma migrate deploy

@@ -119,7 +119,9 @@ Uses pre-built image: `lavamusic:latest`
 ├── docker-compose.yml
 └── .env
 ```
-Builds image during deployment
+Builds the image during deployment. Note: `Dockerfile.standalone` does **not**
+use your local files — it `git clone`s the repo (`main` branch) from GitHub
+inside the build, so the build always reflects the latest pushed `main`.
 
 ### Option C: Full Repo Clone
 ```

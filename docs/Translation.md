@@ -97,17 +97,17 @@ The translation JSON file should be structured as follows:
 }
 ```
 
-**Hindi:**
+**Hindi** (the shipped `Hindi.json` uses romanized Latin script):
 
 ```json
 {
  "cmd": {
   "ping": {
-   "description": "बॉट का पिंग दिखाता है।",
-   "content": "पिंगिंग...",
-   "bot_latency": "पिंगिंग...",
-   "api_latency": "एपीआई लेटेंसी",
-   "requested_by": "{author} द्वारा अनुरोधित"
+   "description": "Bot ka ping dhakeye",
+   "content": "Pinging...",
+   "bot_latency": "Bot Vilanbta",
+   "api_latency": "API Vilanbta",
+   "requested_by": "{author} dwara anurodh kiya gaya"
   }
  }
 }

@@ -6,7 +6,7 @@ Guides for configuring, deploying, and using the LavaMusic Discord bot and its w
 
 ### 🎛️ Dashboard & Web Interface
 - **[DASHBOARD.md](./DASHBOARD.md)** — Dashboard setup, routes, real-time events, and customization (Tailwind build)
-- **[ADVANCED_DASHBOARD_FEATURES.md](./ADVANCED_DASHBOARD_FEATURES.md)** — Player/queue/filter/settings API reference
+- **[ADVANCED_DASHBOARD_FEATURES.md](./ADVANCED_DASHBOARD_FEATURES.md)** — Player/queue/settings API reference (force-play, seek, repeat, fairplay, queue move/jump/clear/shuffle, channels, settings)
 - **[DASHBOARD_SECRET_EXPLAINED.md](./DASHBOARD_SECRET_EXPLAINED.md)** — `DASHBOARD_SECRET` (JWT) configuration
 - **[TTS_DASHBOARD_INTEGRATION.md](./TTS_DASHBOARD_INTEGRATION.md)** — Text-to-Speech panel in the dashboard
 
