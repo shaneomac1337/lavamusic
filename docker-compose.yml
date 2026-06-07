@@ -19,8 +19,11 @@ services:
       - SERVER_ADDRESS=0.0.0.0
     volumes:
       - ./docker/lavalink/application.yml:/opt/Lavalink/application.yml:ro
-      - lavalink-logs:/opt/Lavalink/logs
-      - lavalink-plugins:/opt/Lavalink/plugins
+      # Bind mounts (not named volumes): the official image runs as uid 322 and
+      # must be able to write downloaded plugins/logs. These host dirs must be
+      # owned by 322:322 (see docker/lavalink/README or the deploy step).
+      - ./docker/lavalink/plugins:/opt/Lavalink/plugins
+      - ./docker/lavalink/logs:/opt/Lavalink/logs
     healthcheck:
       test: 'curl -H "Authorization: youshallnotpass" -s http://localhost:2333/version'
       interval: 30s
@@ -58,7 +61,5 @@ services:
       start_period: 60s
 
 volumes:
-  lavalink-logs:
-  lavalink-plugins:
   lavamusic-logs:
   lavamusic-db:

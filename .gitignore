@@ -531,6 +531,11 @@ FodyWeavers.xsd
 # Lavamusic
 # Local Lavalink config carries real secrets — never commit it (use the .example)
 docker/lavalink/application.yml
+# Lavalink bind-mount runtime dirs (downloaded plugins + logs); keep the dirs, ignore contents
+docker/lavalink/plugins/*
+!docker/lavalink/plugins/.gitkeep
+docker/lavalink/logs/*
+!docker/lavalink/logs/.gitkeep
 # Lavalink runtime artifacts (local Lavalink now runs via Docker)
 *.jar
 *.jar.bak
