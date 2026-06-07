@@ -49,9 +49,8 @@ CLIENT_SECRET="your-discord-secret"     # Discord OAuth2 client secret
 
 ### 3. Docker Compose (Recommended)
 
-The dashboard is enabled in the shipped `docker/docker-compose.yml` (there is no
-root `docker-compose.yml`); secrets like `CLIENT_SECRET` come from your `.env`
-file via `env_file`:
+The dashboard is enabled in the shipped root `docker-compose.yml`; secrets like
+`CLIENT_SECRET` come from your `.env` file via `env_file`:
 
 ```yaml
 lavamusic:
