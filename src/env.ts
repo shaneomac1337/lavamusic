@@ -63,7 +63,6 @@ const envSchema = z.object({
 			.default('youtube'),
 	),
 	NODES: z.preprocess(val => (typeof val === 'string' ? JSON.parse(val) : val), z.array(LavalinkNodeSchema)),
-	GENIUS_API: z.string().optional(),
 	WEB_DASHBOARD: z.preprocess(val => val === 'true', z.boolean().default(false)),
 	DASHBOARD_PORT: z.preprocess(val => {
 		if (typeof val === 'string') {

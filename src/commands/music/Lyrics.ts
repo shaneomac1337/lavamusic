@@ -6,7 +6,6 @@ import {
 	ComponentType,
 	type TextChannel,
 } from 'discord.js';
-import { getLyrics } from 'genius-lyrics-api';
 import { Command, type Context, type Lavamusic } from '../../structures/index';
 
 export default class Lyrics extends Command {
@@ -46,21 +45,16 @@ export default class Lyrics extends Command {
 
 		const track = player.queue.current!;
 		const trackTitle = track.info.title.replace(/\[.*?\]/g, '').trim();
-		const artistName = track.info.author.replace(/\[.*?\]/g, '').trim();
 		const trackUrl = track.info.uri;
 		const artworkUrl = track.info.artworkUrl;
 
 		await ctx.sendDeferMessage(ctx.locale('cmd.lyrics.searching', { trackTitle }));
 
-		const options = {
-			apiKey: client.env.GENIUS_API,
-			title: trackTitle,
-			artist: artistName,
-			optimizeQuery: true,
-		};
-
 		try {
-			const lyrics = await getLyrics(options);
+			// Lyrics are provided by the Lavalink server's LavaLyrics plugin via lavalink-client.
+			const result = await player.getCurrentLyrics(false);
+			const lyrics =
+				result?.text ?? (result?.lines?.length ? result.lines.map((line) => line.line).join('\n') : null);
 			if (lyrics) {
 				const lyricsPages = this.paginateLyrics(lyrics);
 				let currentPage = 0;

@@ -394,7 +394,6 @@ GUILD_ID=""           # Single-server mode
 TOPGG=""              # Top.gg API key
 DATABASE_URL=""       # Database connection
 SEARCH_ENGINE="YouTubeMusic"
-GENIUS_API=""         # Lyrics API key
 LOG_CHANNEL_ID=""     # Node status logs
 LOG_COMMANDS_ID=""    # Command usage logs
 AUTO_NODE="false"     # Use lavainfo-api
