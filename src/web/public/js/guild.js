@@ -348,7 +348,7 @@
                 statusElement.innerHTML = `
                     <span class="text-green-600 connection-status">
                         <i class="fas fa-circle text-green-500 mr-1"></i>
-                        Connected to <span class="channel-name">${channelDisplay}</span>
+                        Connected to <span class="channel-name">${escapeHtml(channelDisplay)}</span>
                     </span>
                 `;
             } else {
@@ -958,8 +958,8 @@
                     <div class="flex items-center flex-1 min-w-0">
                         <span class="text-xs text-gray-400 mr-3 w-6">${index + 1}</span>
                         <div class="flex-1 min-w-0">
-                            <p class="text-sm font-medium text-gray-900 truncate">${track.title}</p>
-                            <p class="text-xs text-gray-500 truncate">${track.author} • ${formatDuration(track.duration)}</p>
+                            <p class="text-sm font-medium text-gray-900 truncate">${escapeHtml(track.title)}</p>
+                            <p class="text-xs text-gray-500 truncate">${escapeHtml(track.author)} • ${formatDuration(track.duration)}</p>
                         </div>
                     </div>
                     <div class="flex items-center space-x-1 ml-2">
@@ -1077,6 +1077,17 @@
             return div.innerHTML;
         }
 
+        // Escape a value for use inside a double-quoted HTML attribute.
+        // (escapeHtml is safe for text content but does not escape quotes.)
+        function escapeAttr(text) {
+            return String(text == null ? '' : text)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
         // Load available text channels
         async function loadTextChannels() {
             try {
@@ -1177,7 +1188,7 @@
             playlistsList.innerHTML = playlists.map(playlist => `
                 <div class="flex items-center justify-between p-2 bg-gray-50 rounded hover:bg-gray-100">
                     <div class="flex-1 cursor-pointer" onclick="showPlaylistDetails('${playlist.id}')">
-                        <p class="text-sm font-medium text-gray-900 truncate">${playlist.name}</p>
+                        <p class="text-sm font-medium text-gray-900 truncate">${escapeHtml(playlist.name)}</p>
                         <p class="text-xs text-gray-500">${playlist.trackCount} tracks • ${formatDate(playlist.updatedAt)}</p>
                     </div>
                     <div class="flex space-x-1">
@@ -1293,7 +1304,7 @@
                     <div class="grid grid-cols-2 gap-4">
                         <div>
                             <p class="text-sm text-gray-600">Name</p>
-                            <p class="font-medium">${data.playlist.name}</p>
+                            <p class="font-medium">${escapeHtml(data.playlist.name)}</p>
                         </div>
                         <div>
                             <p class="text-sm text-gray-600">Tracks</p>
@@ -1308,7 +1319,7 @@
                             <p class="font-medium">${data.playlist.isPublic ? 'Public' : 'Private'}</p>
                         </div>
                     </div>
-                    ${data.playlist.description ? `<p class="mt-2 text-sm text-gray-700">${data.playlist.description}</p>` : ''}
+                    ${data.playlist.description ? `<p class="mt-2 text-sm text-gray-700">${escapeHtml(data.playlist.description)}</p>` : ''}
                 `;
 
                 // Update tracks list
@@ -1340,15 +1351,15 @@
                     <div class="flex items-center space-x-3 flex-1">
                         <div class="text-sm text-gray-500 w-8">${index + 1}</div>
                         <div class="flex-1 min-w-0">
-                            <p class="text-sm font-medium text-gray-900 truncate">${track.title}</p>
-                            <p class="text-xs text-gray-500 truncate">${track.author} • ${formatDuration(track.duration)}</p>
+                            <p class="text-sm font-medium text-gray-900 truncate">${escapeHtml(track.title)}</p>
+                            <p class="text-xs text-gray-500 truncate">${escapeHtml(track.author)} • ${formatDuration(track.duration)}</p>
                         </div>
                     </div>
                     <div class="flex space-x-1">
-                        <button onclick="playTrackFromPlaylist('${track.uri.replace(/'/g, "\\'")}', '${track.title.replace(/'/g, "\\'")}', false)" class="text-green-600 hover:text-green-800 p-1" title="Add to queue">
+                        <button data-pf-action="queue" data-pf-uri="${escapeAttr(track.uri)}" data-pf-title="${escapeAttr(track.title)}" class="text-green-600 hover:text-green-800 p-1" title="Add to queue">
                             <i class="fas fa-plus text-xs"></i>
                         </button>
-                        <button onclick="playTrackFromPlaylist('${track.uri.replace(/'/g, "\\'")}', '${track.title.replace(/'/g, "\\'")}', true)" class="text-blue-600 hover:text-blue-800 p-1" title="Force play now">
+                        <button data-pf-action="force" data-pf-uri="${escapeAttr(track.uri)}" data-pf-title="${escapeAttr(track.title)}" class="text-blue-600 hover:text-blue-800 p-1" title="Force play now">
                             <i class="fas fa-play text-xs"></i>
                         </button>
                         <button onclick="removeTrackFromPlaylist(${index})" class="text-red-600 hover:text-red-800 p-1" title="Remove track">
@@ -1357,6 +1368,13 @@
                     </div>
                 </div>
             `).join('');
+
+            // Wire up play buttons via listeners (avoids building JS inside attributes)
+            tracksContainer.querySelectorAll('button[data-pf-action]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    playTrackFromPlaylist(btn.dataset.pfUri, btn.dataset.pfTitle, btn.dataset.pfAction === 'force');
+                });
+            });
         }
 
         async function addTrackToPlaylist() {
@@ -1777,7 +1795,7 @@
                 suggestionElement.dataset.index = index;
 
                 const thumbnail = suggestion.thumbnail ?
-                    `<img src="${suggestion.thumbnail}" alt="Thumbnail" class="suggestion-thumbnail bg-gray-200">` :
+                    `<img src="${escapeAttr(suggestion.thumbnail)}" alt="Thumbnail" class="suggestion-thumbnail bg-gray-200">` :
                     `<div class="suggestion-thumbnail bg-gray-200 flex items-center justify-center"><i class="fas fa-music text-gray-400"></i></div>`;
 
                 suggestionElement.innerHTML = `
@@ -2380,7 +2398,7 @@
                         <span class="text-lg">${flag}</span>
                         <div class="flex-1 min-w-0">
                             <div class="text-sm font-medium text-gray-900 truncate">${safeName}</div>
-                            <div class="text-xs text-gray-500">${v.language.name} · ${v.gender}</div>
+                            <div class="text-xs text-gray-500">${escapeHtml(v.language.name)} · ${escapeHtml(v.gender)}</div>
                         </div>
                         <span class="text-xs text-blue-600">Add</span>
                     </button>`;
