@@ -45,7 +45,7 @@ These plugins will be auto-downloaded on first start:
 3. **lavasrc-plugin** (4.8.3)
    - Spotify support
    - Apple Music, Deezer, Yandex Music
-   - FloweryTTS integration
+   - (FloweryTTS is handled by the bot directly via HTTP, not this plugin — the lavasrc `flowerytts` source is disabled)
 
 4. **lavasearch-plugin** (1.0.0)
    - Advanced search capabilities
@@ -83,7 +83,7 @@ These plugins will be auto-downloaded on first start:
 - ✓ Twitch
 - ✓ Vimeo
 - ✓ HTTP streams
-- ✓ TTS (DuncteBot & FloweryTTS)
+- ✓ TTS (DuncteBot source; FloweryTTS is provided by the bot's own HTTP integration)
 
 ## 🔧 Updating Configuration
 
