@@ -36,9 +36,11 @@ export class WebServer {
 			contentSecurityPolicy: {
 				directives: {
 					defaultSrc: ["'self'"],
-					styleSrc: ["'self'", "'unsafe-inline'", 'https://cdn.jsdelivr.net', 'https://cdnjs.cloudflare.com'],
-					scriptSrc: ["'self'", "'unsafe-inline'", 'https://cdn.jsdelivr.net', 'https://cdn.socket.io'],
-					scriptSrcAttr: ["'unsafe-inline'"], // Allow inline event handlers
+					// CSS is now self-hosted (built Tailwind bundle + page styles); cdnjs serves FontAwesome.
+					styleSrc: ["'self'", "'unsafe-inline'", 'https://cdnjs.cloudflare.com'],
+					// Scripts are self-hosted except the Socket.IO client.
+					scriptSrc: ["'self'", "'unsafe-inline'", 'https://cdn.socket.io'],
+					scriptSrcAttr: ["'unsafe-inline'"], // Allow inline event handlers (guild.html controls)
 					imgSrc: ["'self'", 'data:', 'https:'],
 					connectSrc: ["'self'", 'ws:', 'wss:'],
 				},

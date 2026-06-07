@@ -8,7 +8,9 @@
     "start": "node dist/index.js",
     "db:push": "npx prisma db push",
     "db:migrate": "npx prisma migrate dev --name init",
-    "build": "tsup",
+    "build:css": "tailwindcss -i ./src/web/styles/app.css -o ./src/web/public/css/app.css --minify",
+    "watch:css": "tailwindcss -i ./src/web/styles/app.css -o ./src/web/public/css/app.css --watch",
+    "build": "npm run build:css && tsup",
     "lint": "biome lint .",
     "lint:fix": "biome lint --write .",
     "format": "biome format --write ."
@@ -40,6 +42,7 @@
     "@types/node": "^22.14.1",
     "@types/signale": "^1.4.7",
     "prisma": "^6.6.0",
+    "tailwindcss": "^3.4.19",
     "tsup": "^8.4.0",
     "typescript": "^5.9.3"
   },

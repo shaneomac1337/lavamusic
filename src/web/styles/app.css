@@ -1,0 +1,193 @@
+/*
+ * Lavamusic dashboard — Tailwind entry + design system.
+ *
+ * This file is the BUILD INPUT. It is compiled to src/web/public/css/app.css
+ * (served at /public/css/app.css). Do not edit the compiled output directly.
+ *
+ * Build:  npm run build:css      Watch:  npm run watch:css
+ *
+ * The pages default to LIGHT mode and toggle a `.dark` class on <html> for dark
+ * mode, so every component below defines both. The "glassy/neon" treatment is
+ * expressed through reusable component classes (.glass-card, .btn-*, etc.) that
+ * the page markup opts into — layouts are intentionally left unchanged.
+ */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ----------------------------------------------------------------------------
+ * Design tokens (ported from the former kompg-theme palette)
+ * ------------------------------------------------------------------------- */
+:root {
+  --primary: #6e4ff6;
+  --primary-dark: #5a3fd6;
+  --accent: #00d2ff;
+  --discord: #5865f2;
+
+  /* Surfaces — light mode defaults */
+  --surface: #ffffff;
+  --surface-muted: #f7fafc;
+  --border: #e2e8f0;
+  --text-strong: #1a202c;
+  --text-soft: #4a5568;
+
+  --ring: rgba(110, 79, 246, 0.45);
+  --radius-card: 1rem;
+}
+
+.dark {
+  /* Surfaces — dark mode */
+  --surface: rgba(31, 41, 55, 0.72);
+  --surface-muted: #111827;
+  --border: rgba(255, 255, 255, 0.08);
+  --text-strong: #e2e8f0;
+  --text-soft: #a0aec0;
+}
+
+/* ----------------------------------------------------------------------------
+ * Component layer — opt-in glassy/neon primitives
+ * ------------------------------------------------------------------------- */
+@layer components {
+  /* Frosted glass surface. Light: near-solid white. Dark: translucent + blur. */
+  .glass-card {
+    @apply rounded-2xl border bg-white shadow-glass transition-all duration-300;
+    border-color: var(--border);
+  }
+  .dark .glass-card {
+    background-color: rgba(31, 41, 55, 0.55);
+    border-color: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(14px) saturate(140%);
+    -webkit-backdrop-filter: blur(14px) saturate(140%);
+  }
+  .glass-card:hover {
+    @apply -translate-y-0.5 shadow-glass-lg;
+  }
+
+  /* Brand gradient header bar */
+  .brand-bar {
+    background: linear-gradient(135deg, #6e4ff6 0%, #764ba2 55%, #00d2ff 140%);
+  }
+
+  /* Button system ------------------------------------------------------- */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold
+           transition-all duration-200 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn:focus-visible {
+    box-shadow: 0 0 0 3px var(--ring);
+  }
+  .btn-primary {
+    @apply text-white;
+    background-image: linear-gradient(135deg, #6e4ff6 0%, #5a3fd6 100%);
+    box-shadow: 0 6px 18px rgba(110, 79, 246, 0.30);
+  }
+  .btn-primary:hover {
+    @apply -translate-y-px;
+    box-shadow: 0 10px 24px rgba(110, 79, 246, 0.42);
+  }
+  .btn-ghost {
+    @apply border text-gray-700;
+    border-color: var(--border);
+    background-color: rgba(148, 163, 184, 0.10);
+  }
+  .dark .btn-ghost {
+    @apply text-gray-200;
+  }
+  .btn-ghost:hover {
+    background-color: rgba(148, 163, 184, 0.20);
+  }
+  .btn-danger {
+    @apply text-white;
+    background-image: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    box-shadow: 0 6px 18px rgba(239, 68, 68, 0.30);
+  }
+  .btn-danger:hover {
+    @apply -translate-y-px;
+    box-shadow: 0 10px 24px rgba(239, 68, 68, 0.42);
+  }
+
+  /* Neon accent ring for active toggle/filter states */
+  .neon-active {
+    box-shadow: 0 0 0 1px rgba(110, 79, 246, 0.45), 0 6px 18px rgba(110, 79, 246, 0.28);
+  }
+
+  /* Consistent focus ring for interactive controls */
+  .focus-ring:focus-visible {
+    @apply outline-none;
+    box-shadow: 0 0 0 3px var(--ring);
+  }
+}
+
+/* ----------------------------------------------------------------------------
+ * Base-layer polish — applies cohesively to every page that loads app.css
+ * ------------------------------------------------------------------------- */
+@layer base {
+  body {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Keyboard focus rings for interactive controls (accessibility win).
+     Mouse clicks don't trigger :focus-visible, so this stays unobtrusive. */
+  a:focus-visible,
+  button:focus-visible,
+  [role='button']:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible,
+  [tabindex]:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px var(--ring);
+    border-radius: 0.5rem;
+  }
+
+  ::selection {
+    background-color: rgba(110, 79, 246, 0.35);
+  }
+}
+
+/* Refined, theme-aware scrollbars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e0 transparent;
+}
+.dark * {
+  scrollbar-color: #4b5563 transparent;
+}
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background-color: #cbd5e0;
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+.dark ::-webkit-scrollbar-thumb {
+  background-color: #4b5563;
+}
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--primary);
+}
+
+/* ----------------------------------------------------------------------------
+ * Accessibility — respect reduced-motion: disable decorative animation/transform
+ * ------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .glass-card:hover,
+  .btn:hover {
+    transform: none !important;
+  }
+}
