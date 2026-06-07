@@ -534,7 +534,8 @@ Lavalink/plugins
 Lavalink/Lavalink.jar
 prisma/migrations
 prisma/lavamusic.db
-package-lock.json
+# package-lock.json is tracked on purpose: required for Dependabot security
+# updates of transitive deps and reproducible `npm ci` installs.
 pnpm-lock.yaml
 
 # Whole KompG website
