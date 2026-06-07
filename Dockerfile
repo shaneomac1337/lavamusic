@@ -48,7 +48,9 @@ COPY --from=builder /build/locales ./locales
 COPY --from=builder /build/src/utils/LavaLogo.txt ./src/utils/LavaLogo.txt
 COPY --from=builder /build/src/web/public ./src/web/public
 
-RUN chmod +x docker/docker-entrypoint.sh \
+# Strip any CR (defensive: a CRLF entrypoint from a Windows checkout breaks exec)
+RUN sed -i 's/\r$//' docker/docker-entrypoint.sh \
+    && chmod +x docker/docker-entrypoint.sh \
     && mkdir -p logs \
     && chown -R lavamusic:lavamusic /opt/lavamusic
 
