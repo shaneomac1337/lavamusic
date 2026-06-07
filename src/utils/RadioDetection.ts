@@ -362,11 +362,13 @@ export class RadioDetectionService {
 						};
 					}
 				} else if (station.apiFormat === 'actve_net') {
-					// actve.net API format (Evropa 2)
-					if (data && data.status === 'ok' && data.title && data.artist) {
+					// actve.net API format (Evropa 2). `artist` is empty during
+					// non-song content (shows/jingles), so require only a title and
+					// fall back to the show's moderator/name for the artist line.
+					if (data && data.status === 'ok' && data.title) {
 						songInfo = {
 							title: data.title,
-							artist: data.artist,
+							artist: data.artist || data.moderatorName || data.showName || station.name,
 							album: data.album || null,
 							artwork: data.cover || null,
 							startTime: data.songStart || null,
