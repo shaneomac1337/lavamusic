@@ -529,9 +529,11 @@ FodyWeavers.xsd
 *.sln.iml
 
 # Lavamusic
-Lavalink/logs
-Lavalink/plugins
-Lavalink/Lavalink.jar
+# Local Lavalink config carries real secrets — never commit it (use the .example)
+docker/lavalink/application.yml
+# Lavalink runtime artifacts (local Lavalink now runs via Docker)
+*.jar
+*.jar.bak
 prisma/migrations
 prisma/lavamusic.db
 # package-lock.json is tracked on purpose: required for Dependabot security
@@ -540,4 +542,3 @@ pnpm-lock.yaml
 
 # Whole KompG website
 kompg-website/*
-Lavalink-4.1.1.jar

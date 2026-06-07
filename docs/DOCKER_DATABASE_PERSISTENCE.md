@@ -18,11 +18,11 @@ The `lavamusic.db` file contains:
 - ✅ **Setup Channels** - Setup message configurations
 
 ### Database Persistence ✅
-**The shipped compose files already persist the database.**
+**The shipped compose file already persists the database.**
 
-Both `docker/docker-compose.yml` and `docker-compose.standalone.yml` mount the
-named `lavamusic-db` volume at `/opt/lavamusic/prisma`, so the following survive
-container restarts and recreation:
+The root `docker-compose.yml` mounts the named `lavamusic-db` volume at
+`/opt/lavamusic/prisma`, so the following survive container restarts and
+recreation:
 - ✅ All playlists
 - ✅ User preferences
 - ✅ Guild settings
@@ -30,11 +30,10 @@ container restarts and recreation:
 ## How the Database Is Persisted with Docker Volumes
 
 ### Option 1: Named Volume (used by default)
-The shipped `docker-compose.yml` already contains this configuration:
+The shipped root `docker-compose.yml` already contains this configuration (the
+`lavamusic` service, alongside a `lavalink` service not shown here):
 
 ```yaml
-version: '3.8'
-
 services:
   lavamusic:
     build:
@@ -44,8 +43,6 @@ services:
     container_name: lavamusic
     restart: unless-stopped
     network_mode: host
-    ports:
-      - "3001:3001"
     environment:
       - NODE_ENV=production
       - WEB_DASHBOARD=true
@@ -61,13 +58,11 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 40s
+      start_period: 60s
 
 volumes:
   lavamusic-logs:
-    driver: local
   lavamusic-db:  # ← The named database volume
-    driver: local
 ```
 
 ### Option 2: Bind Mount (Host Path)
@@ -146,7 +141,8 @@ cat lavamusic-dump.sql | docker exec -i lavamusic sqlite3 /opt/lavamusic/prisma/
 # 1. Build and start
 docker-compose up -d
 
-# 2. The image entrypoint runs `npx prisma migrate deploy` then `npx prisma generate` on startup
+# 2. The image entrypoint (docker/docker-entrypoint.sh) runs `npx prisma db push`
+#    then `npx prisma generate` on startup.
 # Playlists will be saved and persist across restarts
 ```
 
@@ -195,11 +191,9 @@ docker cp ./playlist-backup.db lavamusic:/opt/lavamusic/prisma/lavamusic.db
 docker-compose restart
 ```
 
-## Recommended docker-compose.yml (Full)
+## Recommended docker-compose.yml (lavamusic service)
 
 ```yaml
-version: '3.8'
-
 services:
   lavamusic:
     build:
@@ -209,8 +203,6 @@ services:
     container_name: lavamusic
     restart: unless-stopped
     network_mode: host
-    ports:
-      - "3001:3001"
     environment:
       - NODE_ENV=production
       - WEB_DASHBOARD=true
@@ -226,15 +218,11 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 40s
+      start_period: 60s
 
 volumes:
-  lavamusic-logs:
-    driver: local
-    # Persist logs
-  lavamusic-db:
-    driver: local
-    # Persist database (playlists, settings, etc.)
+  lavamusic-logs:   # Persist logs
+  lavamusic-db:     # Persist database (playlists, settings, etc.)
 ```
 
 ## Backup Strategy
@@ -269,24 +257,19 @@ find "$BACKUP_DIR" -name "lavamusic-*.db" -mtime +7 -delete
 
 ## Schema Updates
 
-The Docker images bake an **inline** entrypoint script into the image.
-`docker/docker-compose.yml` builds `docker/Dockerfile` (its `context: .` +
-`dockerfile: Dockerfile` resolves to `docker/Dockerfile`, since there is no root
-`Dockerfile`). `docker-compose.standalone.yml` does **not** build — it runs the
-pre-built `image: lavamusic:latest`, which you build manually from
-`Dockerfile.standalone` (see STANDALONE_DEPLOYMENT.md). Both `docker/Dockerfile`
-and `Dockerfile.standalone` bake the same inline entrypoint, which on startup
-runs:
+The root `Dockerfile` builds the image from the local build context. Its
+entrypoint is `docker/docker-entrypoint.sh` (invoked via the `CMD`), which on
+container startup runs:
 
 ```sh
-npx prisma migrate deploy
+npx prisma db push --accept-data-loss --skip-generate
 npx prisma generate
 ```
 
-Note: the repo has **no `prisma/migrations/` directory**, so `prisma migrate
-deploy` applies no migration files. (Separately, `docker/docker-entrypoint.sh` —
-which runs `npx prisma db push --accept-data-loss --skip-generate` — is only used
-by `Dockerfile.clean`, which is not referenced by either compose file.)
+So schema setup on container start is a **`prisma db push`** (schema-push,
+matching the local `npm run db:push`) — not `prisma migrate deploy`. The repo has
+**no `prisma/migrations/` directory**; the schema is pushed directly from
+`prisma/schema.prisma`.
 
 ### When Schema Changes (New Features)
 ```bash
@@ -294,10 +277,10 @@ by `Dockerfile.clean`, which is not referenced by either compose file.)
 git pull
 
 # 2. Rebuild container
-docker-compose build
+docker compose build
 
-# 3. Start (the image entrypoint runs `prisma migrate deploy` + `prisma generate`)
-docker-compose up -d
+# 3. Start (the entrypoint runs `prisma db push` + `prisma generate`)
+docker compose up -d
 
 # ✅ The named database volume preserves all existing data (playlists) across rebuilds.
 ```
@@ -315,7 +298,7 @@ npx prisma db push
 
 > Note: `npm run db:push` runs `prisma db push` and `npm run db:migrate` runs
 > `prisma migrate dev --name init`; these are the local workflows. The Docker
-> images use `prisma migrate deploy` as shown above.
+> image runs `prisma db push` on startup, as shown above.
 
 ## Troubleshooting
 

@@ -371,7 +371,7 @@ Czech, Chinese (CN/TW), Dutch, English, French, German, Hindi, Indonesian, Itali
 
 **Available Plugins:**
 - `plugins/antiCrash.ts` - Uncaught error handler
-- `plugins/keepAlive.ts` - HTTP keep-alive for Replit
+- `plugins/keepAlive.ts` - HTTP keep-alive endpoint (for uptime pingers / hosts that sleep idle apps)
 - `plugins/updateStatus.ts` - Auto-update bot status
 
 **Loading:** Plugins auto-loaded in `src/plugin/index.ts` during startup.
@@ -403,7 +403,7 @@ DATABASE_URL=""       # Database connection
 SEARCH_ENGINE="youtube"   # Default search source (schema default: youtube)
 LOG_CHANNEL_ID=""     # Node status logs
 LOG_COMMANDS_ID=""    # Command usage logs
-KEEP_ALIVE="false"    # HTTP keep-alive for Replit
+KEEP_ALIVE="false"    # Expose an HTTP keep-alive endpoint (for uptime pingers / hosts that sleep idle apps)
 BOT_STATUS="online"   # online | idle | dnd | invisible
 BOT_ACTIVITY="Lavamusic"  # Activity text
 BOT_ACTIVITY_TYPE="0"     # Activity type (0-5)
@@ -423,8 +423,8 @@ BOT_ACTIVITY_TYPE="0"     # Activity type (0-5)
 ### Lavalink Setup
 
 **Configuration:**
-1. Edit `Lavalink/application.yml`
-2. Add plugins to `Lavalink/plugins/`
+1. Copy `docker/lavalink/application.example.yml` to `docker/lavalink/application.yml` (the real file is gitignored) and edit it
+2. Declare plugins in `application.yml` — the official Lavalink Docker image auto-downloads them (no manual `plugins/` directory)
 3. Update `NODES` in `.env` with host/port/auth
 
 **Recommended Plugins:**
@@ -434,8 +434,8 @@ BOT_ACTIVITY_TYPE="0"     # Activity type (0-5)
 - [jiosaavn-plugin](https://github.com/appujet/jiosaavn-plugin) - JioSaavn
 
 **Docker Setup:**
-- See `docker/` directory for complete stack
-- `docker-compose.yml` includes bot + Lavalink + database
+- Root `Dockerfile` + root `docker-compose.yml` for the complete stack; support files (Lavalink config template, entrypoint) live in `docker/`
+- `docker-compose.yml` includes bot + Lavalink (official image) + database
 
 ## Code Style
 

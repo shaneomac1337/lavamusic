@@ -16,7 +16,6 @@ Guides for configuring, deploying, and using the LavaMusic Discord bot and its w
 
 ### ⚙️ Setup & Deployment
 - **[LAVALINK_SETUP.md](./LAVALINK_SETUP.md)** — Lavalink server (4.2.2) setup and plugin configuration
-- **[STANDALONE_DEPLOYMENT.md](./STANDALONE_DEPLOYMENT.md)** — Standalone Docker / Portainer deployment
 - **[DOCKER_DATABASE_PERSISTENCE.md](./DOCKER_DATABASE_PERSISTENCE.md)** — Persisting the SQLite database and logs with named volumes
 - **[PORTAINER_VOLUME_MANAGEMENT.md](./PORTAINER_VOLUME_MANAGEMENT.md)** — Managing those volumes from the Portainer UI
 
@@ -37,8 +36,7 @@ Guides for configuring, deploying, and using the LavaMusic Discord bot and its w
 
 - **`../src/`** — Source code (`src/web/` is the dashboard)
 - **`../src/web/styles/`** — Tailwind source CSS, built via `npm run build:css` to `src/web/public/css/app.css`
-- **`../config/`** — Runtime config (`application.yml`, `process.json`, `replit.nix`); `tsconfig.json` and `biome.json` live at the repo root
-- **`../docker/`** — Docker configuration
+- **`../docker/`** — Docker support files (`docker-entrypoint.sh`, `lavalink/application.example.yml`); the `Dockerfile` and `docker-compose.yml` live at the repo root, as do `tsconfig.json` and `biome.json`
 - **`../scripts/`** — Command-deploy and utility scripts (`deploy-commands.js`, `restart.js`)
 - **`../locales/`** — Translation files
 - **`../tests/`** — Manual debug scripts (require a bot token)

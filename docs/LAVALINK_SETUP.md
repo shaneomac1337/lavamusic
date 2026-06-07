@@ -1,139 +1,157 @@
 # Lavalink Server Setup
 
-This directory contains the Lavalink audio server required by LavaMusic bot.
+LavaMusic uses [Lavalink](https://lavalink.dev/) as its audio server. Lavalink runs
+as a Docker service defined in the repo's root `docker-compose.yml` using the
+**official Lavalink image** — there is no local jar to download or manage.
 
 ## 🚀 Quick Start
 
-### Starting Lavalink
+### 1. Configure
 
-**Option 1: PowerShell Script (Recommended)**
-```powershell
-cd Lavalink
-.\start-lavalink.ps1
+Copy the example config and edit it (the real `application.yml` is gitignored):
+
+```bash
+cp docker/lavalink/application.example.yml docker/lavalink/application.yml
 ```
 
-**Option 2: Manual Start**
-```powershell
-cd Lavalink
-java -Xmx2G -jar Lavalink.jar
+Edit `docker/lavalink/application.yml` to set the server password and any source
+credentials (Spotify, Deezer, etc.). The default password is `youshallnotpass` —
+change it for any non-local deployment.
+
+### 2. Start
+
+Bring up the whole stack (Lavalink + the bot):
+
+```bash
+docker compose up -d
+```
+
+Or start just Lavalink:
+
+```bash
+docker compose up -d lavalink
 ```
 
 ### Server Information
-- **Version**: Lavalink 4.2.2
-- **Port**: 2333
-- **Address**: http://localhost:2333
-- **Password**: `youshallnotpass`
 
-## 📦 Installed Components
+- **Image**: `ghcr.io/lavalink-devs/lavalink:4.2.2`
+- **Port**: 2333 (`SERVER_PORT`)
+- **Address**: 0.0.0.0 (`SERVER_ADDRESS`), uses `network_mode: host`
+- **Heap**: `_JAVA_OPTIONS=-Xmx2G`
+- **Password**: `youshallnotpass` (set in `application.yml`)
 
-### Main Files
-- `Lavalink.jar` (95.95 MB) - Main Lavalink server
-- `application.yml` - Server configuration
-- `plugins/` - Directory for Lavalink plugins
+## ⚙️ How It Works
 
-### Configured Plugins
-These plugins will be auto-downloaded on first start:
+The `lavalink` service mounts your config read-only into the container:
 
-1. **skybot-lavalink-plugin** (1.7.0)
-   - TTS support with Czech language (cs-CZ)
-   - TikTok, Reddit, Clyp.it, etc.
+- `./docker/lavalink/application.yml` → `/opt/Lavalink/application.yml:ro`
 
-2. **youtube-plugin** (1.18.1)
-   - YouTube playback with OAuth2
-   - Multiple client types for reliability
+Named volumes persist logs and downloaded plugins across restarts:
 
-3. **lavasrc-plugin** (4.8.3)
-   - Spotify support
-   - Apple Music, Deezer, Yandex Music
-   - (FloweryTTS is handled by the bot directly via HTTP, not this plugin — the lavasrc `flowerytts` source is disabled)
+- `lavalink-logs` → `/opt/Lavalink/logs`
+- `lavalink-plugins` → `/opt/Lavalink/plugins`
 
-4. **lavasearch-plugin** (1.0.0)
-   - Advanced search capabilities
+### Plugins (auto-downloaded)
 
-5. **lavalyrics-plugin** (1.1.0)
-   - Lyrics fetching from multiple sources
+You do **not** manage plugin jars manually. The official image reads the
+`lavalink.plugins:` section of `application.yml` and downloads each declared
+plugin on startup. To add, remove, or upgrade a plugin, edit that section and
+restart the container.
 
-6. **sponsorblock-plugin** (3.0.1)
-   - Skip sponsored segments in videos
+Plugins declared in `application.example.yml`:
 
-## ⚙️ Configuration
+1. **jiosaavn-plugin** (1.0.3) — JioSaavn source
+2. **skybot-lavalink-plugin** / DuncteBot (1.7.0) — extra sources (getyarn, clyp.it, TikTok, Reddit, Mixcloud, etc.) and the DuncteBot TTS source
+3. **lavasearch-plugin** (1.0.0) — advanced search capabilities
+4. **lavasrc-plugin** (4.8.3) — Spotify, Apple Music, Deezer, Yandex Music, VK Music sources (all disabled by default in the example; enable + add credentials as needed)
+5. **sponsorblock-plugin** (3.0.1) — skip sponsored segments
+6. **youtube-plugin** (1.12.0) — YouTube playback (the built-in Lavalink YouTube source is disabled in favor of this plugin)
 
-### Current Settings
+> FloweryTTS is handled by the bot directly via HTTP, not through Lavalink — the
+> lavasrc `flowerytts` source is disabled in the example config.
 
-**TTS (Text-to-Speech)**
-- Language: Czech (cs-CZ)
-- Voice: cs-CZ-Tereza (FloweryTTS)
-- Speed: 1.0x
+### Sources Enabled (example config)
 
-**Spotify**
-- Client ID: Configured ✓
-- Client Secret: Configured ✓
-- Country: CZ (Czech Republic)
-
-**YouTube**
-- Email: mpenkava1337@gmail.com
-- OAuth2: Enabled
-- Multiple client types for redundancy
-
-**Sources Enabled**
-- ✓ YouTube (via plugin)
-- ✓ Spotify
+- ✓ YouTube (via the youtube-plugin)
 - ✓ SoundCloud
 - ✓ Bandcamp
 - ✓ Twitch
 - ✓ Vimeo
+- ✓ Nico
 - ✓ HTTP streams
-- ✓ TTS (DuncteBot source; FloweryTTS is provided by the bot's own HTTP integration)
+- ✓ DuncteBot sources / TTS
+
+Spotify, Apple Music, Deezer, Yandex Music and VK Music are present via lavasrc
+but **disabled by default** — enable them and supply credentials in
+`application.yml`.
+
+## ✅ Checking Health
+
+The compose healthcheck polls `http://localhost:2333/version` with the
+`Authorization: youshallnotpass` header. Check status with:
+
+```bash
+docker compose ps          # shows the lavalink service health column
+docker compose logs -f lavalink
+```
+
+Or query the version endpoint directly:
+
+```bash
+curl -H "Authorization: youshallnotpass" http://localhost:2333/version
+# Response: {"version":"4.2.2", ...}
+```
+
+## 🔄 Changing the Lavalink Version
+
+Edit the image tag in `docker-compose.yml`:
+
+```yaml
+lavalink:
+  image: ghcr.io/lavalink-devs/lavalink:4.2.2   # change this tag
+```
+
+Then pull and recreate:
+
+```bash
+docker compose pull lavalink
+docker compose up -d lavalink
+```
 
 ## 🔧 Updating Configuration
 
-To modify settings, edit `application.yml`:
+Edit `docker/lavalink/application.yml`, then restart the service:
 
-```powershell
-notepad application.yml
-# or
-code application.yml  # VS Code
+```bash
+docker compose restart lavalink
 ```
 
-After changes, restart Lavalink for them to take effect.
+(The config is mounted read-only into the container, so changes on the host take
+effect on the next restart.)
 
 ## 📝 Common Issues
 
 ### Port Already in Use
-If port 2333 is already in use:
-1. Edit `application.yml`
-2. Change `server.port` to another port (e.g., 2334)
-3. Update bot's `.env` file to match
+
+Because the service uses `network_mode: host`, Lavalink binds port 2333 directly
+on the host. If it's taken:
+
+1. Change `server.port` in `application.yml` (and `SERVER_PORT` in
+   `docker-compose.yml`)
+2. Update the bot's `NODES` value in `.env` to match
 
 ### Plugins Not Loading
-- Check `logs/` directory for errors
-- Ensure internet connection (plugins download on first start)
-- Verify `plugins/` directory permissions
+
+- Ensure the container has internet access (plugins download on startup)
+- Check the logs: `docker compose logs lavalink`
+- Plugin downloads are cached in the `lavalink-plugins` volume
 
 ### YouTube Issues
-- OAuth2 login required on first start
-- Check console for device code link
+
+- OAuth is disabled by default in the example; enable it under `plugins.youtube.oauth`
+  if needed
+- On first OAuth start, check the logs for the `google.com/device` code link
 - Use a burner Google account (ban risk)
-
-## 📊 Monitoring
-
-### Logs Location
-```
-Lavalink/logs/
-```
-
-### Check Server Status
-```bash
-curl http://localhost:2333/version
-# Response: {"version":"4.2.2","buildTime":...}
-```
-
-## 🔄 Updating Lavalink
-
-1. Download new version from GitHub
-2. Stop Lavalink server (Ctrl+C)
-3. Replace `Lavalink.jar`
-4. Start server again
 
 ## 🆘 Need Help?
 
@@ -144,6 +162,7 @@ curl http://localhost:2333/version
 ## 🔐 Security Note
 
 ⚠️ **Important**: Never expose your Lavalink server to the public internet!
-- Change the default password in `application.yml`
-- Use firewall rules to restrict access
-- Consider using a reverse proxy with rate limiting
+
+- Change the default `youshallnotpass` password in `application.yml`
+- Use firewall rules to restrict access to port 2333
+- Consider a reverse proxy with rate limiting

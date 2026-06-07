@@ -84,9 +84,9 @@ Optional web interface built with:
 - Run `npm run db:push` after schema changes
 
 **Lavalink Setup:**
-- Configure `Lavalink/application.yml`
-- Place plugins in `Lavalink/plugins/`
-- Use provided Docker setup for easy deployment
+- Configure `docker/lavalink/application.yml` (copy it from `docker/lavalink/application.example.yml`; the real file is gitignored)
+- Plugins are declared in `application.yml` and auto-downloaded by the official Lavalink Docker image (no manual `plugins/` directory needed)
+- Lavalink runs via the official Docker image in the root `docker-compose.yml`
 
 ## Code Style & Standards
 
@@ -127,6 +127,6 @@ Optional web interface built with:
 - Input validation and sanitization
 
 **Docker Support:**
-- Complete Docker setup in `docker/` directory
-- Docker Compose for full stack deployment
-- Includes Lavalink server configuration
+- Root `Dockerfile` + root `docker-compose.yml` for full stack deployment (bot + Lavalink + database)
+- Lavalink config template lives at `docker/lavalink/application.example.yml`
+- Includes Lavalink server configuration via the official Lavalink Docker image

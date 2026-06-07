@@ -1,0 +1,19 @@
+# Normalize line endings in the repo, but keep files that REQUIRE LF as LF.
+# Shell scripts with CRLF break Docker entrypoints ("exec format error"),
+# so force LF regardless of the contributor's core.autocrlf setting.
+*.sh            text eol=lf
+docker-entrypoint.sh text eol=lf
+Dockerfile      text eol=lf
+*.yml           text eol=lf
+*.yaml          text eol=lf
+
+# Windows-only helper scripts keep CRLF
+*.bat           text eol=crlf
+*.ps1           text eol=crlf
+
+# Treat large/binary assets as binary (no EOL conversion, no diff)
+*.jar           binary
+*.db            binary
+*.png           binary
+*.jpg           binary
+*.ico           binary

@@ -7,8 +7,6 @@
 [![Issues][issues-shield]][issues-url]
 [![Support Server][support-shield]][support-server]
 [![MIT License][license-shield]][license-url]
-[![Run on Repl.it](https://repl.it/badge/github/appujet/lavamusic)](https://repl.it/github/appujet/lavamusic)
-[![Remix on Glitch](https://cdn.glitch.com/2703baf2-b643-4da7-ab91-7ee2a2d00b5b%2Fremix-button.svg)](https://glitch.com/edit/#!/import/github/appujet/lavamusic)
 
 <!-- PROJECT LOGO -->
 <br />
@@ -79,7 +77,7 @@
 [youtube-source]: https://github.com/lavalink-devs/youtube-source
 [jiosaavn]: https://github.com/appujet/jiosaavn-plugin
 
-To Setup a Lavalink server on Windows, Linux, or Replit, [Click Here!](https://github.com/LucasB25/lavalink-server)
+Lavalink runs via the official Docker image (the `lavalink` service in `docker-compose.yml`), so no separate Lavalink install is required. Just copy `docker/lavalink/application.example.yml` to `docker/lavalink/application.yml` and fill in your credentials.
 
 ## 🎤 Text-to-Speech Features
 
@@ -161,8 +159,6 @@ npm run db:migrate
 
 9. Run the bot:
 
-Note: You can also run `scripts/run.bat` to easily run the bot on Windows.
-
 ```bash
 npm start
 ```
@@ -191,13 +187,15 @@ OWNER_IDS=["859640640640640640","859640640640640640"] # Your discord id, you can
 GUILD_ID="859640640640640640" # Your server ID (if you want to use it for a single server)
 ```
 
-Then copy `Lavalink/example.application.yml` to `Lavalink/application.yml` and put any Lavalink plugins you want to use in `Lavalink/plugins`.
+Then copy `docker/lavalink/application.example.yml` to `docker/lavalink/application.yml` and fill in your credentials. With the official Lavalink Docker image, plugins declared in `application.yml` are downloaded automatically on startup — there is no manual plugins directory to manage.
 
-After saving your changes you can open a terminal and go to the same location as the docker-compose.yml file. Then run the following:
+After saving your changes you can open a terminal in the repository root (the same location as the `docker-compose.yml` file). Then run the following:
 
 ```bash
-docker compose up -d
+docker compose up -d --build
 ```
+
+This starts two services: `lavalink` (the official `ghcr.io/lavalink-devs/lavalink` image) and `lavamusic` (built from this repository's `Dockerfile`).
 
 The above command will start all your services and your bot should be up and running!
 If you want to run it from the console, remove the -d argument.
@@ -238,27 +236,25 @@ lavamusic/
 │   ├── test-dashboard.js
 │   ├── test-flowery-tts.js
 │   └── ... (all test files)
-├── ⚙️ config/            # Runtime config (application.yml, process.json, replit.nix)
-│   └── ... (tsconfig.json and biome.json live at the repo root)
-├── 🐳 docker/            # Docker configuration
-│   ├── Dockerfile
-│   ├── docker-compose.yml
-│   └── ... (container configs)
-├── 📜 scripts/           # Build and utility scripts
+├── 🐳 docker/            # Docker support files
+│   ├── docker-entrypoint.sh        # Container entrypoint
+│   └── lavalink/
+│       └── application.example.yml # Lavalink config template (copy to application.yml)
+├── 📜 scripts/           # Utility scripts
 │   ├── deploy-commands.js
-│   ├── restart.js
-│   └── ... (automation scripts)
+│   └── restart.js
 ├── 🎵 src/               # Source code
 ├── 🌍 locales/           # Translation files
 ├── 🗄️ prisma/            # Database schema
-├── 🔌 Lavalink/          # Lavalink server config
-└── 📦 dist/              # Compiled output
+├── ⚙️ .github/           # GitHub workflows and templates
+├── 🐳 Dockerfile         # Multi-stage image (built by docker-compose.yml)
+├── 🐳 docker-compose.yml # Runs the lavalink + lavamusic services
+└── ... (.env.example, biome.json, tsconfig.json, tsup.config.ts, tailwind.config.js, package.json, etc.)
 ```
 
 ### Quick Navigation
 - **📖 Documentation**: [docs/README.md](docs/README.md)
 - **🧪 Testing**: [tests/README.md](tests/README.md)
-- **⚙️ Configuration**: [config/README.md](config/README.md)
 
 ## 🔗 Useful Links
 
