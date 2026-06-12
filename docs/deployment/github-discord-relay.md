@@ -1,49 +1,56 @@
 # GitHub → Discord Silent Relay
 
 Replaces the direct GitHub→Discord `/github` webhook integration for this repo. All GitHub
-events now flow through a tiny relay on the production host that posts to the Discord
-webhook with **`flags: 4096` (SuppressNotifications)** — messages appear in the channel,
-but **nobody ever gets a notification**, regardless of their personal Discord settings.
+events flow through a relay that posts to the Discord webhook with **`flags: 4096`
+(SuppressNotifications)** — messages appear in the channel, but **nobody ever gets a
+notification**, regardless of their personal Discord settings.
+
+> **Hosting note:** originally a container on the production VPS; moved to **Vercel**
+> on 2026-06-13 (freed 64 MB on the RAM-tight host and removed an nginx route). The VPS
+> deployment is fully decommissioned.
 
 ## Topology
 
 ```
-GitHub (repo webhook, events: *)
-  → https://music.komplexaci.cz/github-relay/   (nginx location, same vhost as dashboard)
-  → 127.0.0.1:9220  github-discord-relay container (node:22-alpine, ~30 MB, mem_limit 64m)
+GitHub (lavamusic repo webhook, events: *, hook id 553683576)
+  → https://github-discord-relay.vercel.app/api/github   (Vercel function)
   → Discord webhook (standard execute endpoint, flags 4096)
 ```
 
 ## Pieces
 
-- **Server**: `/opt/github-discord-relay/` on `komplexaci` — `relay.js` (zero-dependency Node
-  HTTP server), `docker-compose.yml`, `.env` (`DISCORD_WEBHOOK_URL`, `GITHUB_SECRET`; chmod 600)
-- **nginx**: `location /github-relay/` in `/etc/nginx/sites-enabled/music.komplexaci.cz`
-  proxying to `127.0.0.1:9220` (relay binds loopback only; container uses host networking)
-- **GitHub hook**: repo webhook id `553683576`, `content_type: json`, HMAC secret set,
-  subscribed to `*` — the relay decides what to post
+- **Code**: private repo [`shaneomac1337/github-discord-relay`](https://github.com/shaneomac1337/github-discord-relay)
+  — single zero-dependency Vercel function (`api/github.js`), git-integrated (push to `main`
+  auto-deploys production)
+- **Vercel project**: `github-discord-relay` (team `martin-penkavas-projects`), env vars
+  `DISCORD_WEBHOOK_URL` + `GITHUB_SECRET` set for production
+- **GitHub hook**: `content_type: json`, HMAC secret, subscribed to `*` — the relay decides
+  what to post
 
 ## Behavior
 
 - Verifies `X-Hub-Signature-256` (HMAC-SHA256) — unsigned/foreign posts get 401
-- Formats: pushes (commit list + compare link), releases (published), issues and PRs
+- Formats: pushes (commit list + compare link), published releases, issues and PRs
   (opened/closed/reopened/merged), failed workflow runs, stars, forks, branch/tag create+delete
-- Drops everything else (check suites, successful workflow runs, statuses, wiki…) with 204 —
+- Drops everything else (check suites, successful CI runs, statuses, wiki…) with 204 —
   this is the noise filter
 - Every Discord post carries `flags: 4096` → silent for all members
-- Health: `GET /github-relay/health` → `ok`
+- Health: `GET /api/github` → `ok`
 
 ## Operations
 
 ```bash
-# logs
-docker logs github-discord-relay --tail 20
-# restart after editing relay.js
-cd /opt/github-discord-relay && docker compose up -d --force-recreate
+# function logs
+vercel logs github-discord-relay.vercel.app
 # GitHub-side delivery log
 gh api repos/shaneomac1337/lavamusic/hooks/553683576/deliveries
+# redeploy
+cd github-discord-relay && vercel deploy --prod
 ```
 
+Gotcha learned the hard way: PATCHing a GitHub webhook **replaces the whole `config`
+object** — always re-send `url`, `content_type`, and `secret` together, or the secret is
+silently wiped and deliveries start failing signature checks (401).
+
 Rollback: point the webhook back at the Discord `/github` endpoint
-(`gh api -X PATCH repos/shaneomac1337/lavamusic/hooks/553683576 -f "config[url]=<discord /github url>"`)
-and `docker compose down` the relay.
+(`gh api -X PATCH repos/shaneomac1337/lavamusic/hooks/553683576 -f "config[url]=<discord /github url>" -f "config[content_type]=json" -f "config[secret]=<secret>"`).
