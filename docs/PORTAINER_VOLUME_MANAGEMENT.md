@@ -234,8 +234,6 @@ services:
     container_name: lavamusic
     restart: unless-stopped
     network_mode: host
-    ports:
-      - "3001:3001"
     environment:
       - NODE_ENV=production
       - WEB_DASHBOARD=true

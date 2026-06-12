@@ -2,6 +2,9 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+!! Important INFO: !!
+If something is changed in the repo, we need to also reference it in docus, always!
+
 ## Development Commands
 
 **Build & Development:**

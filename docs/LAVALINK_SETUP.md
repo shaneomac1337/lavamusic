@@ -46,10 +46,11 @@ The `lavalink` service mounts your config read-only into the container:
 
 - `./docker/lavalink/application.yml` → `/opt/Lavalink/application.yml:ro`
 
-Named volumes persist logs and downloaded plugins across restarts:
+Bind mounts persist logs and downloaded plugins across restarts (host dirs must be
+owned by uid/gid `322:322`, the image's runtime user — see `docker/lavalink/README.md`):
 
-- `lavalink-logs` → `/opt/Lavalink/logs`
-- `lavalink-plugins` → `/opt/Lavalink/plugins`
+- `./docker/lavalink/logs` → `/opt/Lavalink/logs`
+- `./docker/lavalink/plugins` → `/opt/Lavalink/plugins`
 
 ### Plugins (auto-downloaded)
 
@@ -57,6 +58,10 @@ You do **not** manage plugin jars manually. The official image reads the
 `lavalink.plugins:` section of `application.yml` and downloads each declared
 plugin on startup. To add, remove, or upgrade a plugin, edit that section and
 restart the container.
+
+> Note: the gitignored production `application.yml` can drift from the template —
+> at last snapshot prod ran youtube-plugin 1.18.1 + lavalyrics 1.1.0 and dropped
+> jiosaavn (see `docs/deployment/docker-stack.md`).
 
 Plugins declared in `application.example.yml`:
 

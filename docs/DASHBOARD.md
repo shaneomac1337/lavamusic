@@ -60,8 +60,7 @@ lavamusic:
     - DASHBOARD_PORT=3001
   env_file:
     - .env          # supplies TOKEN, CLIENT_ID, CLIENT_SECRET, NODES, ...
-  ports:
-    - "3001:3001"  # Dashboard access port
+  network_mode: host  # dashboard reachable on host port 3001 directly (no ports: mapping)
 ```
 
 ### 4. Manual Installation
