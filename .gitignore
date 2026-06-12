@@ -551,3 +551,6 @@ kompg-website/*
 
 # Local-only Docker Compose override (e.g. Docker Desktop dashboard port)
 docker-compose.override.yml
+
+# Graphify knowledge graph output (regenerable)
+graphify-out/
