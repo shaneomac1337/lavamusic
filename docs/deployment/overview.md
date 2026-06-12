@@ -20,7 +20,7 @@ GitOps-lite, manual:
    and restarts the stack (see [docker-stack](docker-stack.md))
 
 Production tracks `main` directly; the working tree on the server is kept clean. A fuller GitOps
-design exists in `docs/` (production GitOps deployment spec, commit `16a3943`).
+design exists in `docs/` (production GitOps deployment spec, commit `7949555`).
 
 ## Components
 

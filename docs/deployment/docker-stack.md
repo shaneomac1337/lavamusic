@@ -22,7 +22,7 @@ on the host's loopback/interfaces.
   - `com.dunctebot:skybot-lavalink-plugin:1.7.0` (TTS, getyarn, clypit, pixeldrain)
 - **Bind mounts**: `./docker/lavalink/plugins` and `./docker/lavalink/logs` — must be owned by
   uid/gid **322:322** (the image's runtime user). Named volumes don't work here because the
-  image must write downloaded plugins (fixed in commit `2308de8`).
+  image must write downloaded plugins (fixed in commit `ee067cc`).
 - **Healthcheck**: `GET /version` with the Lavalink password every 30s
 
 ### lavamusic
@@ -34,7 +34,7 @@ on the host's loopback/interfaces.
 - **Env**: `NODE_ENV=production` + `.env` file (see [environment](environment.md))
 - **Named volumes**:
   - `lavamusic-db` → `/opt/lavamusic/prisma` — SQLite database **and** the persisted dashboard
-    JWT secret (`prisma/.dashboard-secret`, commit `551612c`); survives rebuilds
+    JWT secret (`prisma/.dashboard-secret`, commit `019ade2`); survives rebuilds
   - `lavamusic-logs` → `/opt/lavamusic/logs`
 - **Healthcheck**: `GET http://localhost:3001/health` every 30s
 
